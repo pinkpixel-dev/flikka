@@ -1,0 +1,11 @@
+{
+  "name": "dark",
+  "description": "Charcoal surface, crisp white type, soft card elevation, and vibrant recording accents.",
+  "base": "dark",
+  "background": "#0e0e0f", "text": "#f2f2f0", "muted": "#8d8d93", "accent": "#ef4444", "accentText": "#ffffff",
+  "accentGradient": "linear-gradient(90deg, #ef4444, #f87171)",
+  "panel": "#18181a", "card": "#1c1c1e", "border": "#2a2a2d", "radius": 22,
+  "font": "Inter, system-ui, sans-serif", "headingFont": "Inter, system-ui, sans-serif", "monoFont": "\"JetBrains Mono\", ui-monospace, monospace",
+  "fontUrl": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap",
+  "backdrop": "plain"
+}

@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# flikka - screen recorder and video editor for AI agents on Linux.
+set -euo pipefail
+
+HERE="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+exec node "$HERE/lib/cli.mjs" "$@"
