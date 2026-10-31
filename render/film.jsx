@@ -50,7 +50,8 @@ export function Recording({recording, box, frames, rate = 1}) {
   const {fps} = useVideoConfig();
   const {project} = recording;
   let offset = 0;
-  const sequences = project.clips.map((clip, index) => {
+  // Films play a recording at the scene's speed: its freezes and speed edits don't apply here.
+  const sequences = project.clips.filter(clip => !clip.hold).map((clip, index) => {
     const duration = Math.max(1, Math.round((clip.end - clip.start) * fps / rate));
     const sequence = <Sequence key={index} from={offset} durationInFrames={duration} premountFor={fps}>
       <Clip {...recording} project={{...project, captions: {enabled: false}}} transcript={[]} clip={clip} box={box} rate={rate}/>

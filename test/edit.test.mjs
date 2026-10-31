@@ -42,3 +42,31 @@ test('output-time edits, dry runs, timeline and undo work together', async () =>
     await assert.rejects(undoProject(file), /Nothing to undo/);
   } finally { await fs.rm(folder, {recursive: true, force: true}); }
 });
+
+test('trim, freeze and ramp edits, in video time, with undo', async () => {
+  const {folder, file} = await scratchProject();
+  try {
+    await editProject(file, ['--trim', '2,18']);
+    assert.equal((await timelineProject(file)).duration, 16);
+
+    // Video 0:05 is recording 7: hold it for 1.5 s.
+    await editProject(file, ['--output-time', '--freeze', '0:05,1.5']);
+    let timeline = await timelineProject(file);
+    assert.equal(timeline.duration, 17.5);
+    assert.deepEqual(timeline.parts.map(part => part.freeze ? `freeze@${part.source[0]}` : part.source.join('-')), ['2-7', 'freeze@7', '7-18']);
+
+    // A speed change with a ramp: one ramp part between the two speeds, and the video gets shorter.
+    await editProject(file, ['--speed', '2,10,18', '--ramp', '0.5']);
+    timeline = await timelineProject(file);
+    const ramp = timeline.parts.find(part => part.ramp);
+    assert.ok(ramp && ramp.speed[0] > 1 && ramp.speed[1] < 2);
+    assert.ok(timeline.duration < 17.5 && timeline.duration > 13);
+    // The freeze survived the speed edit.
+    assert.ok(timeline.parts.some(part => part.freeze === 1.5));
+
+    await assert.rejects(editProject(file, ['--freeze', '1,2']), /was cut/);
+    await assert.rejects(editProject(file, ['--ramp', '9']), /0.2–2/);
+    await undoProject(file); await undoProject(file);
+    assert.equal((await timelineProject(file)).duration, 16);
+  } finally { await fs.rm(folder, {recursive: true, force: true}); }
+});

@@ -144,6 +144,8 @@ flikka project edit <id> --output-time --cut 1:20,1:25           # do it
 flikka project undo <id>                                         # changed your mind
 ```
 
+The same works for `--trim start,end` (keep only that), `--freeze at,seconds` (hold a moment as a silent still) and `--speed 2,start,end`. Add `--ramp 0.5` to ease between speeds instead of jumping. Freezes and ramps apply to recording renders; a film plays its recordings at the scene's own speed.
+
 `--output-time` reads the times as the video was before this edit. Every saved edit keeps the previous version in the project's `history/` folder, up to 50 deep.
 
 ## Agent Guidelines

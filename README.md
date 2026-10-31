@@ -145,7 +145,10 @@ Some useful ones:
 |---|---|
 | `--cut-idle`, `--cut-silence` | Cut still stretches, or pauses in speech |
 | `--cut start,end` | Cut a range (in the recording's own seconds) |
+| `--trim start,end` | Keep only that range |
 | `--speed 1.5` or `--speed 2,start,end` | Speed up the whole video or one part |
+| `--ramp 0.5` | Ease between speeds over half a second instead of jumping (`--ramp off` to jump) |
+| `--freeze at,seconds` | Hold one moment as a still, in silence, so the viewer can read it |
 | `--auto-zoom`, `--zooms on\|off` | Zoom in on clicks |
 | `--cursor on\|off`, `--clicks on\|off` | The drawn cursor and the click sound |
 | `--preset vertical\|portrait\|square\|landscape` | Output shape. Tall videos follow the cursor |
@@ -166,7 +169,7 @@ flikka project edit 3f9a1c2e --output-time --cut 1:20,1:25
 flikka project undo 3f9a1c2e
 ```
 
-`timeline` lists the kept parts, cuts, zooms, clicks and spoken words in video time. `frames` shows those moments, stamped with both the video time and the recording time. `--dry-run` tells you how the length would change without saving anything, and `undo` steps back through earlier edits (Flikka keeps up to 50).
+`--trim`, `--freeze` and `--speed` all take `--output-time` too. `timeline` lists the kept parts, freezes, speed ramps, cuts, zooms, clicks and spoken words in video time. `frames` shows those moments, stamped with both the video time and the recording time. `--dry-run` tells you how the length would change without saving anything, and `undo` steps back through earlier edits (Flikka keeps up to 50).
 
 ## Making a film
 

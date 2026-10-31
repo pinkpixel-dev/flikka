@@ -1,7 +1,7 @@
 // The time mapping every agent tool relies on: recording seconds ↔ seconds in the finished video.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {segments, toOutput, toSource, seconds, demoFrames, clock} from '../render/timing.js';
+import {segments, toOutput, toSource, seconds, demoFrames, clock, playedClips} from '../render/timing.js';
 
 // 1 s intro, then 0–5 s as recorded, a cut from 5 to 8, then 8–12 s at double speed. 30 fps.
 const project = {export: {fps: 30}, intro: {duration: 1, text: 'Hi'}, clips: [{start: 0, end: 5}, {start: 8, end: 12, speed: 2}]};
@@ -47,4 +47,30 @@ test('seconds reads plain seconds and clock times', () => {
   assert.ok(Number.isNaN(seconds('soon')));
   assert.ok(Number.isNaN(seconds('-3')));
   assert.equal(clock(80.5), '1:20.50');
+});
+
+test('a freeze holds one moment and pushes everything after it back', () => {
+  const frozen = {export: {fps: 30}, clips: [{start: 0, end: 4}, {start: 4, end: 4, hold: 2}, {start: 4, end: 10}]};
+  assert.deepEqual(segments(frozen).map(part => [part.from, part.to]), [[0, 4], [4, 6], [6, 12]]);
+  assert.equal(demoFrames(frozen) / 30, 12);
+  near(toOutput(frozen, 4), 4);   // the frozen moment is seen when the freeze starts
+  near(toOutput(frozen, 5), 7);
+  near(toSource(frozen, 5), 4);   // anywhere inside the freeze shows that moment
+  near(toSource(frozen, 7), 5);
+});
+
+test('a ramp eases between touching parts in small logarithmic steps', () => {
+  const ramped = {export: {fps: 30}, ramp: 0.5, clips: [{start: 0, end: 10}, {start: 10, end: 20, speed: 4}]};
+  const played = playedClips(ramped);
+  const slices = played.filter(clip => clip.ramp);
+  assert.equal(slices.length, 5);
+  const speeds = slices.map(clip => clip.speed);
+  assert.ok(speeds.every((speed, index) => speed > 1 && speed < 4 && (!index || speed > speeds[index - 1])));
+  near(Math.sqrt(speeds[0] * speeds.at(-1)), 2); // geometric middle of 1→4
+  // Nothing of the recording goes missing: the played pieces still cover 0–20 end to end.
+  played.forEach((clip, index) => index && near(clip.start, played[index - 1].end));
+  near(played.at(-1).end, 20);
+  // Without a ramp, or between parts at one speed, nothing changes.
+  assert.equal(playedClips({...ramped, ramp: undefined}).length, 2);
+  assert.equal(playedClips({...ramped, clips: [{start: 0, end: 10}, {start: 10, end: 20}]}).length, 2);
 });

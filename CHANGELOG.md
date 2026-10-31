@@ -10,8 +10,14 @@
 - `flikka project frames <id>` now works for recordings too, with each frame stamped with the video time and the recording time.
 - `--cut` and `--speed` ranges accept `m:ss` as well as seconds.
 
+### ✂️ Cutting and timing
+- `--trim start,end` keeps only that part of a recording.
+- `--freeze at,seconds` holds one moment as a still (the cursor stays where it was, the sound goes quiet), so viewers can read a result.
+- `--ramp 0.2–2` eases between speeds in short steps instead of jumping, in the picture, the cursor and the sound alike. `--ramp off` goes back to hard jumps.
+- `flikka project timeline` shows freezes and speed ramps.
+
 ### 🧪 Tests
-- First automated tests (`npm test`): the time mapping between the recording and the finished video, and edit, timeline and undo on a real project file.
+- First automated tests (`npm test`): the time mapping between the recording and the finished video, freezes and speed ramps, and edit, timeline and undo on a real project file.
 
 ## 0.2.1 - October 31, 2026
 

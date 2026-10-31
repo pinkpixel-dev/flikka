@@ -1,7 +1,7 @@
 // Shared pieces: the cursor and one clip of a recording, fitted into a box.
 import React from 'react';
-import {AbsoluteFill, Sequence, Video, Audio, useCurrentFrame, useVideoConfig} from './frame.jsx';
-import {clamp, ease, speedOf, demoFrames} from './timing.js';
+import {AbsoluteFill, Sequence, Video, Audio, Img, useCurrentFrame, useVideoConfig} from './frame.jsx';
+import {clamp, ease, speedOf, demoFrames, playedClips, clipFrames} from './timing.js';
 
 export {clamp, ease, speedOf, demoFrames};
 
@@ -42,7 +42,9 @@ export function Cursor({events, clicks, time, width, height, style}) {
 
 // box: the area the screen is fitted into (the whole video, or half of it in a comparison).
 // sound: the address of the sound to play with it (the live preview; a render adds the mixed sound with ffmpeg).
-export function Clip({project, clip, sourceUrl, events, clicks, transcript, webcams, box, rate = 1, sound = null}) {
+// A freeze (clip.hold) shows its still (holds: source second → picture) with the cursor where it was, in silence.
+export function Clip({project, clip, sourceUrl, events, clicks, transcript, webcams, holds = {}, box, rate = 1, sound = null}) {
+  if (clip.hold) rate = 0;
   const frame = useCurrentFrame();
   const {fps, width, height} = useVideoConfig();
   const time = clip.start + frame * rate / fps;
@@ -89,12 +91,13 @@ export function Clip({project, clip, sourceUrl, events, clicks, transcript, webc
   return <AbsoluteFill style={{justifyContent: 'center', alignItems: 'center'}}>
     <div style={{width: viewWidth, height: viewHeight, overflow: 'hidden', position: 'relative', borderRadius: project.style.radius, boxShadow: project.style.shadow ? '0 24px 70px #0008, 0 0 0 1px #ffffff18' : undefined}}>
       <div style={{width: screenWidth, height: screenHeight, transformOrigin: '0 0', transform: `translate(${moveX}px, ${moveY}px) scale(${scale})`}}>
-        <Video src={sourceUrl} muted playbackRate={rate} trimBefore={Math.round(clip.start * fps)} objectFit="fill" style={{width: screenWidth, height: screenHeight}}/>
-        {sound && <Audio src={sound} playbackRate={rate} trimBefore={Math.round(clip.start * fps)}/>}
+        {clip.hold ? <Img src={holds[clip.start.toFixed(3)]} style={{width: screenWidth, height: screenHeight, display: 'block'}}/>
+          : <Video src={sourceUrl} muted playbackRate={rate} trimBefore={Math.round(clip.start * fps)} objectFit="fill" style={{width: screenWidth, height: screenHeight}}/>}
+        {sound && !clip.hold && <Audio src={sound} playbackRate={rate} trimBefore={Math.round(clip.start * fps)}/>}
         {!project.cursorBaked && project.cursorEnabled !== false && <Cursor events={events} clicks={clicks} time={time} width={screenWidth} height={screenHeight} style={project.style}/>}
       </div>
     </div>
-    {webcam && <div style={{position: 'absolute', [project.webcam.position?.startsWith('top') ? 'top' : 'bottom']: padding, [project.webcam.position?.endsWith('left') ? 'left' : 'right']: padding, width: width * project.webcam.size, height: width * project.webcam.size * (project.webcam.round === false ? 0.75 : 1), borderRadius: project.webcam.round === false ? width * 0.016 : '50%', overflow: 'hidden', boxShadow: '0 12px 40px #0009', border: '4px solid #ffffffcc'}}>
+    {webcam && !clip.hold && <div style={{position: 'absolute', [project.webcam.position?.startsWith('top') ? 'top' : 'bottom']: padding, [project.webcam.position?.endsWith('left') ? 'left' : 'right']: padding, width: width * project.webcam.size, height: width * project.webcam.size * (project.webcam.round === false ? 0.75 : 1), borderRadius: project.webcam.round === false ? width * 0.016 : '50%', overflow: 'hidden', boxShadow: '0 12px 40px #0009', border: '4px solid #ffffffcc'}}>
       <Sequence from={Math.max(0, Math.round((webcam.start - clip.start) * fps / rate))} layout="none" premountFor={fps}>
         <Video src={webcam.url} muted playbackRate={rate} trimBefore={Math.round((Math.max(0, clip.start - webcam.start) + (webcam.sourceOffset || 0)) * fps)} objectFit="cover" style={{width: '100%', height: '100%'}}/>
       </Sequence>
@@ -113,9 +116,9 @@ export function Demo(props) {
   const {project} = props;
   const {fps} = useVideoConfig();
   let offset = project.intro ? Math.round(project.intro.duration * fps) : 0;
-  const sequences = project.clips.map((clip, index) => {
-    const duration = Math.max(1, Math.round((clip.end - clip.start) * fps / speedOf(project, clip)));
-    const sequence = <Sequence key={index} from={offset} durationInFrames={duration} premountFor={fps}><Clip {...props} clip={clip} rate={speedOf(project, clip)}/></Sequence>;
+  const sequences = playedClips(project).map((clip, index) => {
+    const duration = clipFrames(clip, fps);
+    const sequence = <Sequence key={index} from={offset} durationInFrames={duration} premountFor={fps}><Clip {...props} clip={clip} rate={clip.speed}/></Sequence>;
     offset += duration;
     return sequence;
   });
