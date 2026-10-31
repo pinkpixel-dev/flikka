@@ -148,7 +148,20 @@ The same works for `--trim start,end` (keep only that), `--freeze at,seconds` (h
 
 To explain what's happening on screen: `--step start,end,x,y,"text"` (numbered automatically in time order), `--callout start,end,x,y,"text"`, `--arrow start,end,x,y,x2,y2` and `--box start,end,x,y,w,h`. Quote text that has spaces. `--keystrokes on` shows shortcuts as they're pressed (recordings only log shortcuts and named keys, never typed text). To hide something after recording, use `--redact start,end,x,y,w,h,solid`, or `all,x,y,w,h,solid` for the whole video. Always use `solid` for passwords, keys and tokens, since blurred text can sometimes be recovered.
 
-For a finished feel: `--intro "text"` and `--outro "seconds,text"` add title cards, `--transition fade|wipe|slide|zoom` adds a transition at every cut (films take `"transition"` in film.json), and `--music on` (or `--music <file>`) adds a bed that ducks under the voice. An intro shifts every video time by its length, so re-read `flikka project timeline` after adding one. Freezes and ramps apply to recording renders; a film plays its recordings at the scene's own speed.
+For a finished feel: `--intro "text"` and `--outro "seconds,text"` add title cards, `--transition fade|wipe|slide|zoom` adds a transition at every cut (films take `"transition"` in film.json), and `--music on` (or `--music <file>`) adds a bed that ducks under the voice. An intro shifts every video time by its length, so re-read `flikka project timeline` after adding one.
+
+## Sharing Finished Videos
+
+```bash
+flikka project export <id> --format gif --from 0:03 --to 0:09   # for a README or pull request (800 px, 15 fps)
+flikka project export <id> --format webm
+flikka project poster <id> [--at 0:12]                           # a thumbnail
+flikka project render <id> --presets square,vertical,landscape  # each shape as its own file
+flikka project render <id> --transparent [mov]                  # no backdrop, alpha channel
+flikka project edit <id> --output-time --chapter "0:30,Sign in" # chapters in the file and a list for YouTube
+```
+
+`export` and `poster` use the finished video, so render first. Variants (`--presets`, `--transparent`) never replace the project's main video. Keep GIFs short: a few seconds of the important part. Freezes and ramps apply to recording renders; a film plays its recordings at the scene's own speed.
 
 `--output-time` reads the times as the video was before this edit. Every saved edit keeps the previous version in the project's `history/` folder, up to 50 deep.
 

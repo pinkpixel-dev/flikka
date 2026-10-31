@@ -181,6 +181,35 @@ flikka project undo 3f9a1c2e
 
 `--trim`, `--freeze` and `--speed` all take `--output-time` too. `timeline` lists the kept parts, freezes, speed ramps, cuts, zooms, clicks and spoken words in video time. `frames` shows those moments, stamped with both the video time and the recording time. `--dry-run` tells you how the length would change without saving anything, and `undo` steps back through earlier edits (Flikka keeps up to 50).
 
+## Sharing it
+
+Once a video is rendered, Flikka can make other files from it without rendering again:
+
+```bash
+flikka project export 3f9a1c2e --format gif --from 0:03 --to 0:09
+flikka project export 3f9a1c2e --format webm
+flikka project poster 3f9a1c2e
+```
+
+`export` makes a GIF (800 px wide and 15 fps unless you pass `--width` and `--fps`) or a WebM, and works for films too. `poster` saves a still for a thumbnail, a little past the intro unless you give `--at`.
+
+A recording can also come out in other shapes, or with no backdrop at all, without changing the project:
+
+```bash
+flikka project render 3f9a1c2e --presets square,vertical,landscape
+flikka project render 3f9a1c2e --transparent
+```
+
+`--transparent` makes a WebM with an alpha channel (or `--transparent mov` for ProRes 4444, for video editors), with only the window, cursor and overlays, so you can layer it over something else.
+
+To add chapters, use `--chapter` with a moment and a title. Labelled `record mark` markers count too:
+
+```bash
+flikka project edit 3f9a1c2e --output-time --chapter "0:30,Sign in"
+```
+
+Chapters go into the video file, and also into a `.chapters.txt` list next to it that you can paste into a YouTube description.
+
 ## Making a film
 
 A film is a project made of scenes, narrated by a voice. Start one, optionally with recordings you already have:

@@ -37,6 +37,14 @@
 - Films take `"transition": "fade" | "wipe" | "slide" | "zoom"` for how each scene comes in. `fade` stays the default.
 - `--music on|<file>` adds background music to recordings, ducked about 10 dB under the sound like in films, with `--music-volume`. The panel's live preview plays it too.
 
+### 📤 Output
+- `flikka project export <id> --format gif|webm` converts the finished video (a recording's or a film's) with `--width`, `--fps`, `--from` and `--to`. GIFs use one palette per clip with light dithering, so screen text stays crisp.
+- `flikka project poster <id>` saves a still of the finished video for a thumbnail.
+- `flikka project render <id> --presets square,vertical,landscape` renders each shape as its own file.
+- `flikka project render <id> --transparent [webm|mov]` renders without a backdrop, with an alpha channel (VP9 WebM, or ProRes 4444 MOV for editors).
+- `--chapter at,"label"` adds chapters, and labelled `record mark` markers count too. They're embedded in the video and written to a `.chapters.txt` list for YouTube.
+- Variants never replace the project's main video.
+
 ### 🧪 Tests
 - First automated tests (`npm test`): the time mapping between the recording and the finished video, freezes and speed ramps, and edit, timeline and undo on a real project file.
 

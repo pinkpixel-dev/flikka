@@ -174,3 +174,22 @@ test('intro and outro cards, crossfades and background music', async () => {
     assert.deepEqual([plain.intro, plain.outro, plain.transition, plain.music, plain.duration], [undefined, undefined, undefined, undefined, 20]);
   } finally { await fs.rm(folder, {recursive: true, force: true}); }
 });
+
+test('chapters from labelled markers, in video time', async () => {
+  const {chapters} = await import('../lib/render.mjs');
+  const {folder, file} = await scratchProject();
+  try {
+    await editProject(file, ['--cut', '3,5', '--intro', 'Setup guide']);
+    // Video 0:06 is recording 5.5 (2.5 s intro, then 0–3 and 5–20 kept).
+    await editProject(file, ['--output-time', '--chapter', '0:06,Sign in', '--chapter', '0:10,Invite, then share']);
+    await editProject(file, ['--chapter', '4,Gone with the cut']);
+    const project = JSON.parse(await fs.readFile(file, 'utf8'));
+    const list = chapters(project);
+    // The first chapter starts at 0:00, named after the intro; the cut-away marker is left out.
+    assert.deepEqual(list.map(chapter => [chapter.at, chapter.title]), [[0, 'Setup guide'], [6, 'Sign in'], [10, 'Invite, then share']]);
+    assert.deepEqual(list.map(chapter => chapter.end), [6, 10, 20.5]);
+    await assert.rejects(editProject(file, ['--chapter', '2']), /at,"label"/);
+    await editProject(file, ['--chapters', 'off']);
+    assert.deepEqual(chapters(JSON.parse(await fs.readFile(file, 'utf8'))), []);
+  } finally { await fs.rm(folder, {recursive: true, force: true}); }
+});
