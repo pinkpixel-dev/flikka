@@ -8,6 +8,11 @@
 - Step through frame by frame with the buttons or the arrow keys. Space plays and pauses, Shift plus an arrow jumps a second, and M mutes.
 - A timeline under the player shows the kept clips, cuts, zooms, spotlights, overlays, clicks, markers and spoken lines. Click or drag on it to scrub.
 - Every button has a tooltip, on hover and on keyboard focus.
+- Edit right on the timeline: drag across the clips to cut a part, drag on the Camera row to add a zoom, drag a zoom to move it or its edges to resize it, and click one to change its scale or remove it. Edges snap to the playhead, clip edges and whole frames.
+- Undo button and Ctrl+Z for the last edit.
+
+### ✂️ Editing
+- `flikka project edit --unzoom <time>` removes the zoom showing at that moment (works with `--output-time`).
 
 ### 🧹 Maintenance
 - Added `@fontsource-variable/geist`, `@fontsource-variable/geist-mono` and `lucide-react` for the panel's fonts and icons, bundled locally.

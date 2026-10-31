@@ -1,9 +1,11 @@
 import React, {useEffect, useRef, useState} from 'react';
+import {Undo2} from 'lucide-react';
 import {api, media} from '../lib/api.js';
 import {useToast} from '../lib/toast.js';
 import {Inspector} from '../components/Inspector.jsx';
 import {Player} from '../components/Player.jsx';
 import {Timeline} from '../components/Timeline.jsx';
+import {Button} from '../components/ui.jsx';
 
 // A finished recording or film: the big player (the exported video, or the edit drawn live from the project at
 // 30 fps so a change shows at once), the timeline under it, the edits on the right.
@@ -16,6 +18,7 @@ export function Studio({project, refresh, onChange}) {
   const [timeline, setTimeline] = useState(null);
   const [changed, setChanged] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [version, setVersion] = useState(0);
   const editable = Boolean(project.recording);
   const showing = !project.final || !editable ? (project.final ? 'final' : editable ? 'live' : 'none') : shown;
 
@@ -25,7 +28,7 @@ export function Studio({project, refresh, onChange}) {
     let current = true;
     api('project-timeline', {id: project.id}).then(next => current && setTimeline(next)).catch(failure => current && toast('Timeline: ' + failure.message));
     return () => { current = false; };
-  }, [project.id, project.edited]);
+  }, [project.id, project.edited, version]);
   useEffect(() => {
     if (!editable || showing !== 'live') return;
     let current = true;
@@ -43,6 +46,21 @@ export function Studio({project, refresh, onChange}) {
     catch (failure) { toast(failure.message); }
     finally { refresh(); }
   };
+  // From the timeline: the edit, then the timeline and preview again. It fails loudly, so the timeline can drop
+  // what it drew while saving.
+  const timelineEdit = async body => {
+    try { await api('project-timeline-edit', {id: project.id, ...body}); setChanged(true); setShown('live'); setVersion(old => old + 1); }
+    catch (failure) { toast(failure.message); throw failure; }
+    finally { refresh(); }
+  };
+  // Back one saved edit (any edit: a switch, the timeline, or an agent's).
+  const undo = async () => {
+    try { await api('project-undo', {id: project.id}); setChanged(true); setShown('live'); setVersion(old => old + 1); }
+    catch (failure) { toast(failure.message); }
+    finally { refresh(); }
+  };
+  const undoLatest = useRef(undo);
+  undoLatest.current = undo;
   const render = async () => {
     if (busy) return;
     setBusy(true); setChanged(false); toast('');
@@ -51,10 +69,13 @@ export function Studio({project, refresh, onChange}) {
   };
   const rendering = busy || project.state === 'rendering';
 
-  // Space or K plays and pauses, ← → step a frame (Shift: a second), Home and End, M mutes. Not while typing;
-  // the focused timeline handles its own arrows.
+  // Space or K plays and pauses, ← → step a frame (Shift: a second), Home and End, M mutes, Ctrl+Z undoes. Not
+  // while typing; the focused timeline handles its own arrows.
   useEffect(() => {
     const keys = event => {
+      if ((event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.toLowerCase() === 'z' && !event.target.closest('input, textarea, [contenteditable]')) {
+        event.preventDefault(); if (editable) undoLatest.current(); return;
+      }
       if (event.target.closest('input, select, textarea, [contenteditable]') || event.metaKey || event.ctrlKey || event.altKey) return;
       const controls = player.current;
       if (!controls) return;
@@ -77,6 +98,7 @@ export function Studio({project, refresh, onChange}) {
   return <div className="studio">
     <div className="stage-column">
       <Player ref={player} {...source} fps={fps} onTime={setTime} note={showing === 'none' ? 'Render the film to watch it here.' : undefined}>
+        {editable && <Button icon={Undo2} variant="ghost" size="small" tip="Undo the last edit (Ctrl+Z)" disabled={rendering} onClick={undo}/>}
         {editable && <div className="segmented" role="tablist" aria-label="What plays">
           <button type="button" role="tab" aria-selected={showing === 'final'} disabled={!final} data-tip="The exported video file" onClick={() => setShown('final')}>Exported</button>
           <button type="button" role="tab" aria-selected={showing === 'live'} data-tip="The edit as it is now, drawn live (30 fps)" onClick={() => setShown('live')}>Live</button>
@@ -85,7 +107,7 @@ export function Studio({project, refresh, onChange}) {
       {rendering && <div className="banner">Rendering the video… the live preview plays meanwhile.</div>}
       {!rendering && editable && !final && <div className="banner">Not exported yet. This is the live preview.</div>}
       {stale && <div className="banner">The timeline shows the edit as it is now. Render to update the exported video.</div>}
-      {editable && timeline && <Timeline timeline={timeline} time={time} fps={fps} stale={stale} onSeek={seconds => player.current?.seek(seconds)}/>}
+      {editable && timeline && <Timeline timeline={timeline} time={time} fps={fps} stale={stale} onEdit={timelineEdit} onSeek={seconds => player.current?.seek(seconds)}/>}
     </div>
     <Inspector project={project} edit={edit} render={render} rendering={rendering} changed={changed}/>
   </div>;

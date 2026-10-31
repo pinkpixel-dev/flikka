@@ -88,6 +88,11 @@ test('crop, manual zooms, spotlights and typing zooms', async () => {
     assert.deepEqual(timeline.zooms, [{from: 3, to: 6, x: 0.2, y: 0.8, scale: 2}]);
     await assert.rejects(editProject(file, ['--zoom', '1,2,1.5,0.5']), /x and y from 0 to 1/);
 
+    // Moving a zoom (as the panel's timeline does): remove the one showing at a moment, add it again elsewhere.
+    await editProject(file, ['--output-time', '--unzoom', '0:04', '--zoom', '0:08,0:10,0.2,0.8,2']);
+    assert.deepEqual((await timelineProject(file)).zooms, [{from: 8, to: 10, x: 0.2, y: 0.8, scale: 2}]);
+    await assert.rejects(editProject(file, ['--output-time', '--unzoom', '0:01']), /no zoom at/);
+
     await editProject(file, ['--output-time', '--spotlight', '1,3,0.1,0.1,0.3,0.2']);
     timeline = await timelineProject(file);
     assert.deepEqual(timeline.spotlights, [{from: 1, to: 3, x: 0.1, y: 0.1, w: 0.3, h: 0.2}]);
