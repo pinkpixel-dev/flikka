@@ -1,7 +1,7 @@
 // The time mapping every agent tool relies on: recording seconds ↔ seconds in the finished video.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {segments, toOutput, toSource, seconds, demoFrames, clock, playedClips} from '../render/timing.js';
+import {segments, toOutput, toSource, seconds, demoFrames, clock, playedClips, crossfades, stillTimes} from '../render/timing.js';
 
 // 1 s intro, then 0–5 s as recorded, a cut from 5 to 8, then 8–12 s at double speed. 30 fps.
 const project = {export: {fps: 30}, intro: {duration: 1, text: 'Hi'}, clips: [{start: 0, end: 5}, {start: 8, end: 12, speed: 2}]};
@@ -73,4 +73,14 @@ test('a ramp eases between touching parts in small logarithmic steps', () => {
   // Without a ramp, or between parts at one speed, nothing changes.
   assert.equal(playedClips({...ramped, ramp: undefined}).length, 2);
   assert.equal(playedClips({...ramped, clips: [{start: 0, end: 10}, {start: 10, end: 20}]}).length, 2);
+});
+
+test('crossfades go at cuts only, and never change the length', () => {
+  const cut = {export: {fps: 30}, transition: 'fade', ramp: 0.5,
+    clips: [{start: 0, end: 4}, {start: 6, end: 9}, {start: 9, end: 12, speed: 2}, {start: 12, end: 12, hold: 1}, {start: 12, end: 15}]};
+  // 4→6 is a cut; 9 is only a speed change (ramped), 12 a freeze: neither fades.
+  assert.deepEqual(crossfades(cut).map(fade => fade.from), [4]);
+  assert.equal(demoFrames(cut), demoFrames({...cut, transition: undefined}));
+  assert.deepEqual(stillTimes(cut).sort(), [12, 4]);
+  assert.deepEqual(crossfades({...cut, transition: undefined}), []);
 });

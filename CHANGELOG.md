@@ -31,6 +31,12 @@
 - `flikka project timeline` lists annotations, redactions and keystrokes in video time.
 - A clearer error when text with spaces wasn't quoted.
 
+### ✨ Polish
+- `--intro` and `--outro` add title cards from the CLI. The card text fades in and out.
+- `--transition fade|wipe|slide|zoom` adds a transition at every cut. The outgoing moment, zoom and cursor included, leaves on top of the next part, without changing the video's length.
+- Films take `"transition": "fade" | "wipe" | "slide" | "zoom"` for how each scene comes in. `fade` stays the default.
+- `--music on|<file>` adds background music to recordings, ducked about 10 dB under the sound like in films, with `--music-volume`. The panel's live preview plays it too.
+
 ### 🧪 Tests
 - First automated tests (`npm test`): the time mapping between the recording and the finished video, freezes and speed ramps, and edit, timeline and undo on a real project file.
 

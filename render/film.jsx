@@ -1,6 +1,6 @@
 import React from 'react';
 import {AbsoluteFill, Sequence, Img, Audio, Video, useCurrentFrame, useVideoConfig} from './frame.jsx';
-import {clamp, ease, Clip} from './parts.jsx';
+import {clamp, ease, Clip, entering} from './parts.jsx';
 
 // ---- Films: a sequence of scenes (titles, images, slides, figures, recordings) with captions.
 
@@ -434,7 +434,7 @@ export function Film({film}) {
       // never passes through the bare background between two scenes.
       const overlap = last ? 0 : Math.round(fps / 3);
       return <Sequence key={index} from={scene.from} durationInFrames={scene.frames + overlap} premountFor={fps}>
-        <Crossfade frames={scene.frames} fade={Math.round(fps / 3)} last={last} background={theme.background}>
+        <Crossfade frames={scene.frames} fade={Math.round(fps / 3)} last={last} background={theme.background} style={film.transition}>
           <Backdrop theme={theme} offset={scene.from}/>
           <Scene scene={scene} theme={theme} frames={scene.frames} reserve={film.captions ? 140 : 30}/>
         </Crossfade>
@@ -477,9 +477,11 @@ function Backdrop({theme, offset}) {
   return null;
 }
 
-function Crossfade({frames, fade, last, background, children}) {
+// A scene comes in over the one before it (film.transition: fade, wipe, slide or zoom); the last one fades out.
+function Crossfade({frames, fade, last, background, style, children}) {
   const frame = useCurrentFrame();
-  const opacity = Math.min(ease(frame / fade), last ? ease((frames - frame) / fade) : 1);
-  return <AbsoluteFill style={{opacity, background}}>{children}</AbsoluteFill>;
+  const look = entering(style, ease(frame / fade));
+  const opacity = Math.min(look.opacity ?? 1, last ? ease((frames - frame) / fade) : 1);
+  return <AbsoluteFill style={{...look, opacity, background}}>{children}</AbsoluteFill>;
 }
 

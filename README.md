@@ -157,6 +157,9 @@ Some useful ones:
 | `--arrow start,end,x,y,x2,y2`, `--box start,end,x,y,w,h` | Draw an arrow, or a highlight box around something |
 | `--redact start,end,x,y,w,h[,solid]` | Blur an area after recording, or cover it with `solid`. `all` instead of start,end covers the whole video |
 | `--keystrokes on` | Show shortcuts (Ctrl+S, Enter and so on) in a corner as they're pressed |
+| `--intro "text"`, `--outro "4,text"` | A title card before or after the recording (2.5 s unless you give the seconds) |
+| `--transition fade` | A transition at every cut instead of a hard jump: `fade`, `wipe`, `slide` or `zoom`. The video's length doesn't change |
+| `--music on` or `--music song.mp3` | Background music, ducked under the voice. `--music-volume` from 0.1 to 4 |
 | `--cursor on\|off`, `--clicks on\|off` | The drawn cursor and the click sound |
 | `--preset vertical\|portrait\|square\|landscape` | Output shape. Tall videos follow the cursor |
 | `--background aurora\|sunset\|ocean\|meadow\|graphite\|midnight` | The backdrop behind the window |
@@ -199,7 +202,7 @@ That creates a `film.json` to fill in. Here's a small one:
 }
 ```
 
-In titles, `[words in brackets]` use the accent color and `*words in stars*` are muted. Each scene lasts as long as its narration needs.
+In titles, `[words in brackets]` use the accent color and `*words in stars*` are muted. Each scene lasts as long as its narration needs. Add `"transition": "slide"` (or `wipe`, `zoom`, `fade`) to change how scenes come in.
 
 ```bash
 flikka project schema       # every film.json field, described

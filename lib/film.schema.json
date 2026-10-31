@@ -80,6 +80,15 @@
       "type": "boolean",
       "description": "Burned-in captions from the narration. Default true."
     },
+    "transition": {
+      "enum": [
+        "fade",
+        "wipe",
+        "slide",
+        "zoom"
+      ],
+      "description": "How each scene comes in over the one before: fade (the default), wipe (revealed left to right), slide (in from the right) or zoom (settles in from a slight zoom and blur)."
+    },
     "fps": {
       "enum": [
         24,

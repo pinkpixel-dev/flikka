@@ -1,7 +1,7 @@
 // Shared pieces: the cursor and one clip of a recording, fitted into a box.
 import React from 'react';
 import {AbsoluteFill, Sequence, Video, Audio, Img, useCurrentFrame, useVideoConfig} from './frame.jsx';
-import {clamp, ease, speedOf, demoFrames, playedClips, clipFrames} from './timing.js';
+import {clamp, ease, speedOf, demoFrames, playedClips, clipFrames, crossfades, transitionSeconds} from './timing.js';
 
 export {clamp, ease, speedOf, demoFrames};
 
@@ -185,9 +185,39 @@ export function Clip({project, clip, sourceUrl, events, clicks, transcript, webc
   </AbsoluteFill>;
 }
 
-function Title({text}) {
+// An intro or outro card: the text rises in, and fades out at the end (frames: how long it shows).
+function Title({text, frames}) {
   const frame = useCurrentFrame();
-  return <AbsoluteFill style={{alignItems: 'center', justifyContent: 'center', color: 'white', fontFamily: 'Arial, sans-serif', fontSize: 72, fontWeight: 700, textAlign: 'center', padding: 100, opacity: ease(frame / 12), transform: `translateY(${(1 - ease(frame / 18)) * 20}px)`}}>{text}</AbsoluteFill>;
+  const {width} = useVideoConfig();
+  const shown = Math.min(ease(frame / 12), ease((frames - frame) / 10));
+  return <AbsoluteFill style={{alignItems: 'center', justifyContent: 'center', color: '#fafafa', fontFamily: 'system-ui, sans-serif', fontSize: Math.round(width / 15), fontWeight: 700,
+    letterSpacing: '-0.02em', lineHeight: 1.1, textAlign: 'center', padding: width * 0.09, whiteSpace: 'pre-wrap', textShadow: '0 4px 40px #0008', opacity: shown, transform: `translateY(${(1 - ease(frame / 18)) * 20}px)`}}>{text}</AbsoluteFill>;
+}
+
+// Transition looks, progress from 0 to 1. leaving: the outgoing picture on top of the next (a recording's cuts).
+// entering: the next picture on top of the outgoing one (a film's scenes).
+export function leaving(style, progress) {
+  if (style === 'wipe') return {clipPath: `inset(0 0 0 ${(progress * 100).toFixed(2)}%)`};
+  if (style === 'slide') return {transform: `translateX(${(-progress * 100).toFixed(2)}%)`, opacity: 1 - 0.4 * progress};
+  if (style === 'zoom') return {transform: `scale(${1 + 0.18 * progress})`, filter: `blur(${(progress * 14).toFixed(1)}px)`, opacity: 1 - progress};
+  return {opacity: 1 - progress};
+}
+export function entering(style, progress) {
+  if (style === 'wipe') return {clipPath: `inset(0 ${((1 - progress) * 100).toFixed(2)}% 0 0)`};
+  if (style === 'slide') return {transform: `translateX(${((1 - progress) * 100).toFixed(2)}%)`};
+  if (style === 'zoom') return {transform: `scale(${1.12 - 0.12 * progress})`, filter: `blur(${((1 - progress) * 14).toFixed(1)}px)`, opacity: progress};
+  return {opacity: progress};
+}
+
+function Leaving({frames, style, children}) {
+  const frame = useCurrentFrame();
+  return <AbsoluteFill style={leaving(style, ease(frame / frames))}>{children}</AbsoluteFill>;
+}
+
+// Background music in the live preview (a render mixes it with ffmpeg, ducked under the voice).
+function Music({music}) {
+  const {durationInFrames} = useVideoConfig();
+  return <Sequence durationInFrames={durationInFrames} layout="none"><Audio src={music.url} loop loopSeconds={music.seconds} volume={0.12 * (music.volume ?? 1)}/></Sequence>;
 }
 
 // One recording edited: intro, the kept clips, outro. Also played live in the panel (render/preview.jsx).
@@ -195,16 +225,27 @@ export function Demo(props) {
   const {project} = props;
   const {fps} = useVideoConfig();
   let offset = project.intro ? Math.round(project.intro.duration * fps) : 0;
+  const starts = [];
   const sequences = playedClips(project).map((clip, index) => {
     const duration = clipFrames(clip, fps);
+    starts.push(offset);
     const sequence = <Sequence key={index} from={offset} durationInFrames={duration} premountFor={fps}><Clip {...props} clip={clip} rate={clip.speed}/></Sequence>;
     offset += duration;
     return sequence;
   });
+  // A transition: the outgoing part, frozen at its last moment (zoom and cursor as they were), leaving on top.
+  const seconds = transitionSeconds(project.transition);
+  const fade = Math.round(seconds * fps);
+  const quiet = {...project, captions: {enabled: false}, keystrokes: false};
+  const fades = crossfades(project).map(({index, from}) => <Sequence key={`fade${index}`} from={starts[index]} durationInFrames={fade}>
+    <Leaving frames={fade} style={project.transition}><Clip {...props} project={quiet} transcript={[]} webcams={[]} clip={{start: from, end: from, hold: seconds}} rate={0}/></Leaving>
+  </Sequence>);
   return <AbsoluteFill style={{background: project.style.background}}>
-    {project.intro && <Sequence durationInFrames={Math.round(project.intro.duration * fps)} premountFor={fps}><Title text={project.intro.text}/></Sequence>}
+    {project.intro && <Sequence durationInFrames={Math.round(project.intro.duration * fps)} premountFor={fps}><Title text={project.intro.text} frames={Math.round(project.intro.duration * fps)}/></Sequence>}
     {sequences}
-    {project.outro && <Sequence from={offset} durationInFrames={Math.round(project.outro.duration * fps)} premountFor={fps}><Title text={project.outro.text}/></Sequence>}
+    {fades}
+    {props.music && <Music music={props.music}/>}
+    {project.outro && <Sequence from={offset} durationInFrames={Math.round(project.outro.duration * fps)} premountFor={fps}><Title text={project.outro.text} frames={Math.round(project.outro.duration * fps)}/></Sequence>}
   </AbsoluteFill>;
 }
 

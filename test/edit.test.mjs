@@ -149,3 +149,28 @@ test('callouts, steps, arrows, boxes, redactions and keystrokes', async () => {
     assert.deepEqual((await timelineProject(file)).keystrokes, [{at: 3, keys: 'Ctrl+S'}]);
   } finally { await fs.rm(folder, {recursive: true, force: true}); }
 });
+
+test('intro and outro cards, crossfades and background music', async () => {
+  const {folder, file} = await scratchProject();
+  try {
+    await editProject(file, ['--intro', 'Meet Flikka', '--outro', '4,Thanks, see you soon', '--transition', 'fade', '--music', 'on', '--music-volume', '0.5']);
+    const timeline = await timelineProject(file);
+    assert.deepEqual(timeline.intro, {from: 0, to: 2.5, text: 'Meet Flikka'});
+    assert.deepEqual([timeline.outro.text, timeline.duration], ['Thanks, see you soon', 26.5]);
+    assert.deepEqual([timeline.transition, timeline.music, timeline.musicVolume], ['fade', 'generated', 0.5]);
+    // The recording starts after the intro: video times shift by its length.
+    assert.equal(timeline.parts[0].from, 2.5);
+
+    const song = path.join(folder, 'song.wav');
+    await fs.writeFile(song, '');
+    await editProject(file, ['--music', song]);
+    assert.equal((await timelineProject(file)).music, 'song.wav');
+    await assert.rejects(editProject(file, ['--music', path.join(folder, 'missing.mp3')]), /not found/);
+    await assert.rejects(editProject(file, ['--transition', 'swirl']), /fade, wipe, slide, zoom or off/);
+    await editProject(file, ['--transition', 'wipe']);
+    assert.equal((await timelineProject(file)).transition, 'wipe');
+    await editProject(file, ['--intro', 'off', '--outro', 'off', '--transition', 'off', '--music', 'off']);
+    const plain = await timelineProject(file);
+    assert.deepEqual([plain.intro, plain.outro, plain.transition, plain.music, plain.duration], [undefined, undefined, undefined, undefined, 20]);
+  } finally { await fs.rm(folder, {recursive: true, force: true}); }
+});

@@ -72,3 +72,20 @@ export function seconds(text) {
 
 // Seconds as m:ss.ss, for timelines and frame stamps.
 export const clock = value => `${Math.floor(value / 60)}:${(value % 60).toFixed(2).padStart(5, '0')}`;
+
+// Where a transition plays (project.transition): at every cut, where the recording jumps from one kept part to the
+// next. The outgoing part's last moment (from) leaves on top of the next part at index, in the transition's style;
+// the video's length and timing don't change.
+export const transitionStyles = ['fade', 'wipe', 'slide', 'zoom'];
+export const transitionSeconds = style => ({fade: 0.35, wipe: 0.5, slide: 0.5, zoom: 0.45})[style] || 0.35;
+export function crossfades(project) {
+  if (!transitionStyles.includes(project.transition)) return [];
+  const played = playedClips(project);
+  return played.flatMap((clip, index) => {
+    const previous = played[index - 1];
+    return previous && !previous.hold && !clip.hold && Math.abs(previous.end - clip.start) > 1e-3 ? [{index, from: previous.end}] : [];
+  });
+}
+
+// Moments a render needs as stills: every freeze, and the moment each crossfade dissolves from.
+export const stillTimes = project => [...new Set([...project.clips.filter(clip => clip.hold).map(clip => clip.start), ...crossfades(project).map(fade => fade.from)])];
