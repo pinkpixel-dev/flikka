@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.4.0 - Unreleased
+
+### 🎬 Panel
+- The panel is now a dark, full-window app built in React. Projects stay in the sidebar, and a project's page puts the video front and center with its edits on the right.
+- One player handles both the exported video and the live preview, and it stays on the same moment when you switch between them or an edit reloads the preview.
+- Step through frame by frame with the buttons or the arrow keys. Space plays and pauses, Shift plus an arrow jumps a second, and M mutes.
+- A timeline under the player shows the kept clips, cuts, zooms, spotlights, overlays, clicks, markers and spoken lines. Click or drag on it to scrub.
+- Every button has a tooltip, on hover and on keyboard focus.
+
+### 🧹 Maintenance
+- Added `@fontsource-variable/geist`, `@fontsource-variable/geist-mono` and `lucide-react` for the panel's fonts and icons, bundled locally.
+
 ## 0.3.0 - October 31, 2026
 
 ### 🤖 Agent tools
