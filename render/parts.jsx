@@ -1,10 +1,9 @@
 // Shared pieces: the cursor and one clip of a recording, fitted into a box.
 import React from 'react';
-import {AbsoluteFill, Sequence, useCurrentFrame, useVideoConfig} from 'remotion';
-import {Video, Audio} from '@remotion/media';
+import {AbsoluteFill, Sequence, Video, Audio, useCurrentFrame, useVideoConfig} from './frame.jsx';
+import {clamp, ease, speedOf, demoFrames} from './timing.js';
 
-export const clamp = (value, lower, upper) => Math.min(upper, Math.max(lower, value));
-export const ease = value => { value = clamp(value, 0, 1); return value * value * (3 - 2 * value); };
+export {clamp, ease, speedOf, demoFrames};
 
 export function lastAt(events, time) {
   let lower = 0; let upper = events.length - 1; let found = -1;
@@ -127,7 +126,3 @@ export function Demo(props) {
   </AbsoluteFill>;
 }
 
-// A part's playback speed: its own, the whole video's, or as recorded (lib/render.mjs does the same for the sound).
-export const speedOf = (project, clip) => clip.speed || project.speed || 1;
-export const demoFrames = (project, fps = project.export.fps) => project.clips.reduce((total, clip) => total + Math.max(1, Math.round((clip.end - clip.start) * fps / speedOf(project, clip))), 0)
-  + Math.round(((project.intro?.duration || 0) + (project.outro?.duration || 0)) * fps);

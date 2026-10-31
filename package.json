@@ -54,15 +54,15 @@
     "access": "public"
   },
   "dependencies": {
-    "@remotion/bundler": "4.0.537",
-    "@remotion/media": "4.0.537",
-    "@remotion/player": "4.0.537",
-    "@remotion/renderer": "4.0.537",
+    "@hyperframes/core": "0.8.223",
+    "@hyperframes/engine": "0.8.223",
+    "@hyperframes/player": "0.8.223",
+    "@hyperframes/producer": "0.8.223",
+    "@puppeteer/browsers": "3.2.2",
     "@xterm/addon-fit": "0.11.0",
     "@xterm/xterm": "6.0.0",
     "esbuild": "0.28.1",
     "react": "19.2.0",
-    "react-dom": "19.2.0",
-    "remotion": "4.0.537"
+    "react-dom": "19.2.0"
   }
 }

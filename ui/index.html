@@ -495,14 +495,17 @@ function viewer(project) {
   for (const button of $('seg').children) { button.classList.toggle('on', button.dataset.show === shown); button.disabled = button.dataset.show === 'final' ? !project.final : !project.recording; }
   $('finalFile').hidden = !project.final;
   if (project.final) { $('finalName').textContent = project.final.output.split('/').pop(); $('finalName').title = project.final.output; }
-  if (shown === 'final') { window.flikkaPreviewPause?.(); previewEdited = null; return; }
+  if (shown === 'final') { $('preview').querySelector('hyperframes-player')?.pause(); previewEdited = null; return; }
   $('player').pause();
   if (project.recording && previewEdited !== project.id + project.edited) { previewEdited = project.id + project.edited; livePreview(project.id).catch(failure => toast('Live preview: ' + failure.message)); }
 }
 async function livePreview(id) {
-  if (!window.flikkaPreview) await new Promise((loaded, failed) => document.head.append(Object.assign(document.createElement('script'), {src: '/preview.js?token=' + token, onload: loaded, onerror: () => failed(new Error('could not load'))})));
-  const props = await api('project-preview', {id});
-  if (current?.id === id) window.flikkaPreview($('preview'), props);
+  if (!customElements.get('hyperframes-player')) await new Promise((loaded, failed) => document.head.append(Object.assign(document.createElement('script'), {src: '/preview.js?token=' + token, onload: loaded, onerror: () => failed(new Error('could not load'))})));
+  const {src, width, height} = await api('project-preview', {id});
+  if (current?.id !== id) return;
+  const player = Object.assign(document.createElement('hyperframes-player'), {style: `display:block;width:100%;aspect-ratio:${width} / ${height}`});
+  for (const [name, value] of Object.entries({src: src + '?v=' + Date.now(), width, height, controls: ''})) player.setAttribute(name, value);
+  $('preview').replaceChildren(player);
 }
 for (const button of $('seg').children) button.onclick = () => { shown = button.dataset.show; viewer(current); };
 $('copyVideo').onclick = () => api('copy-video', {id: current.id}).then(() => { $('copyVideo').textContent = 'Copied'; setTimeout(() => $('copyVideo').textContent = 'Copy', 2000); }).catch(failure => toast(failure.message));

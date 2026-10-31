@@ -1,6 +1,5 @@
-import React, {useEffect, useState} from 'react';
-import {AbsoluteFill, Sequence, Img, Audio, useCurrentFrame, useVideoConfig, delayRender, continueRender} from 'remotion';
-import {Video} from '@remotion/media';
+import React from 'react';
+import {AbsoluteFill, Sequence, Img, Audio, Video, useCurrentFrame, useVideoConfig} from './frame.jsx';
 import {clamp, ease, Clip} from './parts.jsx';
 
 // ---- Films: a sequence of scenes (titles, images, slides, figures, recordings) with captions.
@@ -42,7 +41,7 @@ export function Background({scene, frames}) {
   const zoom = 1.04 + 0.06 * frame / Math.max(1, frames);
   const style = {position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', transform: `scale(${zoom})`};
   return <AbsoluteFill>
-    {scene.backgroundVideo ? <Video src={scene.backgroundUrl} muted loop objectFit="cover" style={style}/> : <Img src={scene.backgroundUrl} style={style}/>}
+    {scene.backgroundVideo ? <Video src={scene.backgroundUrl} muted loop loopSeconds={scene.backgroundSeconds} objectFit="cover" style={style}/> : <Img src={scene.backgroundUrl} style={style}/>}
     <AbsoluteFill style={{background: `linear-gradient(180deg, #000000${scene.dim ?? '55'} 0%, #00000022 45%, #000000${scene.dim ?? '66'} 100%)`}}/>
   </AbsoluteFill>;
 }
@@ -356,92 +355,66 @@ function Captions({captions}) {
   </div>;
 }
 
-// Check mode only: measure what is really on screen in this frame and log layout problems.
-function LayoutProbe() {
-  const frame = useCurrentFrame();
-  const {width, height} = useVideoConfig();
-  const [handle] = useState(() => delayRender('layout probe'));
-  useEffect(() => {
-    const measure = () => {
-      const visible = element => {
-        for (let node = element; node && node !== document.body; node = node.parentElement) {
-          const style = getComputedStyle(node);
-          if (style.visibility === 'hidden' || style.display === 'none' || Number(style.opacity) < 0.6) return false;
-        }
-        return true;
-      };
-      const items = [...document.querySelectorAll('[data-check]')].filter(visible).map(element => {
-        const box = element.getBoundingClientRect();
-        return {kind: element.dataset.check, element, text: (element.textContent || '').trim().slice(0, 50), box: {left: box.left, top: box.top, right: box.right, bottom: box.bottom}};
-      }).filter(item => item.box.right > item.box.left && item.box.bottom > item.box.top);
-      const issues = [];
-      const overlap = (a, b) => Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left)) * Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
-      const texts = items.filter(item => item.kind === 'text');
-      for (const item of texts) {
-        const {box} = item;
-        if (box.left < -2 || box.top < -2 || box.right > width + 2 || box.bottom > height + 2) issues.push({kind: 'off-frame', text: item.text, box});
-        if (item.element.scrollWidth > item.element.clientWidth + 2 && getComputedStyle(item.element).overflow !== 'visible') issues.push({kind: 'clipped', text: item.text, box});
-      }
-      // Contrast: text color against the first solid background behind it (WCAG ratio).
-      const rgb = value => (value.match(/[\d.]+/g) || []).map(Number);
-      const luminance = ([r, g, b]) => [r, g, b].map(channel => { channel /= 255; return channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4; }).reduce((sum, channel, index) => sum + channel * [0.2126, 0.7152, 0.0722][index], 0);
-      const contrast = element => {
-        const style = getComputedStyle(element);
-        const color = rgb(style.color);
-        if (color[3] === 0 || style.backgroundClip === 'text' || style.webkitBackgroundClip === 'text') return null; // gradient text
-        let background = null;
-        for (let node = element; node; node = node.parentElement) {
-          const computed = getComputedStyle(node);
-          const solid = rgb(computed.backgroundColor);
-          if (solid.length && (solid[3] === undefined || solid[3] > 0.8)) { background = solid; break; }
-          // A gradient background: judge against its first color.
-          const stop = computed.backgroundImage.includes('gradient') && computed.backgroundImage.match(/rgba?\([^)]*\)/);
-          if (stop) { background = rgb(stop[0]); break; }
-        }
-        if (!background) return null;
-        const [a, b] = [luminance(color), luminance(background)].sort((x, y) => y - x);
-        return (a + 0.05) / (b + 0.05);
-      };
-      for (const item of texts) {
-        // Judge the elements that actually hold the words, not their container.
-        const holders = [item.element, ...item.element.querySelectorAll('*')].filter(element => [...element.childNodes].some(node => node.nodeType === 3 && node.textContent.trim()) && visible(element));
-        const ratios = holders.map(contrast).filter(ratio => ratio !== null);
-        if (ratios.length && Math.min(...ratios) < 3) issues.push({kind: 'contrast', text: `${item.text} (contrast ${Math.min(...ratios).toFixed(1)}:1)`, box: item.box});
-      }
-      // Text on text (ignoring an element inside another), and text under media.
-      for (let a = 0; a < texts.length; a++) for (let b = a + 1; b < texts.length; b++) {
-        if (texts[a].element.contains(texts[b].element) || texts[b].element.contains(texts[a].element)) continue;
-        if (overlap(texts[a].box, texts[b].box) > 40) issues.push({kind: 'overlap', text: `${texts[a].text} ⟷ ${texts[b].text}`, box: texts[a].box});
-      }
-      // Captions sit in a fixed band at the bottom: nothing important may live there.
-      const band = {left: width * 0.1, right: width * 0.9, top: height - 125, bottom: height - 25};
-      for (const item of items.filter(item => item.kind !== 'caption')) {
-        const shared = overlap(item.box, band);
-        if (shared > 400 && (item.kind === 'text' || shared > 0.03 * (item.box.right - item.box.left) * (item.box.bottom - item.box.top))) issues.push({kind: 'caption-zone', text: item.kind === 'media' ? '(recording or image)' : item.text, box: item.box});
-      }
-      console.log('FLIKKA_LAYOUT ' + JSON.stringify({frame, issues}));
-      continueRender(handle);
-    };
-    // Wait two frames so fonts and layout have settled.
-    requestAnimationFrame(() => requestAnimationFrame(measure));
-  }, [frame]);
-  return null;
-}
-
-// Load the style's fonts before any frame is captured.
-function Fonts({url}) {
-  const [handle] = useState(() => url ? delayRender('fonts') : null);
-  useEffect(() => {
-    if (!url) return;
-    let link = document.querySelector(`link[data-jr-fonts="${url}"]`);
-    if (!link) { link = Object.assign(document.createElement('link'), {rel: 'stylesheet', href: url}); link.dataset.jrFonts = url; document.head.appendChild(link); }
-    const done = () => document.fonts.ready.then(() => continueRender(handle));
-    const timer = setTimeout(() => continueRender(handle), 15000); // never block a render on a slow font server
-    if (link.sheet) done(); else link.addEventListener('load', done, {once: true});
-    link.addEventListener('error', () => continueRender(handle), {once: true});
-    return () => clearTimeout(timer);
-  }, [url]);
-  return null;
+// The layout check: what is really on screen in the frame shown now, and its problems. The still capture
+// (lib/compose.mjs) calls it after seeking, once fonts and layout have settled.
+export function layoutIssues(width, height) {
+  const visible = element => {
+    for (let node = element; node && node !== document.body; node = node.parentElement) {
+      const style = getComputedStyle(node);
+      if (style.visibility === 'hidden' || style.display === 'none' || Number(style.opacity) < 0.6) return false;
+    }
+    return true;
+  };
+  const items = [...document.querySelectorAll('[data-check]')].filter(visible).map(element => {
+    const box = element.getBoundingClientRect();
+    return {kind: element.dataset.check, element, text: (element.textContent || '').trim().slice(0, 50), box: {left: box.left, top: box.top, right: box.right, bottom: box.bottom}};
+  }).filter(item => item.box.right > item.box.left && item.box.bottom > item.box.top);
+  const issues = [];
+  const overlap = (a, b) => Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left)) * Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
+  const texts = items.filter(item => item.kind === 'text');
+  for (const item of texts) {
+    const {box} = item;
+    if (box.left < -2 || box.top < -2 || box.right > width + 2 || box.bottom > height + 2) issues.push({kind: 'off-frame', text: item.text, box});
+    if (item.element.scrollWidth > item.element.clientWidth + 2 && getComputedStyle(item.element).overflow !== 'visible') issues.push({kind: 'clipped', text: item.text, box});
+  }
+  // Contrast: text color against the first solid background behind it (WCAG ratio).
+  const rgb = value => (value.match(/[\d.]+/g) || []).map(Number);
+  const luminance = ([r, g, b]) => [r, g, b].map(channel => { channel /= 255; return channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4; }).reduce((sum, channel, index) => sum + channel * [0.2126, 0.7152, 0.0722][index], 0);
+  const contrast = element => {
+    const style = getComputedStyle(element);
+    const color = rgb(style.color);
+    if (color[3] === 0 || style.backgroundClip === 'text' || style.webkitBackgroundClip === 'text') return null; // gradient text
+    let background = null;
+    for (let node = element; node; node = node.parentElement) {
+      const computed = getComputedStyle(node);
+      const solid = rgb(computed.backgroundColor);
+      if (solid.length && (solid[3] === undefined || solid[3] > 0.8)) { background = solid; break; }
+      // A gradient background: judge against its first color.
+      const stop = computed.backgroundImage.includes('gradient') && computed.backgroundImage.match(/rgba?\([^)]*\)/);
+      if (stop) { background = rgb(stop[0]); break; }
+    }
+    if (!background) return null;
+    const [a, b] = [luminance(color), luminance(background)].sort((x, y) => y - x);
+    return (a + 0.05) / (b + 0.05);
+  };
+  for (const item of texts) {
+    // Judge the elements that actually hold the words, not their container.
+    const holders = [item.element, ...item.element.querySelectorAll('*')].filter(element => [...element.childNodes].some(node => node.nodeType === 3 && node.textContent.trim()) && visible(element));
+    const ratios = holders.map(contrast).filter(ratio => ratio !== null);
+    if (ratios.length && Math.min(...ratios) < 3) issues.push({kind: 'contrast', text: `${item.text} (contrast ${Math.min(...ratios).toFixed(1)}:1)`, box: item.box});
+  }
+  // Text on text (ignoring an element inside another), and text under media.
+  for (let a = 0; a < texts.length; a++) for (let b = a + 1; b < texts.length; b++) {
+    if (texts[a].element.contains(texts[b].element) || texts[b].element.contains(texts[a].element)) continue;
+    if (overlap(texts[a].box, texts[b].box) > 40) issues.push({kind: 'overlap', text: `${texts[a].text} ⟷ ${texts[b].text}`, box: texts[a].box});
+  }
+  // Captions sit in a fixed band at the bottom: nothing important may live there.
+  const band = {left: width * 0.1, right: width * 0.9, top: height - 125, bottom: height - 25};
+  for (const item of items.filter(item => item.kind !== 'caption')) {
+    const shared = overlap(item.box, band);
+    if (shared > 400 && (item.kind === 'text' || shared > 0.03 * (item.box.right - item.box.left) * (item.box.bottom - item.box.top))) issues.push({kind: 'caption-zone', text: item.kind === 'media' ? '(recording or image)' : item.text, box: item.box});
+  }
+  return issues.map(({kind, text, box}) => ({kind, text, box}));
 }
 
 export function Film({film}) {
@@ -449,7 +422,6 @@ export function Film({film}) {
   const theme = film.theme;
   const variables = {'--jr-font': theme.font || systemFont, '--jr-heading': theme.headingFont || theme.font || systemFont, '--jr-mono': theme.monoFont || 'ui-monospace, monospace'};
   return <AbsoluteFill style={{background: theme.background, ...variables}}>
-    <Fonts url={theme.fontUrl}/>
     {film.scenes.map((scene, index) => {
       const Scene = scenes[scene.type];
       const last = index === film.scenes.length - 1;
@@ -464,11 +436,10 @@ export function Film({film}) {
       </Sequence>;
     })}
     {film.captions && <Captions captions={film.captions}/>}
-    {film.probe && <LayoutProbe/>}
     {film.stamp && <Stamp scenes={film.scenes}/>}
     {/* Live preview only: exports mix narration and music separately (ducking, loudness). */}
     {film.audio && film.audio.narration.map((line, index) => <Sequence key={index} from={line.from} layout="none"><Audio src={line.url}/></Sequence>)}
-    {film.audio?.music && <Audio src={film.audio.music} loop volume={0.12}/>}
+    {film.audio?.music && <Audio src={film.audio.music} loop loopSeconds={film.audio.musicSeconds} volume={0.12}/>}
   </AbsoluteFill>;
 }
 

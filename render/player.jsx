@@ -1,10 +1,8 @@
-// The live page: the film playing (Remotion player) next to a scene list and a form for the
-// selected scene, generated from film.schema.json so every field shows its description.
+// The live page: the film playing (a HyperFrames player, its composition served from /film/) next to a scene
+// list and a form for the selected scene, generated from film.schema.json so every field shows its description.
 // Saving writes film.json (validated by the server); the film then reloads by itself.
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {createRoot} from 'react-dom/client';
-import {Player} from '@remotion/player';
-import {Film} from './film.jsx';
 
 const ink = '#d6dae3'; const muted = '#8a91a3'; const line = '#262b36'; const panel = '#12151c'; const accent = '#5fb3ff';
 const css = `
@@ -90,14 +88,12 @@ function App() {
     const poll = async () => {
       const next = await fetch('/state.json', {cache: 'no-store'}).then(response => response.json()).catch(() => null);
       if (next && next.version !== current) {
-        // A custom scene's code changed: the page script itself is new, so reload the page.
-        if (window.__bundle && next.bundle && next.bundle !== window.__bundle) { location.reload(); return; }
-        window.__bundle = next.bundle;
         current = next.version;
-        const frame = player.current?.getCurrentFrame?.() ?? 0;
+        // The new film loads in the player; it comes back to the same moment once it is ready.
+        const time = player.current?.currentTime ?? 0;
+        player.current?.addEventListener('ready', () => player.current?.seek(time), {once: true});
         setState(next);
         setFilm(await fetch('/film.json', {cache: 'no-store'}).then(response => response.json()));
-        setTimeout(() => player.current?.seekTo?.(frame), 50);
       }
     };
     poll();
@@ -107,7 +103,7 @@ function App() {
   const timeline = state?.props?.film;
   const select = index => {
     setSelected(index); setDraft(null); setErrors(null);
-    if (index >= 0 && timeline?.scenes[index]) player.current?.seekTo(timeline.scenes[index].from);
+    if (index >= 0 && timeline?.scenes[index]) player.current?.seek(timeline.scenes[index].from / timeline.fps);
   };
   const save = async next => {
     const response = await fetch('/save', {method: 'POST', headers: {Authorization: `Bearer ${window.FLIKKA_LIVE.token}`}, body: JSON.stringify({film: next})});
@@ -148,8 +144,8 @@ function App() {
     </div>
     <div>
       {state.error && <div className="errors">{state.error}</div>}
-      {timeline && <Player ref={player} component={Film} inputProps={state.props} durationInFrames={timeline.frames} fps={timeline.fps}
-        compositionWidth={timeline.width} compositionHeight={timeline.height} controls style={{width: '100%', borderRadius: 10, overflow: 'hidden'}}/>}
+      {timeline && state.src && <hyperframes-player ref={player} src={state.src} controls width={timeline.width} height={timeline.height}
+        style={{display: 'block', width: '100%', aspectRatio: `${timeline.width} / ${timeline.height}`, borderRadius: 10, overflow: 'hidden'}}/>}
       <div className="status">Version {state.version} · {timeline ? `${(timeline.frames / timeline.fps).toFixed(1)} s · ${timeline.scenes.length} scenes` : ''} · reloads when film.json or a recording changes</div>
       <div className="editor">
         {selected >= 0 && current ? <>

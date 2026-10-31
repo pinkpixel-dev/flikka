@@ -22,7 +22,7 @@ Every command prints structured JSON to stdout.
 | `flikka record wait "text"` | Waits for text or a selector to appear on the page |
 | `flikka record stop` | Finalizes recording, mixes audio, and outputs project files |
 | `flikka project edit <id>` | Configures clips, auto-zooms, idle cuts, cursor overlay (--cursor on/off), background styling |
-| `flikka project render <id>` | Renders the final 60 fps MP4 video through Remotion |
+| `flikka project render <id>` | Renders the final 60 fps MP4 video through HyperFrames |
 | `flikka project new <name>` | Scaffolds a multi-scene film with voice narration |
 | `flikka voice say <name> "text"` | Synthesizes speech using Kokoro neural voices on CUDA/CPU |
 | `flikka shot` | Captures framed screenshots with desktop wallpaper backgrounds |
