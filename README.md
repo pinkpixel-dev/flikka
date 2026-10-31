@@ -1,61 +1,90 @@
-# 🎬 Flikka
+<p align="center">
+  <img src="assets/flikka.png" alt="Flikka" width="250" height="250">
+</p>
 
-The screen recorder your AI agent edits, built natively for Linux.
+<h1 align="center">Flikka</h1>
 
-You record, or your AI coding agent records itself. Then you tell it what you want in plain words ("cut the pauses", "zoom in when I click the signup button", "narrate this with captions") and the agent edits and renders the video for you.
+<p align="center">The screen recorder your AI agent edits, built for Linux.</p>
 
-## What is Flikka?
+<p align="center">
+  <a href="https://www.npmjs.com/package/@pinkpixel/flikka"><img src="https://img.shields.io/npm/v/@pinkpixel/flikka?color=f92571&label=npm" alt="npm version"></a>
+  <a href="https://aur.archlinux.org/packages/flikka"><img src="https://img.shields.io/aur/version/flikka?color=3390ff&label=AUR" alt="AUR version"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-81b313" alt="Apache 2.0"></a>
+</p>
 
-Flikka gives AI agents (and humans) a CLI-first video creation workflow. Instead of dragging clips on a timeline in a GUI app, every edit in Flikka is code and structured JSON.
+Flikka records your screen, a window, a browser tab or a terminal, then lets you (or your AI coding agent) edit the result with plain commands instead of a timeline. Idle time gets cut and clicks get zoomed automatically, so a fresh recording already renders into a decent video. From there you can speed parts up, change the background, add narration in a neural voice, or build a whole launch film with title cards, charts and captions.
 
-- **Agents record themselves**: An agent can launch a real browser with your existing logins, click buttons, type naturally like a human, and record its own walkthroughs in the background.
-- **Terminal recordings**: Record terminal sessions with automatic secret blurring (for API keys or passwords) and typing sounds.
-- **Auto-edits**: When a recording stops, Flikka automatically trims out dead air and calculates smooth zooms onto clicks from recorded mouse telemetry.
-- **Launch videos and films**: Turn clips into multi-scene demo videos with title cards, kinetic captions, voiceover narration, and background music.
-- **Hardware accelerated**: Optimized for modern Linux desktops (Arch / CachyOS, Wayland, PipeWire) with CUDA support for speech recognition and neural voice synthesis.
+Every command prints JSON, which is what makes it work so well with agents. An agent can open a browser, click around a real site like a person would, record itself doing it, and hand you a finished MP4.
 
-## Quick Start
+## What it does
 
-### Prerequisites
-- Linux (tested on Arch Linux / CachyOS with Wayland and PipeWire)
+- **Records the desktop** (a display, one window, or a region you drag out) with `gpu-screen-recorder`, so it's fast and light even at 60 fps.
+- **Records a browser** that's a copy of your own, logins included. The mouse glides and text gets typed at human speed, so the video doesn't look like a bot made it.
+- **Records a terminal** running your real shell, with a `--blur` option that hides API keys and other secrets.
+- **Edits automatically**: cuts idle stretches, zooms in on clicks, and draws a smooth cursor with a click ripple.
+- **Narrates** with Kokoro neural voices, and transcribes speech with Whisper for captions.
+- **Builds films**: a `film.json` lists scenes (recordings, titles, images, stats, charts, line graphs, slides, before/after comparisons, your own React components) and the narrator's lines. Flikka times everything to the voice, adds captions and music, and checks the result for problems like frozen frames or music drowning out the voice.
+- **Takes framed screenshots** with a nice backdrop, copied straight to your clipboard.
+- **Has a local review panel** where you can watch projects, flip switches like click sounds or zoom, and re-render.
+
+## Requirements
+
+- Linux on x86_64 (developed on Arch and CachyOS, Wayland, PipeWire)
 - Node.js 22 or newer
-- FFmpeg
-- Python 3.12+ and `uv`
-- Chromium or Google Chrome
+- `gpu-screen-recorder` for screen, window and region recording
+- A Chromium-family browser (Chrome, Chromium, Brave, Edge or Vivaldi) for browser recordings
 
-### Installation
+Flikka downloads a few things by itself the first time it needs them: ffmpeg and `uv` if you don't have them, the DeepFilterNet noise remover, and a headless Chrome for rendering (about 100 MB, into `~/.cache/hyperframes`). The first narration also sets up a Python environment with Kokoro, Whisper and PyTorch through `uv`, which is a few GB, so give that one a minute. Narration and transcription use your NVIDIA GPU through CUDA when it's there.
+
+You don't have to figure out what's missing by hand, though. Once Flikka is installed, `flikka doctor` checks everything and prints the exact install command for your distro.
+
+## Installation
+
+### Arch Linux (AUR)
 
 ```bash
-git clone https://github.com/your-username/flikka.git
-cd flikka
-npm install
+paru -S flikka
 ```
 
-Link the `flikka` command to your local bin, install the desktop entry, and register agent skills:
+Or `yay -S flikka`. This pulls in ffmpeg, `uv`, `gpu-screen-recorder` and the rest as normal dependencies, and installs the app launcher system-wide.
+
+### npm
 
 ```bash
+npm install -g @pinkpixel/flikka
+```
+
+### From source
+
+```bash
+git clone https://github.com/pinkpixel-dev/flikka.git
+cd flikka
+npm install
 node flikka app install
 ```
 
-Then check that your system has everything Flikka uses (screen recorder, clipboard tools, a browser and so on). It prints the exact install command for whatever's missing:
+From a clone, `app install` also links the `flikka` command into `~/.local/bin`.
+
+### After installing
+
+Set up the desktop launcher (npm and source installs) and the agent skill:
+
+```bash
+flikka app install
+```
+
+Then check your system:
 
 ```bash
 flikka doctor
 ```
 
-## How to Use It
+It lists every tool Flikka uses, what each one is for, and whether it's there. Anything Flikka downloads by itself shows as "downloads on first use", and anything you need to install comes with a ready-to-paste `pacman`, `apt` or `dnf` command.
 
-Flikka uses five core words:
+## Quick start
 
-```bash
-flikka record    # make a video: browser, terminal, or screen
-flikka project   # list, edit, preview, and render projects
-flikka shot      # framed screenshots
-flikka voice     # voice samples and narration
-flikka app       # local preview panel
-```
+### Record a browser session
 
-### 1. Let an agent record a browser session
 ```bash
 flikka record browser https://example.com --name signup-flow
 flikka record look
@@ -64,24 +93,177 @@ flikka record type 1 "hello@example.com"
 flikka record stop
 ```
 
-When it stops, Flikka prints a project ID (like `3f9a1c2e`).
+`look` lists the page's buttons, links and fields with numbers, and `click` and `type` take those numbers (or visible text, or a CSS selector). `stop` prints the new project's id, something like `3f9a1c2e`.
 
-### 2. Edit the video with simple flags
+### Record the screen, a window or a region
+
 ```bash
-flikka project edit 3f9a1c2e --cut-idle --auto-zoom --cursor off --preset vertical
+flikka record screen
+flikka record window
+flikka record region
+flikka record stop
+```
+
+On Wayland, `window` lets you pick a window through your desktop's own picker, and `region` without coordinates lets you drag out an area with `slurp`. `flikka record sources` lists displays, microphones and cameras. Add `--mic default`, `--system-audio` or `--camera default` to record those too.
+
+### Record a terminal
+
+```bash
+flikka record terminal --blur 'sk-[A-Za-z0-9]+'
+flikka record run "npm test"
+flikka record stop
+```
+
+### Render it
+
+```bash
 flikka project render 3f9a1c2e
 ```
 
-The rendered video is saved to `~/Documents/flikka/`.
+The finished video lands in `~/Documents/flikka/`. Videos are square (1080×1080) by default, which looks good almost everywhere.
 
-### 3. Build a multi-scene launch film
-Create a `film.json` file describing your scenes and voiceover lines, then render:
+### Open the panel
 
 ```bash
-flikka project new launch-demo
-flikka project render launch-demo
+flikka app panel
 ```
+
+Or launch Flikka from your app menu. The panel shows every project, a live preview of the edit, and switches for the microphone, system audio, camera bubble, click sounds, zooms and the cursor overlay.
+
+## Editing a recording
+
+Edits are flags on `flikka project edit`, and you can combine several in one call:
+
+```bash
+flikka project edit 3f9a1c2e --cut-silence --speed 1.5 --background sunset --preset vertical
+flikka project render 3f9a1c2e
+```
+
+Some useful ones:
+
+| Flag | What it does |
+|---|---|
+| `--cut-idle`, `--cut-silence` | Cut still stretches, or pauses in speech |
+| `--cut start,end` | Cut a range (in the recording's own seconds) |
+| `--speed 1.5` or `--speed 2,start,end` | Speed up the whole video or one part |
+| `--auto-zoom`, `--zooms on\|off` | Zoom in on clicks |
+| `--cursor on\|off`, `--clicks on\|off` | The drawn cursor and the click sound |
+| `--preset vertical\|portrait\|square\|landscape` | Output shape. Tall videos follow the cursor |
+| `--background aurora\|sunset\|ocean\|meadow\|graphite\|midnight` | The backdrop behind the window |
+| `--camera round=on,size=0.22,position=bottom-right` | The webcam bubble |
+
+`flikka project help` lists them all.
+
+## Making a film
+
+A film is a project made of scenes, narrated by a voice. Start one, optionally with recordings you already have:
+
+```bash
+flikka project new launch --with signup-flow
+```
+
+That creates a `film.json` to fill in. Here's a small one:
+
+```json
+{
+  "voice": {"name": "af_heart"},
+  "scenes": [
+    {"type": "title", "title": "Meet [Flikka]", "subtitle": "Screen recording for AI agents", "say": "Meet Flikka."},
+    {"type": "recording", "recording": "signup-flow", "say": "Here's the signup flow, recorded by an agent."},
+    {"type": "stats", "title": "Faster renders", "stats": [{"value": "60 fps", "label": "Capture"}], "say": "It records at sixty frames a second."}
+  ]
+}
+```
+
+In titles, `[words in brackets]` use the accent color and `*words in stars*` are muted. Each scene lasts as long as its narration needs.
+
+```bash
+flikka project schema       # every film.json field, described
+flikka project styles       # built-in looks (add your own in ~/.flikka/styles)
+flikka project preview launch
+flikka project live launch
+flikka project render launch
+```
+
+`preview` gives you one picture per scene plus a layout check, which is quick. `live` plays the film in your browser and reloads every time you save `film.json`. `render` makes the video and then checks it for frozen frames, music too loud under the voice, captions too fast to read, and words a listener might mishear. Every issue comes with a timestamp and a frame to look at.
+
+## Voices
+
+```bash
+flikka voice list
+flikka voice say af_heart "Testing one two three" --out test.wav
+```
+
+A film picks its narrator with `"voice": {"name": "..."}`. The default is `af_heart`, one of Kokoro's built-in voices.
+
+## Screenshots
+
+```bash
+flikka shot
+```
+
+Pick an area or a window and Flikka frames it on a backdrop, saves it to `~/Documents/flikka/shots`, and copies it to your clipboard. `--background`, `--plain` and `--from file.png` change how it's made.
+
+## Using it with AI agents
+
+`flikka app install` puts a Flikka skill where agents look for them:
+
+- `~/.claude/skills/flikka` for Claude Code
+- `~/.codex/skills/flikka` for Codex
+- `~/.agents/skills/flikka` for Gemini CLI and other agents that read the shared `.agents` folder
+
+After that, you can just ask your agent to "record yourself signing up on example.com" or "make a launch video from project 3f9a1c2e". The built-in help (`flikka help`, `flikka record help`, and so on) is written for agents too, with rules like "look before you click" and "never type passwords".
+
+## Where things live
+
+| What | Where |
+|---|---|
+| Projects | `~/.flikka/projects/<id>/` |
+| Finished videos | `~/Documents/flikka/` |
+| Screenshots | `~/Documents/flikka/shots/` |
+| Your voices and styles | `~/.flikka/voices/`, `~/.flikka/styles/` |
+| Downloaded tools | `~/.flikka/bin/` |
+| Anything Flikka can rebuild | `~/.cache/flikka/` |
+| Activity log | `~/.flikka/trace.log` |
+
+`FLIKKA_DIR` changes where finished videos go, and `FLIKKA_PROJECTS` moves the projects folder.
+
+## Updating and uninstalling
+
+Update the same way you installed:
+
+```bash
+paru -Syu flikka
+npm install -g @pinkpixel/flikka@latest
+```
+
+From a git clone, `flikka app update` pulls and reinstalls for you. After any update, run `flikka app install` once more to refresh the agent skills.
+
+To remove the launcher and skills (your projects and videos stay):
+
+```bash
+flikka app uninstall
+```
+
+## Troubleshooting
+
+- Run `flikka doctor` first. Most problems are a missing tool.
+- Every Flikka process writes what it's doing, with timings, to `~/.flikka/trace.log`. Watching it while something runs usually shows where it's stuck:
+
+  ```bash
+  tail -f ~/.flikka/trace.log
+  ```
+
+- A covered window stops updating in window recordings, so keep it visible. Browser recordings don't have this problem.
+
+## How it's built
+
+Flikka is Node.js all the way down, with a little Python for the voice models. Videos are rendered with [HyperFrames](https://github.com/heygen-com/hyperframes): each edit becomes a small web page drawn by React, and HyperFrames captures it frame by frame in a headless Chrome. Flikka mixes the sound itself with ffmpeg.
 
 ## License
 
-Apache 2.0. See [LICENSE](LICENSE) for details.
+Apache 2.0. See [LICENSE](LICENSE).
+
+---
+
+Made with 💖 by [Pink Pixel](https://pinkpixel.dev) · [GitHub](https://github.com/pinkpixel-dev) · [Buy me a coffee](https://www.buymeacoffee.com/pinkpixel) · [Ko-fi](https://ko-fi.com/sizzlebop)
