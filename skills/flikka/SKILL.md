@@ -22,6 +22,9 @@ Every command prints structured JSON to stdout.
 | `flikka record wait "text"` | Waits for text or a selector to appear on the page |
 | `flikka record stop` | Finalizes recording, mixes audio, and outputs project files |
 | `flikka project edit <id>` | Configures clips, auto-zooms, idle cuts, cursor overlay (--cursor on/off), background styling |
+| `flikka project timeline <id>` | Lists what happens in the finished video, in its own seconds: kept parts, cuts, zooms, clicks, speech |
+| `flikka project frames <id> --at 3,1:20` | Labelled frames of the edit in one picture, each stamped with video time and recording time |
+| `flikka project undo <id>` | Puts the project back as it was before the last saved edit |
 | `flikka project render <id>` | Renders the final 60 fps MP4 video through HyperFrames |
 | `flikka project new <name>` | Scaffolds a multi-scene film with voice narration |
 | `flikka voice say <name> "text"` | Synthesizes speech using Kokoro neural voices on CUDA/CPU |
@@ -129,9 +132,24 @@ flikka project render product-launch
 
 Available Kokoro neural voices include `af_heart`, `af_bella`, `af_nicole`, `am_adam`, `am_michael`, `bf_emma`, and `bm_george`. List them with `flikka voice list`.
 
+## Editing by What the Viewer Sees
+
+Times a user mentions ("cut the part at 1:20") are in the finished video, not the raw recording. Don't convert them by hand:
+
+```bash
+flikka project timeline <id>                                     # parts, cuts, zooms, clicks and speech in video time
+flikka project frames <id> --at 1:18,1:20,1:22                   # look at the moments before changing them
+flikka project edit <id> --output-time --cut 1:20,1:25 --dry-run # what would change: durations before and after
+flikka project edit <id> --output-time --cut 1:20,1:25           # do it
+flikka project undo <id>                                         # changed your mind
+```
+
+`--output-time` reads the times as the video was before this edit. Every saved edit keeps the previous version in the project's `history/` folder, up to 50 deep.
+
 ## Agent Guidelines
 
 - Look before acting: Run `flikka record look` first to obtain accurate numeric targets for clicks and typing.
 - Avoid raw DOM evaluations for recorded interactions: Use `click`, `type`, and `scroll` so the mouse cursor moves smoothly across frames.
 - Guard secrets: Use `--hide <text>` and `--blur <regex>` when launching recordings to keep API keys and tokens out of video frames.
+- Edit in video time: read `flikka project timeline` and use `--output-time` instead of converting times by hand. Try big edits with `--dry-run` first.
 - Verify before finishing: Always inspect the final video with `ffprobe` to confirm video resolution, framerate, and audio track validity.

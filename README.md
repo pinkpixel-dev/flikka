@@ -154,6 +154,20 @@ Some useful ones:
 
 `flikka project help` lists them all.
 
+### Editing by the time in the video
+
+Times like "cut the part at 1:20" usually mean the finished video, which has already been cut and sped up. Flikka can show you that timeline and take edits in it directly:
+
+```bash
+flikka project timeline 3f9a1c2e
+flikka project frames 3f9a1c2e --at 1:18,1:20,1:22
+flikka project edit 3f9a1c2e --output-time --cut 1:20,1:25 --dry-run
+flikka project edit 3f9a1c2e --output-time --cut 1:20,1:25
+flikka project undo 3f9a1c2e
+```
+
+`timeline` lists the kept parts, cuts, zooms, clicks and spoken words in video time. `frames` shows those moments, stamped with both the video time and the recording time. `--dry-run` tells you how the length would change without saving anything, and `undo` steps back through earlier edits (Flikka keeps up to 50).
+
 ## Making a film
 
 A film is a project made of scenes, narrated by a voice. Start one, optionally with recordings you already have:

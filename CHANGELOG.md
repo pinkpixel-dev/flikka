@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.3.0 - Unreleased
+
+### 🤖 Agent tools
+- `flikka project timeline <id>` lists what happens in the finished video, in its own seconds: kept parts, cuts, zooms, clicks and spoken words.
+- `flikka project edit --output-time` takes times in the finished video (seconds or `m:ss`), so "cut 1:20 to 1:25" needs no converting.
+- `flikka project edit --dry-run` shows what an edit would change, with the video length before and after, without saving.
+- `flikka project undo <id>` steps back through earlier edits. Every saved edit keeps the previous version in `history/`, up to 50.
+- `flikka project frames <id>` now works for recordings too, with each frame stamped with the video time and the recording time.
+- `--cut` and `--speed` ranges accept `m:ss` as well as seconds.
+
+### 🧪 Tests
+- First automated tests (`npm test`): the time mapping between the recording and the finished video, and edit, timeline and undo on a real project file.
+
 ## 0.2.1 - October 31, 2026
 
 ### 🎨 Branding
