@@ -34,6 +34,7 @@
     "flikka": "flikka"
   },
   "files": [
+    "assets/",
     "flikka",
     "lib/",
     "render/",
