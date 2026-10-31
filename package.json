@@ -1,6 +1,6 @@
 {
   "name": "@pinkpixel/flikka",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "The screen recorder your AI agent edits. Record browsers, terminals, and Linux desktops, then edit, narrate, and render videos from the CLI.",
   "keywords": [
     "screen-recorder",

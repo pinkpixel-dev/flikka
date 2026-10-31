@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.3.0 - Unreleased
+## 0.3.0 - October 31, 2026
 
 ### 🤖 Agent tools
 - `flikka project timeline <id>` lists what happens in the finished video, in its own seconds: kept parts, cuts, zooms, clicks and spoken words.
