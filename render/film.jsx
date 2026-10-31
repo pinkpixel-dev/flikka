@@ -61,11 +61,14 @@ export function Recording({recording, box, frames, rate = 1}) {
   });
   // If the narration runs longer than the recording, hold its last frame.
   const padding = box.padding;
-  const ratio = Math.min((box.width - 2 * padding) / project.width, (box.height - 2 * padding) / project.height);
+  const crop = project.crop || {x: 0, y: 0, w: 1, h: 1};
+  const ratio = Math.min((box.width - 2 * padding) / (project.width * crop.w), (box.height - 2 * padding) / (project.height * crop.h));
   return <AbsoluteFill>
     {sequences}
     {frames > offset && <Sequence from={offset}><AbsoluteFill style={{justifyContent: 'center', alignItems: 'center'}}>
-      <Img src={recording.lastFrameUrl} style={{width: project.width * ratio, height: project.height * ratio, borderRadius: project.style.radius, boxShadow: '0 24px 70px #0005, 0 0 0 1px #0000000f'}}/>
+      <div style={{position: 'relative', overflow: 'hidden', width: project.width * crop.w * ratio, height: project.height * crop.h * ratio, borderRadius: project.style.radius, boxShadow: '0 24px 70px #0005, 0 0 0 1px #0000000f'}}>
+        <Img src={recording.lastFrameUrl} style={{position: 'absolute', left: -crop.x * project.width * ratio, top: -crop.y * project.height * ratio, width: project.width * ratio, height: project.height * ratio}}/>
+      </div>
     </AbsoluteFill></Sequence>}
   </AbsoluteFill>;
 }
@@ -290,7 +293,8 @@ function CompareScene({scene, theme, frames}) {
     <div style={{display: 'flex'}}>
       {[scene.before, scene.after].map((side, index) => {
         const {project} = side.recording;
-        const box = {width: width / 2, height: (width / 2 - 2 * padding) * project.height / project.width + 2 * padding, padding};
+        const crop = project.crop || {w: 1, h: 1};
+        const box = {width: width / 2, height: (width / 2 - 2 * padding) * project.height * crop.h / (project.width * crop.w) + 2 * padding, padding};
         return <div key={index} style={{width: box.width, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, opacity: appear(frame, index * 8, 20)}}>
           <div data-check="text" style={{padding: '10px 26px', borderRadius: 999, fontFamily: font, fontWeight: 700, fontSize: 30, letterSpacing: 0.5,
             background: index ? theme.accent : theme.panel, color: index ? theme.accentText : theme.muted, boxShadow: '0 0 0 1px #0000000f'}}>{side.label || (index ? 'After' : 'Before')}</div>

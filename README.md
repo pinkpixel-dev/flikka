@@ -149,7 +149,10 @@ Some useful ones:
 | `--speed 1.5` or `--speed 2,start,end` | Speed up the whole video or one part |
 | `--ramp 0.5` | Ease between speeds over half a second instead of jumping (`--ramp off` to jump) |
 | `--freeze at,seconds` | Hold one moment as a still, in silence, so the viewer can read it |
-| `--auto-zoom`, `--zooms on\|off` | Zoom in on clicks |
+| `--auto-zoom`, `--zooms on\|off` | Zoom in on clicks, and on the field you're typing in |
+| `--zoom start,end,x,y[,scale]` | Zoom in on a spot yourself (x and y from 0 to 1) |
+| `--crop x,y,w,h` | Show only part of the recording (fractions, or pixels of the recording). `--crop off` undoes it |
+| `--spotlight start,end,x,y,w,h` | Dim everything except one area for a while |
 | `--cursor on\|off`, `--clicks on\|off` | The drawn cursor and the click sound |
 | `--preset vertical\|portrait\|square\|landscape` | Output shape. Tall videos follow the cursor |
 | `--background aurora\|sunset\|ocean\|meadow\|graphite\|midnight` | The backdrop behind the window |

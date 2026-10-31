@@ -16,6 +16,13 @@
 - `--ramp 0.2–2` eases between speeds in short steps instead of jumping, in the picture, the cursor and the sound alike. `--ramp off` goes back to hard jumps.
 - `flikka project timeline` shows freezes and speed ramps.
 
+### 🔍 Framing
+- `--crop x,y,w,h` shows only part of a recording, given as fractions or as pixels of the recording. Zooms, the cursor, spotlights, vertical follow and film scenes all respect it.
+- `--zoom start,end,x,y[,scale]` adds a zoom from the CLI and replaces any zoom it overlaps.
+- `--spotlight start,end,x,y,w,h` dims everything except one area, fading in and out.
+- `--auto-zoom` now zooms on typing too: three or more key presses in a row zoom in on the field being typed in, until a second after the last key. Browser and terminal recordings now log where typing goes, so this works on new recordings.
+- `flikka project timeline` shows the crop and spotlights.
+
 ### 🧪 Tests
 - First automated tests (`npm test`): the time mapping between the recording and the finished video, freezes and speed ramps, and edit, timeline and undo on a real project file.
 

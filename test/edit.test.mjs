@@ -70,3 +70,47 @@ test('trim, freeze and ramp edits, in video time, with undo', async () => {
     assert.equal((await timelineProject(file)).duration, 16);
   } finally { await fs.rm(folder, {recursive: true, force: true}); }
 });
+
+test('crop, manual zooms, spotlights and typing zooms', async () => {
+  const {folder, file} = await scratchProject();
+  try {
+    // Pixels of the 1920×1080 recording become fractions; off brings the whole recording back.
+    await editProject(file, ['--crop', '960,0,960,540']);
+    assert.deepEqual((await timelineProject(file)).crop, {x: 0.5, y: 0, w: 0.5, h: 0.5});
+    await assert.rejects(editProject(file, ['--crop', '0.9,0,0.01,0.5']), /Invalid crop/);
+    await editProject(file, ['--crop', 'off']);
+    assert.equal((await timelineProject(file)).crop, undefined);
+
+    // A manual zoom replaces the automatic one it overlaps (4–7) and takes video times.
+    await editProject(file, ['--cut', '0,2']);
+    await editProject(file, ['--output-time', '--zoom', '0:03,0:06,0.2,0.8,2']);
+    let timeline = await timelineProject(file);
+    assert.deepEqual(timeline.zooms, [{from: 3, to: 6, x: 0.2, y: 0.8, scale: 2}]);
+    await assert.rejects(editProject(file, ['--zoom', '1,2,1.5,0.5']), /x and y from 0 to 1/);
+
+    await editProject(file, ['--output-time', '--spotlight', '1,3,0.1,0.1,0.3,0.2']);
+    timeline = await timelineProject(file);
+    assert.deepEqual(timeline.spotlights, [{from: 1, to: 3, x: 0.1, y: 0.1, w: 0.3, h: 0.2}]);
+    await editProject(file, ['--spotlight', 'off']);
+    assert.deepEqual((await timelineProject(file)).spotlights, []);
+  } finally { await fs.rm(folder, {recursive: true, force: true}); }
+});
+
+test('auto-zoom follows typing to the focused field', async () => {
+  const {folder, file} = await scratchProject();
+  try {
+    const project = JSON.parse(await fs.readFile(file, 'utf8'));
+    const events = [{type: 'click', x: 0.5, y: 0.5, t: 2},
+      // Six keys into a field at (0.3, 0.7) from 8 to 10.5 s, then a stray key at 15 s (too few to zoom on).
+      ...[8, 8.5, 9, 9.5, 10, 10.5].map(t => ({type: 'key', x: 0.5, y: 0.5, fx: 0.3, fy: 0.7, t})), {type: 'key', x: 0.5, y: 0.5, fx: 0.9, fy: 0.1, t: 15}];
+    await fs.writeFile(path.join(folder, 'recording.cursor.jsonl'), events.map(event => JSON.stringify(event)).join('\n'));
+    await fs.writeFile(file, JSON.stringify({...project, cursor: 'recording.cursor.jsonl', zooms: []}));
+    await editProject(file, ['--auto-zoom']);
+    const {zooms} = JSON.parse(await fs.readFile(file, 'utf8'));
+    assert.equal(zooms.length, 2);
+    const typing = zooms[1];
+    assert.deepEqual([typing.x, typing.y], [0.3, 0.7]);
+    // In from just before the first key until a second after the last.
+    assert.ok(Math.abs(typing.start - 7.65) < 1e-9 && Math.abs(typing.end - 11.5) < 1e-9);
+  } finally { await fs.rm(folder, {recursive: true, force: true}); }
+});

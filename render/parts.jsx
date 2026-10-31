@@ -40,6 +40,15 @@ export function Cursor({events, clicks, time, width, height, style}) {
   </>;
 }
 
+// A spotlight: everything but one area of the screen dims for a while (x, y, w, h from 0 to 1, recording seconds).
+function Spotlight({spots = [], time, width, height}) {
+  const spot = spots.find(item => time >= item.start && time <= item.end);
+  if (!spot) return null;
+  const fade = Math.min(ease((time - spot.start) / 0.3), ease((spot.end - time) / 0.3));
+  return <div style={{position: 'absolute', left: spot.x * width, top: spot.y * height, width: spot.w * width, height: spot.h * height, borderRadius: 14,
+    boxShadow: `0 0 0 ${Math.round(2 * Math.max(width, height))}px rgba(0, 0, 0, ${(0.6 * fade).toFixed(3)})`, outline: `2px solid rgba(255, 255, 255, ${(0.35 * fade).toFixed(3)})`}}/>;
+}
+
 // box: the area the screen is fitted into (the whole video, or half of it in a comparison).
 // sound: the address of the sound to play with it (the live preview; a render adds the mixed sound with ffmpeg).
 // A freeze (clip.hold) shows its still (holds: source second → picture) with the cursor where it was, in silence.
@@ -49,16 +58,22 @@ export function Clip({project, clip, sourceUrl, events, clicks, transcript, webc
   const {fps, width, height} = useVideoConfig();
   const time = clip.start + frame * rate / fps;
   const padding = box?.padding ?? project.style.padding;
+  // A crop shows part of the recording as the whole screen. Zooms, cursor and spotlights keep full-recording
+  // coordinates; local() turns a full-recording point into one on the cropped screen.
+  const crop = project.crop || {x: 0, y: 0, w: 1, h: 1};
+  const [sourceWidth, sourceHeight] = [project.width * crop.w, project.height * crop.h];
+  const local = point => ({...point, x: (point.x - crop.x) / crop.w, y: (point.y - crop.y) / crop.h});
   const [boxWidth, boxHeight] = [(box?.width ?? width) - 2 * padding, (box?.height ?? height) - 2 * padding];
   // A wide screen in a tall video (Shorts, Reels, X on a phone) fitted whole is a thin strip of tiny text. Instead it
   // fills a 4:5 window as tall as it can be, cropped to what's around the cursor, and the window follows it.
   // Only a tall video (vertical, portrait) crops: a square one shows the whole desktop, as it was recorded.
-  const follow = boxHeight > boxWidth * 1.1 && project.width / project.height > 1.3 * boxWidth / boxHeight;
+  const follow = boxHeight > boxWidth * 1.1 && sourceWidth / sourceHeight > 1.3 * boxWidth / boxHeight;
   const [fitWidth, fitHeight] = follow ? [boxWidth, Math.min(boxHeight, boxWidth * 5 / 4)] : [boxWidth, boxHeight];
   // At most 2 video pixels per recorded pixel: a small area on a non-Retina screen blown up more turns to mush.
-  const ratio = follow ? Math.min(2, fitHeight / project.height, fitWidth * 0.98 / (project.width * 0.4)) : Math.min(2, boxWidth / project.width, boxHeight / project.height);
-  const screenWidth = project.width * ratio;
-  const screenHeight = project.height * ratio;
+  const ratio = follow ? Math.min(2, fitHeight / sourceHeight, fitWidth * 0.98 / (sourceWidth * 0.4)) : Math.min(2, boxWidth / sourceWidth, boxHeight / sourceHeight);
+  const screenWidth = sourceWidth * ratio;
+  const screenHeight = sourceHeight * ratio;
+  const [fullWidth, fullHeight] = [project.width * ratio, project.height * ratio];
   const [viewWidth, viewHeight] = [Math.min(screenWidth, fitWidth), Math.min(screenHeight, fitHeight)];
   const index = project.zooms.findIndex(item => time >= item.start && time <= item.end);
   const zoom = project.zooms[index];
@@ -67,7 +82,7 @@ export function Clip({project, clip, sourceUrl, events, clicks, transcript, webc
   const next = zoom && project.zooms[index + 1] && Math.abs(project.zooms[index + 1].start - zoom.end) < 0.05;
   const strength = zoom ? Math.min(previous ? 1 : ease((time - zoom.start) / 0.4), next ? 1 : ease((zoom.end - time) / 0.4)) : 0;
   const pan = previous ? ease((time - zoom.start) / 0.6) : 1;
-  const focus = zoom && ['x', 'y', 'scale'].reduce((values, key) => ({...values, [key]: previous ? previous[key] + (zoom[key] - previous[key]) * pan : zoom[key]}), {});
+  const focus = zoom && local(['x', 'y', 'scale'].reduce((values, key) => ({...values, [key]: previous ? previous[key] + (zoom[key] - previous[key]) * pan : zoom[key]}), {}));
   // Following, a click's zoom adds less: never past 2 video pixels per recorded one.
   const most = follow ? Math.max(1, 2 / ratio) : Infinity;
   const scale = zoom ? 1 + (Math.min(focus.scale, most) - 1) * strength : 1;
@@ -76,7 +91,7 @@ export function Clip({project, clip, sourceUrl, events, clicks, transcript, webc
     // The cursor over the last second and a bit ahead, averaged: the window glides instead of shaking.
     // Typed keys don't count: a terminal's carry no real pointer.
     const pointer = events.filter(event => event.type !== 'key');
-    const seen = Array.from({length: 16}, (_, step) => cursorAt(pointer, time - 1.2 + step * 0.1)).filter(Boolean);
+    const seen = Array.from({length: 16}, (_, step) => cursorAt(pointer, time - 1.2 + step * 0.1)).filter(Boolean).map(local);
     // No pointer (a terminal): its left edge, where every line starts.
     const at = seen.length ? {x: seen.reduce((sum, item) => sum + item.x, 0) / seen.length, y: seen.reduce((sum, item) => sum + item.y, 0) / seen.length} : {x: 0, y: 0.5};
     const center = zoom ? {x: at.x + (focus.x - at.x) * strength, y: at.y + (focus.y - at.y) * strength} : at;
@@ -90,11 +105,14 @@ export function Clip({project, clip, sourceUrl, events, clicks, transcript, webc
   const webcam = webcams?.find(item => time >= item.start && time < item.end);
   return <AbsoluteFill style={{justifyContent: 'center', alignItems: 'center'}}>
     <div style={{width: viewWidth, height: viewHeight, overflow: 'hidden', position: 'relative', borderRadius: project.style.radius, boxShadow: project.style.shadow ? '0 24px 70px #0008, 0 0 0 1px #ffffff18' : undefined}}>
-      <div style={{width: screenWidth, height: screenHeight, transformOrigin: '0 0', transform: `translate(${moveX}px, ${moveY}px) scale(${scale})`}}>
-        {clip.hold ? <Img src={holds[clip.start.toFixed(3)]} style={{width: screenWidth, height: screenHeight, display: 'block'}}/>
-          : <Video src={sourceUrl} muted playbackRate={rate} trimBefore={Math.round(clip.start * fps)} objectFit="fill" style={{width: screenWidth, height: screenHeight}}/>}
-        {sound && !clip.hold && <Audio src={sound} playbackRate={rate} trimBefore={Math.round(clip.start * fps)}/>}
-        {!project.cursorBaked && project.cursorEnabled !== false && <Cursor events={events} clicks={clicks} time={time} width={screenWidth} height={screenHeight} style={project.style}/>}
+      <div style={{position: 'relative', overflow: 'hidden', width: screenWidth, height: screenHeight, transformOrigin: '0 0', transform: `translate(${moveX}px, ${moveY}px) scale(${scale})`}}>
+        <div style={{position: 'absolute', left: -crop.x * fullWidth, top: -crop.y * fullHeight, width: fullWidth, height: fullHeight}}>
+          {clip.hold ? <Img src={holds[clip.start.toFixed(3)]} style={{width: fullWidth, height: fullHeight, display: 'block'}}/>
+            : <Video src={sourceUrl} muted playbackRate={rate} trimBefore={Math.round(clip.start * fps)} objectFit="fill" style={{width: fullWidth, height: fullHeight}}/>}
+          {sound && !clip.hold && <Audio src={sound} playbackRate={rate} trimBefore={Math.round(clip.start * fps)}/>}
+          <Spotlight spots={project.spotlights} time={time} width={fullWidth} height={fullHeight}/>
+          {!project.cursorBaked && project.cursorEnabled !== false && <Cursor events={events} clicks={clicks} time={time} width={fullWidth} height={fullHeight} style={project.style}/>}
+        </div>
       </div>
     </div>
     {webcam && !clip.hold && <div style={{position: 'absolute', [project.webcam.position?.startsWith('top') ? 'top' : 'bottom']: padding, [project.webcam.position?.endsWith('left') ? 'left' : 'right']: padding, width: width * project.webcam.size, height: width * project.webcam.size * (project.webcam.round === false ? 0.75 : 1), borderRadius: project.webcam.round === false ? width * 0.016 : '50%', overflow: 'hidden', boxShadow: '0 12px 40px #0009', border: '4px solid #ffffffcc'}}>
