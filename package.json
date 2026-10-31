@@ -1,10 +1,57 @@
 {
-  "name": "flikka",
+  "name": "@pinkpixel/flikka",
   "version": "0.2.0",
-  "private": true,
+  "description": "The screen recorder your AI agent edits. Record browsers, terminals, and Linux desktops, then edit, narrate, and render videos from the CLI.",
+  "keywords": [
+    "screen-recorder",
+    "video-editor",
+    "linux",
+    "wayland",
+    "cli",
+    "ai-agents",
+    "agent-skills",
+    "demo-video",
+    "narration",
+    "text-to-speech"
+  ],
+  "homepage": "https://github.com/pinkpixel-dev/flikka#readme",
+  "bugs": {
+    "url": "https://github.com/pinkpixel-dev/flikka/issues",
+    "email": "support@pinkpixel.dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pinkpixel-dev/flikka.git"
+  },
+  "license": "Apache-2.0",
+  "author": "Pink Pixel <admin@pinkpixel.dev> (https://pinkpixel.dev)",
+  "funding": [
+    "https://www.buymeacoffee.com/pinkpixel",
+    "https://ko-fi.com/sizzlebop"
+  ],
   "type": "module",
+  "bin": {
+    "flikka": "flikka"
+  },
+  "files": [
+    "flikka",
+    "lib/",
+    "render/",
+    "skills/",
+    "styles/",
+    "ui/"
+  ],
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "x64"
+  ],
   "engines": {
     "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "dependencies": {
     "@remotion/bundler": "4.0.537",
@@ -13,6 +60,7 @@
     "@remotion/renderer": "4.0.537",
     "@xterm/addon-fit": "0.11.0",
     "@xterm/xterm": "6.0.0",
+    "esbuild": "0.28.1",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "remotion": "4.0.537"
