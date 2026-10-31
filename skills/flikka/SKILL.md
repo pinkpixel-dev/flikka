@@ -26,6 +26,7 @@ Every command prints structured JSON to stdout.
 | `flikka project new <name>` | Scaffolds a multi-scene film with voice narration |
 | `flikka voice say <name> "text"` | Synthesizes speech using Kokoro neural voices on CUDA/CPU |
 | `flikka shot` | Captures framed screenshots with desktop wallpaper backgrounds |
+| `flikka doctor` | Checks the system tools flikka needs and prints the command that installs anything missing |
 
 ## Autonomous Browser Recording Workflow
 

@@ -37,6 +37,12 @@ Link the `flikka` command to your local bin, install the desktop entry, and regi
 node flikka app install
 ```
 
+Then check that your system has everything Flikka uses (screen recorder, clipboard tools, a browser and so on). It prints the exact install command for whatever's missing:
+
+```bash
+flikka doctor
+```
+
 ## How to Use It
 
 Flikka uses five core words:
