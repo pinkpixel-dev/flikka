@@ -153,6 +153,10 @@ Some useful ones:
 | `--zoom start,end,x,y[,scale]` | Zoom in on a spot yourself (x and y from 0 to 1) |
 | `--crop x,y,w,h` | Show only part of the recording (fractions, or pixels of the recording). `--crop off` undoes it |
 | `--spotlight start,end,x,y,w,h` | Dim everything except one area for a while |
+| `--callout start,end,x,y,"text"` | A label pointing at a spot. `--step` does the same with a number, counted in time order |
+| `--arrow start,end,x,y,x2,y2`, `--box start,end,x,y,w,h` | Draw an arrow, or a highlight box around something |
+| `--redact start,end,x,y,w,h[,solid]` | Blur an area after recording, or cover it with `solid`. `all` instead of start,end covers the whole video |
+| `--keystrokes on` | Show shortcuts (Ctrl+S, Enter and so on) in a corner as they're pressed |
 | `--cursor on\|off`, `--clicks on\|off` | The drawn cursor and the click sound |
 | `--preset vertical\|portrait\|square\|landscape` | Output shape. Tall videos follow the cursor |
 | `--background aurora\|sunset\|ocean\|meadow\|graphite\|midnight` | The backdrop behind the window |
@@ -275,6 +279,7 @@ flikka app uninstall
   ```
 
 - A covered window stops updating in window recordings, so keep it visible. Browser recordings don't have this problem.
+- To hide a password or API key after recording, use `--redact ...,solid`. Strong blur is usually fine for names and emails, but blurred text can sometimes be partly recovered.
 
 ## How it's built
 

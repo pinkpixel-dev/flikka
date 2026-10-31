@@ -23,6 +23,14 @@
 - `--auto-zoom` now zooms on typing too: three or more key presses in a row zoom in on the field being typed in, until a second after the last key. Browser and terminal recordings now log where typing goes, so this works on new recordings.
 - `flikka project timeline` shows the crop and spotlights.
 
+### 🏷️ Annotations
+- `--callout` and `--step` add labels that point at a spot. Steps are numbered automatically in time order.
+- `--arrow` and `--box` draw an arrow or a highlight box. Annotations sit on the recording, so they move with zooms and crops.
+- `--redact` blurs an area after recording, or covers it with `solid`. `all` covers the whole video.
+- `--keystrokes on` shows shortcuts in a corner as they're pressed. Browser and terminal recordings now log shortcut combos and named keys only, never typed characters.
+- `flikka project timeline` lists annotations, redactions and keystrokes in video time.
+- A clearer error when text with spaces wasn't quoted.
+
 ### 🧪 Tests
 - First automated tests (`npm test`): the time mapping between the recording and the finished video, freezes and speed ramps, and edit, timeline and undo on a real project file.
 

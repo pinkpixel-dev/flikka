@@ -114,3 +114,38 @@ test('auto-zoom follows typing to the focused field', async () => {
     assert.ok(Math.abs(typing.start - 7.65) < 1e-9 && Math.abs(typing.end - 11.5) < 1e-9);
   } finally { await fs.rm(folder, {recursive: true, force: true}); }
 });
+
+test('callouts, steps, arrows, boxes, redactions and keystrokes', async () => {
+  const {folder, file} = await scratchProject();
+  try {
+    await editProject(file, ['--cut', '0,2']);
+    await editProject(file, ['--output-time',
+      '--step', '0:01,0:03,0.2,0.3,Open the menu, then Save',
+      '--callout', '0:04,0:06,0.8,0.5,Saved!',
+      '--arrow', '1,3,0.1,0.1,0.2,0.3',
+      '--box', '1,3,0.15,0.25,0.2,0.1',
+      '--redact', '0,2,0.5,0.5,0.2,0.1']);
+    await editProject(file, ['--redact', 'all,0,0,0.3,0.05,solid']);
+    let timeline = await timelineProject(file);
+    // Text keeps its commas; video times come back out as the same video times.
+    const step = timeline.annotations.find(item => item.type === 'step');
+    assert.deepEqual(step, {from: 1, to: 3, type: 'step', x: 0.2, y: 0.3, text: 'Open the menu, then Save'});
+    assert.deepEqual(timeline.annotations.map(item => item.type).sort(), ['arrow', 'box', 'callout', 'step']);
+    assert.deepEqual(timeline.redactions.map(item => [item.from, item.to, item.style]), [[0, 18, 'solid'], [0, 2, 'blur']]);
+
+    await assert.rejects(editProject(file, ['--callout', '1,2,0.5,0.5,']), /Invalid annotation/);
+    await assert.rejects(editProject(file, ['--box', '1,2,0.9,0.5,0.3,0.1']), /Invalid annotation/);
+    await assert.rejects(editProject(file, ['--redact', '1,2,0.1,0.1,0.2,0.2,pixel']), /blur \(the default\) or solid/);
+
+    await editProject(file, ['--annotations', 'off', '--redact', 'off']);
+    timeline = await timelineProject(file);
+    assert.deepEqual([timeline.annotations, timeline.redactions], [[], []]);
+
+    // Keystrokes: only combos show (plain key events carry none), at their place in the video.
+    const project = JSON.parse(await fs.readFile(file, 'utf8'));
+    await fs.writeFile(path.join(folder, 'recording.cursor.jsonl'), [{type: 'key', x: 0.5, y: 0.5, t: 5, combo: 'Ctrl+S'}, {type: 'key', x: 0.5, y: 0.5, t: 6}].map(event => JSON.stringify(event)).join('\n'));
+    await fs.writeFile(file, JSON.stringify({...project, cursor: 'recording.cursor.jsonl'}));
+    await editProject(file, ['--keystrokes', 'on']);
+    assert.deepEqual((await timelineProject(file)).keystrokes, [{at: 3, keys: 'Ctrl+S'}]);
+  } finally { await fs.rm(folder, {recursive: true, force: true}); }
+});

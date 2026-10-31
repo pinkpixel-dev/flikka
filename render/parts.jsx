@@ -49,6 +49,64 @@ function Spotlight({spots = [], time, width, height}) {
     boxShadow: `0 0 0 ${Math.round(2 * Math.max(width, height))}px rgba(0, 0, 0, ${(0.6 * fade).toFixed(3)})`, outline: `2px solid rgba(255, 255, 255, ${(0.35 * fade).toFixed(3)})`}}/>;
 }
 
+// Redactions: areas blurred or covered for a while (x, y, w, h from 0 to 1 of the recording; recording seconds).
+function Redactions({items = [], time, width, height}) {
+  return <>{items.filter(item => time >= item.start && time <= item.end).map((item, index) => {
+    const box = {position: 'absolute', left: item.x * width, top: item.y * height, width: item.w * width, height: item.h * height, borderRadius: 6};
+    return item.style === 'solid' ? <div key={index} style={{...box, background: '#18181b'}}/>
+      : <div key={index} style={{...box, backdropFilter: `blur(${Math.round(width * 0.012)}px) saturate(0.6)`, background: '#18181b33'}}/>;
+  })}</>;
+}
+
+// Callouts, numbered steps, arrows and highlight boxes, on the recording (they move with zooms). unit: 1% of the
+// screen's width as shown, so text keeps one size whatever the recording's resolution.
+function Annotations({items = [], time, width, height, unit, color}) {
+  const steps = items.filter(item => item.type === 'step').sort((a, b) => a.start - b.start);
+  const font = 'system-ui, sans-serif';
+  return <>{items.filter(item => time >= item.start && time <= item.end).map((item, index) => {
+    const shown = Math.min(ease((time - item.start) / 0.25), ease((item.end - time) / 0.25));
+    const [x, y] = [item.x * width, item.y * height];
+    if (item.type === 'box') return <div key={index} style={{position: 'absolute', left: x, top: y, width: item.w * width, height: item.h * height, borderRadius: unit,
+      border: `${Math.max(2, unit * 0.35)}px solid ${color}`, boxShadow: `0 0 0 ${unit * 0.3}px ${color}33`, opacity: shown}}/>;
+    if (item.type === 'arrow') {
+      const [toX, toY] = [item.x2 * width, item.y2 * height];
+      const angle = Math.atan2(toY - y, toX - x); const head = unit * 2.2; const stroke = Math.max(3, unit * 0.45);
+      const along = shown; const [endX, endY] = [x + (toX - x) * along, y + (toY - y) * along];
+      const wing = side => `${endX - head * Math.cos(angle + side * 0.5)},${endY - head * Math.sin(angle + side * 0.5)}`;
+      return <svg key={index} width={width} height={height} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible', filter: 'drop-shadow(0 2px 4px #0008)'}}>
+        <line x1={x} y1={y} x2={endX} y2={endY} stroke={color} strokeWidth={stroke} strokeLinecap="round"/>
+        <polygon points={`${endX},${endY} ${wing(1)} ${wing(-1)}`} fill={color}/>
+      </svg>;
+    }
+    // A callout or step: a label beside its point, on the side with room.
+    const left = item.x > 0.6;
+    const number = item.type === 'step' ? steps.indexOf(item) + 1 : null;
+    return <div key={index} style={{position: 'absolute', left: x, top: y, transform: `translate(${left ? '-100%' : '0'}, -50%) scale(${0.92 + 0.08 * shown})`,
+      transformOrigin: left ? 'right center' : 'left center', opacity: shown, display: 'flex', alignItems: 'center', gap: unit * 0.8, flexDirection: left ? 'row-reverse' : 'row'}}>
+      <div style={{width: unit * 1.2, height: unit * 1.2, borderRadius: '50%', background: color, boxShadow: `0 0 0 ${unit * 0.4}px ${color}44`, flex: 'none'}}/>
+      <div data-check="text" style={{display: 'flex', alignItems: 'center', gap: unit * 0.8, padding: `${unit * 0.7}px ${unit * 1.3}px`, borderRadius: unit * 1.1, background: '#18181bf0',
+        color: '#fafafa', fontFamily: font, fontWeight: 600, fontSize: unit * 2.1, lineHeight: 1.25, maxWidth: width * 0.5, boxShadow: '0 8px 30px #0009', whiteSpace: 'pre-wrap'}}>
+        {number && <span style={{display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: unit * 2.6, height: unit * 2.6, borderRadius: '50%', background: color, color: '#fff', fontSize: unit * 1.6, flex: 'none'}}>{number}</span>}
+        {item.text}
+      </div>
+    </div>;
+  })}</>;
+}
+
+// Shortcuts as they're pressed (key events with a combo), each for a moment, newest last.
+function Keystrokes({events, time, width, height}) {
+  const shown = events.filter(event => event.combo && time >= event.t && time < event.t + 1.4).slice(-3);
+  if (!shown.length) return null;
+  const unit = width / 100;
+  return <div style={{position: 'absolute', right: unit * 3, bottom: height * 0.07 + unit * 6, display: 'flex', gap: unit, alignItems: 'center'}}>
+    {shown.map((event, index) => {
+      const fade = Math.min(ease((time - event.t) / 0.12), ease((event.t + 1.4 - time) / 0.3));
+      return <div key={index} style={{padding: `${unit * 0.8}px ${unit * 1.6}px`, borderRadius: unit, background: '#18181bf2', border: '1px solid #ffffff26', color: '#fafafa',
+        fontFamily: 'ui-monospace, monospace', fontWeight: 600, fontSize: unit * 2.4, boxShadow: '0 8px 30px #0009', opacity: fade, transform: `translateY(${(1 - fade) * unit}px)`}}>{event.combo.replace(/\+/g, ' + ')}</div>;
+    })}
+  </div>;
+}
+
 // box: the area the screen is fitted into (the whole video, or half of it in a comparison).
 // sound: the address of the sound to play with it (the live preview; a render adds the mixed sound with ffmpeg).
 // A freeze (clip.hold) shows its still (holds: source second → picture) with the cursor where it was, in silence.
@@ -110,11 +168,14 @@ export function Clip({project, clip, sourceUrl, events, clicks, transcript, webc
           {clip.hold ? <Img src={holds[clip.start.toFixed(3)]} style={{width: fullWidth, height: fullHeight, display: 'block'}}/>
             : <Video src={sourceUrl} muted playbackRate={rate} trimBefore={Math.round(clip.start * fps)} objectFit="fill" style={{width: fullWidth, height: fullHeight}}/>}
           {sound && !clip.hold && <Audio src={sound} playbackRate={rate} trimBefore={Math.round(clip.start * fps)}/>}
+          <Redactions items={project.redactions} time={time} width={fullWidth} height={fullHeight}/>
           <Spotlight spots={project.spotlights} time={time} width={fullWidth} height={fullHeight}/>
+          <Annotations items={project.annotations} time={time} width={fullWidth} height={fullHeight} unit={screenWidth / 100} color={project.style.clickColor || '#ff3b5c'}/>
           {!project.cursorBaked && project.cursorEnabled !== false && <Cursor events={events} clicks={clicks} time={time} width={fullWidth} height={fullHeight} style={project.style}/>}
         </div>
       </div>
     </div>
+    {project.keystrokes && <Keystrokes events={events} time={time} width={width} height={height}/>}
     {webcam && !clip.hold && <div style={{position: 'absolute', [project.webcam.position?.startsWith('top') ? 'top' : 'bottom']: padding, [project.webcam.position?.endsWith('left') ? 'left' : 'right']: padding, width: width * project.webcam.size, height: width * project.webcam.size * (project.webcam.round === false ? 0.75 : 1), borderRadius: project.webcam.round === false ? width * 0.016 : '50%', overflow: 'hidden', boxShadow: '0 12px 40px #0009', border: '4px solid #ffffffcc'}}>
       <Sequence from={Math.max(0, Math.round((webcam.start - clip.start) * fps / rate))} layout="none" premountFor={fps}>
         <Video src={webcam.url} muted playbackRate={rate} trimBefore={Math.round((Math.max(0, clip.start - webcam.start) + (webcam.sourceOffset || 0)) * fps)} objectFit="cover" style={{width: '100%', height: '100%'}}/>
