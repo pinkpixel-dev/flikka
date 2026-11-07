@@ -281,6 +281,25 @@ fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
 .hint { margin: 0; color: var(--faint); font-size: 12px; }
 .line { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 13.5px; }
 .line select { width: auto; }
+.range-input { display: flex; align-items: center; gap: 10px; }
+.range-input input { width: 128px; }
+.range-input output { min-width: 46px; color: var(--muted); font: 12px var(--mono); text-align: right; }
+.shapes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.shapes button { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px 2px 7px; border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--bg); color: var(--muted); font: 500 11.5px var(--sans); white-space: nowrap; transition: border-color .15s, color .15s, background-color .15s; }
+.shapes button:hover { color: var(--text); border-color: var(--surface-3); }
+.shapes button:active { background: var(--surface); }
+.shapes button[aria-pressed=true] { color: var(--text); border-color: var(--text); background: var(--surface); }
+.shapes button:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+.shape-icon { display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; }
+.shape-icon span { max-width: 24px; max-height: 24px; width: 100%; border: 1.5px solid currentColor; border-radius: 3px; }
+.shapes button:nth-child(n+3) .shape-icon span { width: auto; height: 100%; }
+.swatches { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
+.swatches button { aspect-ratio: 1; border: 1px solid oklch(1 0 0 / 0.14); border-radius: 6px; transition: transform .15s var(--ease); }
+.swatches button:hover { transform: translateY(-1px); }
+.swatches button[aria-pressed=true] { outline: 2px solid var(--text); outline-offset: 2px; }
+.swatches button:focus-visible { outline: 2px solid var(--muted); outline-offset: 4px; }
+.swatches button[aria-pressed=true]:focus-visible { outline-color: var(--text); }
 .file { display: flex; flex-direction: column; gap: 8px; }
 .file-name { font: 12px var(--mono); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .prompt { display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }

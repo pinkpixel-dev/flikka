@@ -14,9 +14,11 @@
 - Aim a zoom on the recording itself: choose a zoom, press the crosshair (or A), then click or drag the frame to where it should look and pick how close it gets.
 - The zoom switch is now an Auto zoom picker: clicks and typing, just clicks, just typing, or off.
 - Zooms work from the keyboard too: with the timeline focused, `[` and `]` jump to the previous or next zoom and choose it, and Enter chooses the one under the playhead. Then A aims it, Delete removes it and Esc lets go.
+- A Frame section in the edit column: pick the video's shape (square, landscape, portrait or vertical), the wallpaper behind the recording, the padding around it, how round its corners are, and whether it has a shadow. The live preview updates after each change, and Ctrl+Z undoes it. A run of arrow-key presses on a slider saves as one edit.
 
 ### ✂️ Editing
 - `flikka project edit --unzoom <time>` removes the zoom showing at that moment (works with `--output-time`).
+- `flikka project edit --padding <px>`, `--radius <px>` and `--shadow on|off` set the frame around the recording. Padding goes up to a third of the video's short side and corners up to 200 px, and the error says the limit when you go past it.
 - `--zooms clicks` and `--zooms typing` (and `--auto-zoom clicks|typing`) zoom on only one kind of moment.
 - `flikka project timeline` lists typing bursts, with where they were typed, so agents can zoom on them too.
 

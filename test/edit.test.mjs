@@ -213,3 +213,21 @@ test('chapters from labelled markers, in video time', async () => {
     assert.deepEqual(chapters(JSON.parse(await fs.readFile(file, 'utf8'))), []);
   } finally { await fs.rm(folder, {recursive: true, force: true}); }
 });
+
+test('frame look: wallpaper, shape, padding, corners and shadow', async () => {
+  const {folder, file} = await scratchProject();
+  const read = async () => JSON.parse(await fs.readFile(file, 'utf8'));
+  try {
+    await editProject(file, ['--background', 'ocean', '--preset', 'vertical', '--padding', '100', '--radius', '0', '--shadow', 'off']);
+    const project = await read();
+    assert.match(project.style.background, /#3ac7ff/);
+    assert.deepEqual([project.export.width, project.export.height], [1080, 1920]);
+    assert.deepEqual([project.style.padding, project.style.radius, project.style.shadow], [100, 0, false]);
+
+    // Limits come with numbers an agent can act on, and a refused edit saves nothing.
+    await assert.rejects(editProject(file, ['--padding', '400']), /Padding must be 0–360 px for a 1080×1920 video/);
+    await assert.rejects(editProject(file, ['--radius', '250']), /Corner radius must be 0–200 px/);
+    await assert.rejects(editProject(file, ['--shadow', 'maybe']), /on or off/);
+    assert.equal((await read()).style.padding, 100);
+  } finally { await fs.rm(folder, {recursive: true, force: true}); }
+});

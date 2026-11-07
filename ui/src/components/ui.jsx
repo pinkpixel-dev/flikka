@@ -25,6 +25,31 @@ export function ConfirmButton({onConfirm, children, armed: armedText = 'Sure? Cl
   }}>{armed ? armedText : children}</Button>;
 }
 
+// A slider that follows the drag and saves once: when it's let go, when focus leaves it, or half a second after the
+// last arrow key (so a run of key presses is one edit and one undo step). Its value shows beside it.
+export function Range({label, tip, value, min, max, step = 1, unit = '', onCommit, disabled}) {
+  const [moving, setMoving] = useState(null);
+  const pending = useRef(null);
+  const timer = useRef();
+  useEffect(() => () => clearTimeout(timer.current), []);
+  const commit = () => {
+    clearTimeout(timer.current);
+    if (pending.current == null) return;
+    const next = pending.current;
+    pending.current = null;
+    if (next === value) { setMoving(null); return; }
+    Promise.resolve(onCommit(next)).finally(() => { if (pending.current == null) setMoving(null); });
+  };
+  const shown = moving ?? value;
+  return <label className="line slider-line" data-tip={tip}><span>{label}</span>
+    <span className="range-input">
+      <input type="range" min={min} max={max} step={step} value={shown} disabled={disabled} aria-valuetext={shown + unit}
+        onChange={event => { pending.current = Number(event.target.value); setMoving(pending.current); }}
+        onPointerUp={commit} onBlur={commit} onKeyUp={() => { clearTimeout(timer.current); if (pending.current != null) timer.current = setTimeout(commit, 500); }}/>
+      <output>{shown}{unit}</output>
+    </span></label>;
+}
+
 export function Section({title, children, aside, hidden}) {
   if (hidden) return null;
   return <section className="section">

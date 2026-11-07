@@ -150,6 +150,8 @@ To explain what's happening on screen: `--step start,end,x,y,"text"` (numbered a
 
 For a finished feel: `--intro "text"` and `--outro "seconds,text"` add title cards, `--transition fade|wipe|slide|zoom` adds a transition at every cut (films take `"transition"` in film.json), and `--music on` (or `--music <file>`) adds a bed that ducks under the voice. An intro shifts every video time by its length, so re-read `flikka project timeline` after adding one.
 
+To change how the video frames the recording: `--preset square|landscape|portrait|vertical` sets the shape, `--background aurora|sunset|ocean|meadow|graphite|midnight` (or any CSS background) sets the wallpaper, `--padding 64` and `--radius 20` set the margin and corner rounding in video pixels, and `--shadow on|off` toggles the shadow under the recording.
+
 ## Sharing Finished Videos
 
 ```bash

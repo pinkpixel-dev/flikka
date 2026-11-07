@@ -6,6 +6,7 @@ import {useFlash} from '../lib/hooks.js';
 import {useToast} from '../lib/toast.js';
 import {Button, Section, Switch} from './ui.jsx';
 import {Steps} from './Steps.jsx';
+import {Frame} from './Frame.jsx';
 
 // Mic, system audio, camera, click sounds, zooms and cursor: each in or out of the video.
 const switchNames = {mic: ['Microphone', 'Your voice'], system: ['System audio', 'Sound from apps'], webcam: ['Camera bubble', 'You in a bubble in the corner'],
@@ -47,6 +48,8 @@ export function Inspector({project, edit, render, rendering, changed}) {
             {zoomModes.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
         : <Switch key={kind} label={switchNames[kind][0]} tip={switchNames[kind][1]} checked={on} onChange={value => edit('project-switch', {kind, on: value})}/>)}
     </Section>}
+
+    {project.look && <Frame look={project.look} edit={edit}/>}
 
     {project.speed && <Section title="Speed">
       <select aria-label="Playback speed" value={String(project.speed.whole)} onChange={event => edit('project-speed', {speed: Number(event.target.value)})}>
