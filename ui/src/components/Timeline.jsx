@@ -10,6 +10,7 @@ import {Button} from './ui.jsx';
 //   Camera: drag on empty space for a new zoom, drag a zoom to move it or its edges to resize it, click one to
 //   change its scale, aim it on the recording, or remove it (Delete).
 //   Events: click a click or a typing burst (or press Z near one) to zoom in right there.
+// Keys: [ and ] jump to the previous or next zoom and choose it, Enter chooses the zoom under the playhead.
 // Edges snap to the playhead, clip edges and other zooms, then to whole frames.
 const steps = [0.5, 1, 2, 5, 10, 15, 30, 60, 120, 300];
 const scales = [1.25, 1.5, 2, 2.5, 3];
@@ -139,6 +140,19 @@ export function Timeline({timeline, time, onSeek, onEdit, onAim, fps, stale}) {
   };
   // Aiming happens over the player: this zoom's popover closes so it doesn't show the old scale meanwhile.
   const aimAt = zoom => { setChosen(null); onAim(zoom); };
+  // Choosing a zoom from the keyboard: the playhead goes to its start and its popover opens.
+  const chooseZoom = index => {
+    const zoom = timeline.zooms[index];
+    if (!zoom || saving) return;
+    setSelection(null); setPicked(null); setChosen(index); onSeek(zoom.from);
+  };
+  // The previous or next zoom from the playhead (or from the chosen one, so repeated presses walk them in order).
+  const jumpZoom = by => {
+    const order = timeline.zooms.map((zoom, index) => ({index, from: zoom.from})).sort((a, b) => a.from - b.from);
+    const from = chosen !== null ? timeline.zooms[chosen].from : time, near = 0.5 / fps;
+    const next = by > 0 ? order.find(item => item.from > from + near) : order.findLast(item => item.from < from - near);
+    if (next) chooseZoom(next.index);
+  };
   const cut = () => selection && save({cut: [selection.from, selection.to]}, {cut: selection});
   const remove = index => { const zoom = timeline.zooms[index]; save({unzoom: (zoom.from + zoom.to) / 2}, {removed: index}); };
   const rescale = (index, scale) => { const zoom = timeline.zooms[index]; save({unzoom: (zoom.from + zoom.to) / 2, zoom: {...zoom, scale}}, {index, from: zoom.from, to: zoom.to}); };
@@ -149,6 +163,9 @@ export function Timeline({timeline, time, onSeek, onEdit, onAim, fps, stale}) {
     else if (event.key === 'Home') { handled(); onSeek(0); }
     else if (event.key === 'End') { handled(); onSeek(duration); }
     else if (event.key === 'Enter' && selection) { handled(); cut(); }
+    // Only from the timeline itself: Enter on a popover button is that button's.
+    else if (event.key === 'Enter' && event.target === event.currentTarget) { handled(); chooseZoom(timeline.zooms.findIndex(zoom => time >= zoom.from && time <= zoom.to)); }
+    else if ((event.key === '[' || event.key === ']') && !event.ctrlKey && !event.metaKey && !event.altKey) { handled(); jumpZoom(event.key === ']' ? 1 : -1); }
     else if ((event.key === 'Delete' || event.key === 'Backspace') && chosen !== null) { handled(); remove(chosen); }
     else if (event.key.toLowerCase() === 'z' && !event.ctrlKey && !event.metaKey && !event.altKey) { handled(); pickNearest(); }
     else if (event.key.toLowerCase() === 'a' && chosen !== null && onAim && !event.ctrlKey && !event.metaKey && !event.altKey) { handled(); aimAt(timeline.zooms[chosen]); }
@@ -180,7 +197,7 @@ export function Timeline({timeline, time, onSeek, onEdit, onAim, fps, stale}) {
       {timeline.outro && <Block className="card-block" {...span(timeline.outro.from, timeline.outro.to, duration)} tip={`Outro · ${timeline.outro.text || ''}`}>Outro</Block>}
       {marked && <span className={`range ${saving?.cut ? 'saving' : ''}`} style={span(marked.from, marked.to, duration)} aria-hidden/>}
     </>},
-    {name: 'Camera', lane: 'camera', tip: 'Drag to add a zoom. Drag a zoom to move it, or its edges to resize it.', show: true, items: <>
+    {name: 'Camera', lane: 'camera', tip: 'Drag to add a zoom. Drag a zoom to move it, or its edges to resize it. [ and ] jump between zooms, Enter chooses the one under the playhead.', show: true, items: <>
       {zooms.map((zoom, index) => zoom && <span key={index} className={`block zoom ${zoom.live ? 'live' : ''} ${chosen === index ? 'chosen' : ''}`} style={span(zoom.from, zoom.to, duration)}
         data-zoom={index < timeline.zooms.length ? index : undefined} data-tip={zoom.live || chosen === index ? undefined : `Zoom ${zoom.scale}× · ${timecode(zoom.from)}–${timecode(zoom.to)}`}>
         {index < timeline.zooms.length && <><span className="edge start" data-edge="start"/><span className="edge end" data-edge="end"/></>}

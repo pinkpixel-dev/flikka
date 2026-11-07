@@ -28,7 +28,8 @@ export function AimStage({src, timeline, aim, onChange, onSave, onCancel}) {
   const [dragging, setDragging] = useState(false);
   const frame = aimFrame(aim, timeline.crop);
   const moment = sourceAt(timeline, (aim.zoom.from + aim.zoom.to) / 2);
-  useEffect(() => { box.current?.focus(); }, []);
+  // Focus once it shows (it's hidden until the video knows its size, and hidden things can't take focus).
+  useEffect(() => { if (ratio) box.current?.focus(); }, [ratio]);
 
   const place = event => {
     const area = box.current.getBoundingClientRect();

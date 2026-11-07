@@ -13,11 +13,15 @@
 - Pick which moments get a zoom: click a click or a typing burst on the timeline (or press Z near one) and choose Zoom here.
 - Aim a zoom on the recording itself: choose a zoom, press the crosshair (or A), then click or drag the frame to where it should look and pick how close it gets.
 - The zoom switch is now an Auto zoom picker: clicks and typing, just clicks, just typing, or off.
+- Zooms work from the keyboard too: with the timeline focused, `[` and `]` jump to the previous or next zoom and choose it, and Enter chooses the one under the playhead. Then A aims it, Delete removes it and Esc lets go.
 
 ### ✂️ Editing
 - `flikka project edit --unzoom <time>` removes the zoom showing at that moment (works with `--output-time`).
 - `--zooms clicks` and `--zooms typing` (and `--auto-zoom clicks|typing`) zoom on only one kind of moment.
 - `flikka project timeline` lists typing bursts, with where they were typed, so agents can zoom on them too.
+
+### 🐛 Fixes
+- The live preview no longer fails with `EEXIST` when an edit and a reload (or two quick edits) rebuild it at the same moment. Preview builds for a project now wait their turn.
 
 ### 🧹 Maintenance
 - Added `@fontsource-variable/geist`, `@fontsource-variable/geist-mono` and `lucide-react` for the panel's fonts and icons, bundled locally.
