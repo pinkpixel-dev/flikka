@@ -22,6 +22,7 @@
 
 ### 🐛 Fixes
 - The live preview no longer fails with `EEXIST` when an edit and a reload (or two quick edits) rebuild it at the same moment. Preview builds for a project now wait their turn.
+- Recording a window that never changes no longer leaves a broken project stuck in "finalizing" with its session still running. On Wayland a completely still window sends no frames at all, so Stop now says that plainly, marks the recording as failed and closes the session.
 
 ### 🧹 Maintenance
 - Added `@fontsource-variable/geist`, `@fontsource-variable/geist-mono` and `lucide-react` for the panel's fonts and icons, bundled locally.
