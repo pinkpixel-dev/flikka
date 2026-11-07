@@ -9,7 +9,8 @@ import {Steps} from './Steps.jsx';
 
 // Mic, system audio, camera, click sounds, zooms and cursor: each in or out of the video.
 const switchNames = {mic: ['Microphone', 'Your voice'], system: ['System audio', 'Sound from apps'], webcam: ['Camera bubble', 'You in a bubble in the corner'],
-  clicks: ['Click sounds', 'A soft tick on each click'], zooms: ['Zoom on clicks', 'Moves in where you click'], cursor: ['Cursor overlay', 'Smooth pointer and click ring']};
+  clicks: ['Click sounds', 'A soft tick on each click'], cursor: ['Cursor overlay', 'Smooth pointer and click ring']};
+const zoomModes = [['all', 'Clicks and typing'], ['clicks', 'Clicks'], ['typing', 'Typing'], ['off', 'Off']];
 const speeds = [0.5, 0.75, 1, 1.25, 1.5, 2, 3];
 const corners = [['bottom-right', 'Bottom right'], ['bottom-left', 'Bottom left'], ['top-right', 'Top right'], ['top-left', 'Top left']];
 
@@ -40,8 +41,11 @@ export function Inspector({project, edit, render, rendering, changed}) {
     </Section>
 
     {project.switches && Object.keys(project.switches).length > 0 && <Section title="In the video">
-      {Object.entries(project.switches).map(([kind, on]) => <Switch key={kind} label={switchNames[kind][0]} tip={switchNames[kind][1]} checked={on}
-        onChange={value => edit('project-switch', {kind, on: value})}/>)}
+      {Object.entries(project.switches).map(([kind, on]) => kind === 'zooms'
+        ? <label key={kind} className="line" data-tip="Picking again replaces the zooms with automatic ones (Ctrl+Z undoes)"><span>Auto zoom</span>
+          <select value={on} onChange={event => edit('project-switch', {kind, on: event.target.value !== 'off', mode: event.target.value})}>
+            {zoomModes.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+        : <Switch key={kind} label={switchNames[kind][0]} tip={switchNames[kind][1]} checked={on} onChange={value => edit('project-switch', {kind, on: value})}/>)}
     </Section>}
 
     {project.speed && <Section title="Speed">

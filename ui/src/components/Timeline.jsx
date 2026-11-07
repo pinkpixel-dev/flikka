@@ -1,5 +1,5 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {Scissors, Trash2, X} from 'lucide-react';
+import {Crosshair, Scissors, Trash2, X, ZoomIn} from 'lucide-react';
 import {clock, timecode} from '../lib/format.js';
 import {Button} from './ui.jsx';
 
@@ -8,19 +8,21 @@ import {Button} from './ui.jsx';
 //   Ruler and the other lanes: click or drag to scrub.
 //   Clips: drag across a part to select it, then Cut (or Enter).
 //   Camera: drag on empty space for a new zoom, drag a zoom to move it or its edges to resize it, click one to
-//   change its scale or remove it (Delete).
+//   change its scale, aim it on the recording, or remove it (Delete).
+//   Events: click a click or a typing burst (or press Z near one) to zoom in right there.
 // Edges snap to the playhead, clip edges and other zooms, then to whole frames.
 const steps = [0.5, 1, 2, 5, 10, 15, 30, 60, 120, 300];
 const scales = [1.25, 1.5, 2, 2.5, 3];
 const at = (seconds, duration) => `${(seconds / duration) * 100}%`;
 const span = (from, to, duration) => ({left: at(from, duration), width: `max(2px, ${((to - from) / duration) * 100}%)`});
 
-export function Timeline({timeline, time, onSeek, onEdit, fps, stale}) {
+export function Timeline({timeline, time, onSeek, onEdit, onAim, fps, stale}) {
   const strip = useRef();
   const [width, setWidth] = useState(800);
   const [drag, setDrag] = useState(null);
   const [selection, setSelection] = useState(null);
   const [chosen, setChosen] = useState(null);
+  const [picked, setPicked] = useState(null);
   const [saving, setSaving] = useState(null);
   useEffect(() => {
     const observer = new ResizeObserver(([entry]) => setWidth(entry.contentRect.width));
@@ -28,7 +30,7 @@ export function Timeline({timeline, time, onSeek, onEdit, fps, stale}) {
     return () => observer.disconnect();
   }, []);
   // A new timeline (after an edit, or an agent's): what was drawn while saving is now real.
-  useEffect(() => { setSaving(null); setChosen(null); setSelection(null); }, [timeline]);
+  useEffect(() => { setSaving(null); setChosen(null); setSelection(null); setPicked(null); }, [timeline]);
 
   const duration = Math.max(0.01, timeline.duration);
   const tick = steps.find(step => (step / duration) * width >= 72) || steps.at(-1);
@@ -57,18 +59,19 @@ export function Timeline({timeline, time, onSeek, onEdit, fps, stale}) {
     if (event.button !== 0 || saving) return;
     const target = event.target;
     const zoom = target.closest('[data-zoom]')?.dataset.zoom;
+    const pick = target.closest('[data-pick]')?.dataset.pick;
     const lane = target.closest('[data-lane]')?.dataset.lane;
     const start = timeAt(event.clientX);
-    const mode = target.dataset.edge || (zoom !== undefined ? 'move' : lane === 'clips' ? 'select' : lane === 'camera' ? 'create' : 'scrub');
+    const mode = target.dataset.edge || (zoom !== undefined ? 'move' : pick ? 'pick' : lane === 'clips' ? 'select' : lane === 'camera' ? 'create' : 'scrub');
     event.currentTarget.setPointerCapture(event.pointerId);
-    if (mode === 'scrub') { setChosen(null); onSeek(start); }
-    setDrag({mode, zoom: zoom === undefined ? null : Number(zoom), x: event.clientX, start, now: start, moved: false});
+    if (mode === 'scrub') { setChosen(null); setPicked(null); onSeek(start); }
+    setDrag({mode, zoom: zoom === undefined ? null : Number(zoom), pick, x: event.clientX, start, now: start, moved: false});
   };
   const move = event => {
     if (!drag) return;
     const moved = drag.moved || Math.abs(event.clientX - drag.x) > 4;
     const now = timeAt(event.clientX, drag.zoom);
-    if (drag.mode === 'scrub') onSeek(now);
+    if (drag.mode === 'scrub' || (drag.mode === 'pick' && moved)) onSeek(now);
     setDrag({...drag, now, moved});
   };
   const up = () => {
@@ -77,6 +80,11 @@ export function Timeline({timeline, time, onSeek, onEdit, fps, stale}) {
     const {mode, start, now, moved} = drag;
     const zoom = drag.zoom === null ? null : timeline.zooms[drag.zoom];
     if (mode === 'scrub') return;
+    // A click or a typing burst: pressed without dragging, it's picked (the playhead goes to it).
+    if (mode === 'pick') {
+      if (!moved) { const [kind, index] = drag.pick.split(':'); pickEvent(kind, Number(index)); }
+      return;
+    }
     if (!moved) {
       if (zoom) setChosen(drag.zoom); else { setChosen(null); setSelection(null); onSeek(start); }
       return;
@@ -107,6 +115,30 @@ export function Timeline({timeline, time, onSeek, onEdit, fps, stale}) {
     return [zoom.from, clamp(Math.max(now, zoom.from + 0.2))];
   };
 
+  // Events that can get a zoom of their own: clicks, and typing bursts (recordings that logged the field).
+  const events = (kind, index) => (kind === 'click' ? timeline.clicks : timeline.typing || [])[index];
+  const pickEvent = (kind, index) => {
+    const item = events(kind, index);
+    if (!item) return;
+    setChosen(null); setSelection(null); setPicked({kind, index}); onSeek(item.at ?? item.from);
+  };
+  // The same span an automatic zoom gets: in a little before, out 1.6 s after a click or 1 s after typing stops.
+  const zoomHere = () => {
+    const item = events(picked.kind, picked.index);
+    const [from, to] = item.at !== undefined ? [item.at - 0.35, item.at + 1.6] : [item.from - 0.35, item.to + 1];
+    const made = {from: frame(clamp(from)), to: frame(clamp(to)), x: item.x, y: item.y, scale: 1.5};
+    setPicked(null);
+    if (made.to - made.from >= 0.2) save({zoom: made}, {...made, index: null});
+  };
+  // Z: pick the click or typing burst nearest the playhead (within a second).
+  const pickNearest = () => {
+    const near = [...timeline.clicks.map((item, index) => ({kind: 'click', index, at: item.at})),
+      ...(timeline.typing || []).map((item, index) => ({kind: 'typing', index, at: Math.max(item.from, Math.min(item.to, time))}))]
+      .map(item => ({...item, off: Math.abs(item.at - time)})).filter(item => item.off <= 1).sort((a, b) => a.off - b.off)[0];
+    if (near) pickEvent(near.kind, near.index);
+  };
+  // Aiming happens over the player: this zoom's popover closes so it doesn't show the old scale meanwhile.
+  const aimAt = zoom => { setChosen(null); onAim(zoom); };
   const cut = () => selection && save({cut: [selection.from, selection.to]}, {cut: selection});
   const remove = index => { const zoom = timeline.zooms[index]; save({unzoom: (zoom.from + zoom.to) / 2}, {removed: index}); };
   const rescale = (index, scale) => { const zoom = timeline.zooms[index]; save({unzoom: (zoom.from + zoom.to) / 2, zoom: {...zoom, scale}}, {index, from: zoom.from, to: zoom.to}); };
@@ -118,7 +150,9 @@ export function Timeline({timeline, time, onSeek, onEdit, fps, stale}) {
     else if (event.key === 'End') { handled(); onSeek(duration); }
     else if (event.key === 'Enter' && selection) { handled(); cut(); }
     else if ((event.key === 'Delete' || event.key === 'Backspace') && chosen !== null) { handled(); remove(chosen); }
-    else if (event.key === 'Escape' && (selection || chosen !== null)) { handled(); setSelection(null); setChosen(null); }
+    else if (event.key.toLowerCase() === 'z' && !event.ctrlKey && !event.metaKey && !event.altKey) { handled(); pickNearest(); }
+    else if (event.key.toLowerCase() === 'a' && chosen !== null && onAim && !event.ctrlKey && !event.metaKey && !event.altKey) { handled(); aimAt(timeline.zooms[chosen]); }
+    else if (event.key === 'Escape' && (selection || chosen !== null || picked)) { handled(); setSelection(null); setChosen(null); setPicked(null); }
   };
 
   // Zooms as they show right now: mid-drag, saving, or saved.
@@ -134,7 +168,8 @@ export function Timeline({timeline, time, onSeek, onEdit, fps, stale}) {
 
   const overlays = [...timeline.annotations.map(item => ({...item, kind: 'note', label: item.text || {arrow: 'Arrow', box: 'Box', callout: 'Callout', step: 'Step'}[item.type] || 'Note'})),
     ...timeline.redactions.map(item => ({...item, kind: 'redact', label: 'Blurred'}))];
-  const events = timeline.clicks.length + timeline.markers.length + (timeline.keystrokes?.length || 0);
+  const eventCount = timeline.clicks.length + timeline.markers.length + (timeline.keystrokes?.length || 0) + (timeline.typing?.length || 0);
+  const isPicked = (kind, index) => picked?.kind === kind && picked.index === index ? 'chosen' : '';
   const rows = [
     {name: 'Clips', lane: 'clips', tip: 'Drag across the clips to select a part to cut', show: true, items: <>
       {timeline.intro && <Block className="card-block" {...span(timeline.intro.from, timeline.intro.to, duration)} tip={`Intro · ${timeline.intro.text || ''}`}>Intro</Block>}
@@ -153,8 +188,11 @@ export function Timeline({timeline, time, onSeek, onEdit, fps, stale}) {
       {timeline.spotlights.map((item, index) => <Block key={'s' + index} className="spotlight" {...span(item.from, item.to, duration)} tip={`Spotlight · ${timecode(item.from)}–${timecode(item.to)}`}/>)}
     </>},
     {name: 'Overlays', show: overlays.length > 0, items: overlays.map((item, index) => <Block key={index} className={item.kind} {...span(item.from, item.to, duration)} tip={item.label}>{item.label}</Block>)},
-    {name: 'Events', show: events > 0, items: <>
-      {timeline.clicks.map((click, index) => <span key={index} className="click" style={{left: at(click.at, duration)}} data-tip={`Click at ${timecode(click.at)}`}/>)}
+    {name: 'Events', tip: 'Click a click or a typing burst to zoom in there (Z)', show: eventCount > 0, items: <>
+      {(timeline.typing || []).map((item, index) => <span key={'t' + index} className={`block typing ${isPicked('typing', index)}`} style={span(item.from, item.to, duration)}
+        data-pick={`typing:${index}`} data-tip={picked ? undefined : `Typing at ${timecode(item.from)} · click to zoom here`}/>)}
+      {timeline.clicks.map((click, index) => <span key={index} className={`click ${isPicked('click', index)}`} style={{left: at(click.at, duration)}}
+        data-pick={`click:${index}`} data-tip={picked ? undefined : `Click at ${timecode(click.at)} · click to zoom here`}/>)}
       {(timeline.keystrokes || []).map((key, index) => <span key={'k' + index} className="keystroke" style={{left: at(key.at, duration)}} data-tip={key.keys}/>)}
       {timeline.markers.map((marker, index) => <span key={'m' + index} className="marker" style={{left: at(marker.at, duration)}} data-tip={marker.label || 'Marker'}/>)}
     </>},
@@ -162,7 +200,9 @@ export function Timeline({timeline, time, onSeek, onEdit, fps, stale}) {
   ].filter(row => row.show);
 
   const chosenZoom = chosen !== null && !saving ? timeline.zooms[chosen] : null;
-  const tools = selection && !saving ? {where: (selection.from + selection.to) / 2, row: 'clips'} : chosenZoom ? {where: (chosenZoom.from + chosenZoom.to) / 2, row: 'camera'} : null;
+  const pickedEvent = picked && !saving ? events(picked.kind, picked.index) : null;
+  const tools = selection && !saving ? {where: (selection.from + selection.to) / 2, row: 'clips'} : chosenZoom ? {where: (chosenZoom.from + chosenZoom.to) / 2, row: 'camera'}
+    : pickedEvent ? {where: pickedEvent.at ?? (pickedEvent.from + pickedEvent.to) / 2, row: 'events', top: 20 + 26 * rows.findIndex(row => row.name === 'Events')} : null;
   return <div className={`timeline ${stale ? 'stale' : ''} ${drag?.moved ? 'dragging' : ''}`}>
     <div className="timeline-labels"><span/>{rows.map(row => <span key={row.name} data-tip={row.tip}>{row.name}</span>)}</div>
     <div className="timeline-track" ref={strip} role="slider" tabIndex={0} aria-label="Timeline" aria-valuemin={0} aria-valuemax={+duration.toFixed(2)} aria-valuenow={+time.toFixed(2)}
@@ -170,13 +210,17 @@ export function Timeline({timeline, time, onSeek, onEdit, fps, stale}) {
       <div className="ruler">{ticks.map(second => <span key={second} style={{left: at(second, duration)}}>{clock(second)}</span>)}</div>
       {rows.map(row => <div className="lane" key={row.name} data-lane={row.lane}>{row.items}</div>)}
       <div className="playhead" style={{transform: `translateX(${Math.min(1, time / duration) * width}px)`}} aria-hidden/>
-      {tools && <div className={`timeline-tools on-${tools.row}`} style={{left: `clamp(110px, ${at(tools.where, duration)}, calc(100% - 110px))`}} onPointerDown={event => event.stopPropagation()}>
+      {tools && <div className={`timeline-tools on-${tools.row}`} style={{left: `clamp(110px, ${at(tools.where, duration)}, calc(100% - 110px))`, top: tools.top}} onPointerDown={event => event.stopPropagation()}>
         {selection ? <>
           <Button size="small" variant="record" icon={Scissors} tip="Cut this part out of the video (Enter)" onClick={cut}>Cut {(selection.to - selection.from).toFixed(2)} s</Button>
           <Button size="small" variant="ghost" icon={X} tip="Clear the selection (Esc)" onClick={() => setSelection(null)}/>
+        </> : pickedEvent ? <>
+          <Button size="small" icon={ZoomIn} tip={`Zoom in on this ${picked.kind === 'click' ? 'click' : 'typing'} (Enter)`} onClick={zoomHere} autoFocus>Zoom here</Button>
+          <Button size="small" variant="ghost" icon={X} tip="Close (Esc)" onClick={() => setPicked(null)}/>
         </> : <>
           <select aria-label="Zoom scale" value={chosenZoom.scale} onChange={event => rescale(chosen, Number(event.target.value))}>
             {[...new Set([...scales, chosenZoom.scale])].sort((a, b) => a - b).map(scale => <option key={scale} value={scale}>{scale}×</option>)}</select>
+          {onAim && <Button size="small" variant="ghost" icon={Crosshair} tip="Aim: pick the spot on the recording (A)" onClick={() => aimAt(chosenZoom)}/>}
           <Button size="small" variant="ghost" icon={Trash2} tip="Remove this zoom (Delete)" onClick={() => remove(chosen)}/>
           <Button size="small" variant="ghost" icon={X} tip="Done (Esc)" onClick={() => setChosen(null)}/>
         </>}

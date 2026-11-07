@@ -2,6 +2,7 @@ import React, {useEffect, useRef, useState} from 'react';
 import {Undo2} from 'lucide-react';
 import {api, media} from '../lib/api.js';
 import {useToast} from '../lib/toast.js';
+import {AimBar, AimStage, aimFrame} from '../components/Aim.jsx';
 import {Inspector} from '../components/Inspector.jsx';
 import {Player} from '../components/Player.jsx';
 import {Timeline} from '../components/Timeline.jsx';
@@ -19,6 +20,9 @@ export function Studio({project, refresh, onChange}) {
   const [changed, setChanged] = useState(false);
   const [busy, setBusy] = useState(false);
   const [version, setVersion] = useState(0);
+  // A zoom being aimed on the recording: the zoom, and where and how close it looks for now.
+  const [aim, setAim] = useState(null);
+  const [aiming, setAiming] = useState(false);
   const editable = Boolean(project.recording);
   const showing = !project.final || !editable ? (project.final ? 'final' : editable ? 'live' : 'none') : shown;
 
@@ -59,6 +63,14 @@ export function Studio({project, refresh, onChange}) {
     catch (failure) { toast(failure.message); }
     finally { refresh(); }
   };
+  const startAim = zoom => { player.current?.step(0); setAim({zoom, x: zoom.x, y: zoom.y, scale: zoom.scale}); };
+  const saveAim = async () => {
+    if (!aim || aiming) return;
+    const {zoom, scale} = aim, {x, y} = aimFrame(aim, timeline?.crop);
+    setAiming(true);
+    try { await timelineEdit({unzoom: (zoom.from + zoom.to) / 2, zoom: {from: zoom.from, to: zoom.to, x: +x.toFixed(4), y: +y.toFixed(4), scale}}); setAim(null); } catch {}
+    finally { setAiming(false); }
+  };
   const undoLatest = useRef(undo);
   undoLatest.current = undo;
   const render = async () => {
@@ -97,9 +109,11 @@ export function Studio({project, refresh, onChange}) {
 
   return <div className="studio">
     <div className="stage-column">
-      <Player ref={player} {...source} fps={fps} onTime={setTime} note={showing === 'none' ? 'Render the film to watch it here.' : undefined}>
-        {editable && <Button icon={Undo2} variant="ghost" size="small" tip="Undo the last edit (Ctrl+Z)" disabled={rendering} onClick={undo}/>}
-        {editable && <div className="segmented" role="tablist" aria-label="What plays">
+      <Player ref={player} {...source} fps={fps} onTime={setTime} note={showing === 'none' ? 'Render the film to watch it here.' : undefined}
+        overlay={aim && timeline && <AimStage src={media(project.id, 'raw')} timeline={timeline} aim={aim} onChange={change => setAim(old => ({...old, ...change}))} onSave={saveAim} onCancel={() => setAim(null)}/>}>
+        {aim && <AimBar aim={aim} saving={aiming} onChange={change => setAim(old => ({...old, ...change}))} onSave={saveAim} onCancel={() => setAim(null)}/>}
+        {editable && !aim && <Button icon={Undo2} variant="ghost" size="small" tip="Undo the last edit (Ctrl+Z)" disabled={rendering} onClick={undo}/>}
+        {editable && !aim && <div className="segmented" role="tablist" aria-label="What plays">
           <button type="button" role="tab" aria-selected={showing === 'final'} disabled={!final} data-tip="The exported video file" onClick={() => setShown('final')}>Exported</button>
           <button type="button" role="tab" aria-selected={showing === 'live'} data-tip="The edit as it is now, drawn live (30 fps)" onClick={() => setShown('live')}>Live</button>
         </div>}
@@ -107,7 +121,7 @@ export function Studio({project, refresh, onChange}) {
       {rendering && <div className="banner">Rendering the video… the live preview plays meanwhile.</div>}
       {!rendering && editable && !final && <div className="banner">Not exported yet. This is the live preview.</div>}
       {stale && <div className="banner">The timeline shows the edit as it is now. Render to update the exported video.</div>}
-      {editable && timeline && <Timeline timeline={timeline} time={time} fps={fps} stale={stale} onEdit={timelineEdit} onSeek={seconds => player.current?.seek(seconds)}/>}
+      {editable && timeline && <Timeline timeline={timeline} time={time} fps={fps} stale={stale} onEdit={timelineEdit} onAim={startAim} onSeek={seconds => player.current?.seek(seconds)}/>}
     </div>
     <Inspector project={project} edit={edit} render={render} rendering={rendering} changed={changed}/>
   </div>;

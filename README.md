@@ -130,6 +130,8 @@ flikka app panel
 
 Or launch Flikka from your app menu. The panel shows every project, a live preview of the edit, and switches for the microphone, system audio, camera bubble, click sounds, zooms and the cursor overlay.
 
+If you don't want a zoom on every click, set Auto zoom to just clicks, just typing, or off, then add zooms only where you want them. Click a click or a typing burst on the timeline's Events row (or press Z near one) and pick Zoom here. To change where a zoom looks, click it on the Camera row and press the crosshair (or A). The recording opens over the player with a frame showing what the zoom will show: click or drag to move it, pick how close it gets (up to 3x), and save. Arrow keys nudge the frame and Enter saves, if you'd rather use the keyboard.
+
 ## Editing a recording
 
 Edits are flags on `flikka project edit`, and you can combine several in one call:
@@ -150,6 +152,7 @@ Some useful ones:
 | `--ramp 0.5` | Ease between speeds over half a second instead of jumping (`--ramp off` to jump) |
 | `--freeze at,seconds` | Hold one moment as a still, in silence, so the viewer can read it |
 | `--auto-zoom`, `--zooms on\|off` | Zoom in on clicks, and on the field you're typing in |
+| `--zooms clicks\|typing` | Only zoom on clicks, or only on typing |
 | `--zoom start,end,x,y[,scale]` | Zoom in on a spot yourself (x and y from 0 to 1) |
 | `--crop x,y,w,h` | Show only part of the recording (fractions, or pixels of the recording). `--crop off` undoes it |
 | `--spotlight start,end,x,y,w,h` | Dim everything except one area for a while |

@@ -117,6 +117,21 @@ test('auto-zoom follows typing to the focused field', async () => {
     assert.deepEqual([typing.x, typing.y], [0.3, 0.7]);
     // In from just before the first key until a second after the last.
     assert.ok(Math.abs(typing.start - 7.65) < 1e-9 && Math.abs(typing.end - 11.5) < 1e-9);
+
+    // The timeline lists the burst (first key to last), aimed at the field, for the panel's "Zoom here".
+    assert.deepEqual((await timelineProject(file)).typing, [{from: 8, to: 10.5, x: 0.3, y: 0.7}]);
+
+    // Only clicks, only typing, or none: the mode is kept so the panel can show it.
+    const zoomsWith = async mode => { await editProject(file, ['--zooms', mode]); return JSON.parse(await fs.readFile(file, 'utf8')); };
+    let saved = await zoomsWith('clicks');
+    assert.deepEqual([saved.autoZoom, saved.zooms.map(zoom => [zoom.x, zoom.y])], ['clicks', [[0.5, 0.5]]]);
+    saved = await zoomsWith('typing');
+    assert.deepEqual([saved.autoZoom, saved.zooms.map(zoom => [zoom.x, zoom.y])], ['typing', [[0.3, 0.7]]]);
+    saved = await zoomsWith('off');
+    assert.deepEqual([saved.autoZoom, saved.zooms.length], ['off', 0]);
+    saved = await zoomsWith('on');
+    assert.deepEqual([saved.autoZoom, saved.zooms.length], ['all', 2]);
+    await assert.rejects(editProject(file, ['--zooms', 'sometimes']), /on, off, clicks or typing/);
   } finally { await fs.rm(folder, {recursive: true, force: true}); }
 });
 

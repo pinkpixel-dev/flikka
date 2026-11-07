@@ -4,8 +4,9 @@ import {timecode} from '../lib/format.js';
 import {Button} from './ui.jsx';
 
 // The big player: a <hyperframes-player> for the exported video (video mode) or the live composition. It keeps
-// its moment when a new version of the source loads. `fps` is what a frame step moves by.
-export function Player({src, video, width, height, fps, onTime, ref, note, children}) {
+// its moment when a new version of the source loads. `fps` is what a frame step moves by. `overlay` covers the
+// stage (aiming a zoom), `children` go in the transport bar.
+export function Player({src, video, width, height, fps, onTime, ref, note, overlay, children}) {
   const element = useRef(null);
   const [state, setState] = useState({time: 0, duration: 0, playing: false, muted: false, ready: false});
   const resume = useRef(0);
@@ -57,6 +58,7 @@ export function Player({src, video, width, height, fps, onTime, ref, note, child
       {src ? <hyperframes-player ref={element} key={video ? 'video' : 'live'} src={src} width={width} height={height} type={video ? 'video/mp4' : undefined}
         style={{aspectRatio: `${width} / ${height}`, width: `min(100cqw, ${(width / height).toFixed(4)} * 100cqh)`}}/> : <div className="stage-note">{note || 'Preparing the preview…'}</div>}
       {src && !state.ready && <div className="stage-loading" aria-hidden/>}
+      {overlay}
     </div>
     <div className="transport" role="group" aria-label="Playback">
       <Button icon={state.playing ? Pause : Play} variant="ghost" tip={state.playing ? 'Pause (Space)' : 'Play (Space)'} disabled={!state.ready} onClick={() => controls.toggle()}/>
