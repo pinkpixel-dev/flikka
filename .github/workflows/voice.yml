@@ -1,4 +1,5 @@
-# Builds flikka-voice (voice/), the helper that speaks in your own voices, and packs it for Flikka to download.
+# Builds flikka-voice (voice/), the helper that speaks in your own voices, and flikka-cursor (cursor/), which logs the
+# pointer during Wayland screen recordings, and packs both into one archive for Flikka to download.
 # A pushed voice-v* tag (matching voice/Cargo.toml's version) makes a draft GitHub release with the archive and its
 # .sha256; drafts stay private until published. Run it by hand from the Actions tab to only build and keep the archive
 # as an artifact. See DOCS/RELEASING.md.
@@ -43,14 +44,24 @@ jobs:
       # so that folder is cached with target/, or a cached build would leave the link pointing at nothing.
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: "./voice -> target"
+          workspaces: |
+            ./voice -> target
+            ./cursor -> target
           cache-directories: ~/.cache/ort.pyke.io
+
+      # flikka-cursor links the system's libpipewire, and its bindings are generated with libclang.
+      - name: PipeWire headers
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libpipewire-0.3-dev libclang-dev
 
       - uses: taiki-e/install-action@v2
         with:
           tool: cargo-about@0.9.2
 
       - name: Build
+        run: cargo build --release --locked
+
+      - name: Build flikka-cursor
+        working-directory: cursor
         run: cargo build --release --locked
 
       - name: Third-party notices
