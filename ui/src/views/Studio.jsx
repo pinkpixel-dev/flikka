@@ -101,6 +101,8 @@ export function Studio({project, refresh, onChange}) {
       </Player>
       {rendering && <div className="banner">Rendering the video… the live preview plays meanwhile.</div>}
       {!rendering && editable && !final && <div className="banner">Not exported yet. This is the live preview.</div>}
+      {showing === 'live' && preview?.narration && preview.narration.spoken < preview.narration.total &&
+        <div className="banner">{preview.narration.spoken} of {preview.narration.total} narration lines spoken. The rest play once you render.</div>}
       {stale && <div className="banner">The timeline shows the edit as it is now. Render to update the exported video.</div>}
       {editable && timeline && <Timeline timeline={timeline} time={time} fps={fps} stale={stale} onEdit={timelineEdit} onAim={startAim} onSeek={seconds => player.current?.seek(seconds)}/>}
     </div>

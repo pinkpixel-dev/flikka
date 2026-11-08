@@ -235,6 +235,15 @@ function Music({music}) {
   return <Sequence durationInFrames={durationInFrames} layout="none"><Audio src={music.url} loop loopSeconds={music.seconds} volume={0.12 * (music.volume ?? 1)}/></Sequence>;
 }
 
+// Narration lines in the live preview, each where it lands in the finished video (seconds). A render mixes them
+// with ffmpeg instead (fades, loudness, the dip under the voice).
+function NarrationSound({lines}) {
+  const {fps} = useVideoConfig();
+  return lines.map((line, index) => <Sequence key={index} from={Math.round(line.from * fps)} durationInFrames={Math.max(1, Math.round(line.length * fps))} layout="none">
+    <Audio src={line.url} trimBefore={Math.round(line.trimStart * fps)} volume={line.volume}/>
+  </Sequence>);
+}
+
 // One recording edited: intro, the kept clips, outro. Also played live in the panel (render/preview.jsx).
 export function Demo(props) {
   const {project} = props;
@@ -261,6 +270,7 @@ export function Demo(props) {
     {sequences}
     {fades}
     {props.captions?.length > 0 && <NarrationCaptions captions={props.captions}/>}
+    {props.narration?.length > 0 && <NarrationSound lines={props.narration}/>}
     {props.music && <Music music={props.music}/>}
     {project.outro && <Sequence from={offset} durationInFrames={Math.round(project.outro.duration * fps)} premountFor={fps}><Title text={project.outro.text} frames={Math.round(project.outro.duration * fps)}/></Sequence>}
   </AbsoluteFill>;
