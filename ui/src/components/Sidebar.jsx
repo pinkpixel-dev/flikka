@@ -14,7 +14,7 @@ export function Sidebar({projects, current, view, counts, renders, onCancelRende
     <nav className="nav" aria-label="Library">
       <a href="#shots" data-tip="Framed screenshots you've taken" className={view === 'shots' ? 'on' : ''} aria-current={view === 'shots' ? 'page' : undefined}><Image size={16} strokeWidth={1.8} aria-hidden/>Screenshots<span>{counts.shots || ''}</span></a>
       <a href="#voices" data-tip="Your voices for narration" className={view === 'voices' ? 'on' : ''} aria-current={view === 'voices' ? 'page' : undefined}><Mic size={16} strokeWidth={1.8} aria-hidden/>Voices<span>{counts.voices || ''}</span></a>
-      <a href="#settings" data-tip="Where videos, screenshots and projects go" className={view === 'settings' ? 'on' : ''} aria-current={view === 'settings' ? 'page' : undefined}><Settings size={16} strokeWidth={1.8} aria-hidden/>Settings</a>
+      <a href="#settings" data-tip="Folders, voice, demo browser, screenshots and ports" className={view === 'settings' ? 'on' : ''} aria-current={view === 'settings' ? 'page' : undefined}><Settings size={16} strokeWidth={1.8} aria-hidden/>Settings</a>
     </nav>
     <Renders items={renders} onCancel={onCancelRender} onClear={onClearRenders}/>
     <div className="list-title">Projects</div>

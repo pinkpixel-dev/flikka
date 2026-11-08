@@ -23,8 +23,10 @@
 
 ### 📁 Folders and settings
 - Finished videos now go to `~/Videos/flikka` and screenshots to `~/Pictures/flikka`, instead of `~/Documents/flikka`. Both follow the desktop's own Videos and Pictures folders, so a renamed or translated one (like `~/Vidéos`) works too.
-- A Settings page in the panel, and `flikka app config` in the CLI, let you move the videos, screenshots, projects, voices and styles folders. Both save to `~/.config/flikka/config.json`, so the panel, the CLI and agents all agree, and the panel picks up a change right away. Each folder shows whether it's the default, changed in Settings, or set by an environment variable.
-- New environment variables for one-off overrides: `FLIKKA_VIDEOS` (`FLIKKA_DIR` still works), `FLIKKA_SCREENSHOTS`, `FLIKKA_PROJECTS`, `FLIKKA_VOICES` and `FLIKKA_STYLES`. They win over the settings file.
+- A Settings page in the panel, and `flikka app config` in the CLI, cover everything that used to need an environment variable: the videos, screenshots, projects, voices and styles folders, the default voice, the transcription model, which browser records demos (and its sign-ins, profile and port), your own screenshot command, and the panel's port. Both save to `~/.config/flikka/config.json`, so the panel, the CLI and agents all agree, and the panel picks up a change right away. Each setting shows whether it's the default, changed in Settings, or set by an environment variable, and a value that can't work is refused with the reason.
+- New environment variables for one-off overrides: `FLIKKA_VIDEOS` (`FLIKKA_DIR` still works) and `FLIKKA_SCREENSHOTS`. Every environment variable wins over the settings file.
+- Films without a `voice` use the default voice from Settings (or `FLIKKA_DEFAULT_VOICE`) instead of always `af_heart`.
+- Picking a browser by name for demos (like `brave`) now says so when it isn't installed, instead of falling back to another one.
 - The terminal's state files moved from the videos folder into `~/.flikka`.
 
 ### ✂️ Editing

@@ -29,7 +29,7 @@
       "properties": {
         "name": {
           "type": "string",
-          "description": "A voice from flikka voice list (your own, cloned), or a Kokoro voice, e.g. af_heart, af_bella, am_michael, bf_emma. Default af_heart."
+          "description": "A voice from flikka voice list (your own, cloned), or a Kokoro voice, e.g. af_heart, af_bella, am_michael, bf_emma. Default: the voice in Settings (flikka app config), af_heart unless changed."
         },
         "speed": {
           "type": "number",

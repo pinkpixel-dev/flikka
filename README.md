@@ -290,14 +290,32 @@ Videos and screenshots go in your desktop's own Videos and Pictures folders, so 
 You can move any of the first four rows. Open **Settings** in the panel, or use the CLI:
 
 ```bash
-flikka app config                                # where everything goes right now, and why
-flikka app config set videos ~/Videos/demos      # videos, screenshots, projects, voices or styles
+flikka app config                                # every setting, its value, and where that came from
+flikka app config set videos ~/Videos/demos      # change one
 flikka app config unset videos                   # back to the default
 ```
 
-Both save to `~/.config/flikka/config.json`, so the panel, the CLI and your agent all agree. Files that are already saved stay where they are, so move them yourself if you want them together.
+Files that are already saved stay where they are, so move them yourself if you want them together.
 
-For one run or a script, an environment variable wins over the setting: `FLIKKA_VIDEOS`, `FLIKKA_SCREENSHOTS`, `FLIKKA_PROJECTS`, `FLIKKA_VOICES` or `FLIKKA_STYLES`.
+## Settings
+
+Everything else you might want to change lives in the same place, the panel's **Settings** page or `flikka app config`:
+
+| Setting | What it does | Default |
+|---|---|---|
+| `videos`, `screenshots`, `projects`, `voices`, `styles` | Where each kind of file goes | See the table above |
+| `voice` | The narrator when a film or `flikka voice say` doesn't name one. One of your own voices, or a Kokoro voice like `am_michael` | `af_heart` |
+| `whisper-model` | The speech-to-text model that checks narration and reads your voice samples: `tiny`, `base`, `small`, `medium` or `large-v3`. Bigger is more accurate, and slower | `tiny` |
+| `browser` | What records browser demos: `auto` (your default browser), `google-chrome`, `chromium`, `brave`, `edge`, `vivaldi`, or the path to another Chromium-based browser | `auto` |
+| `browser-source` | A browser profile folder whose sign-ins the demo browser starts with | That browser's own profile |
+| `browser-profile` | Where the demo browser keeps its own copy of the profile | `~/.flikka/browser-<name>` |
+| `browser-port` | The port Flikka uses to talk to the demo browser | `9333` |
+| `screenshot-command` | Your own tool for picking an area, with `%o` where it saves the PNG, like `grim -g "$(slurp)" %o` | Picked for your desktop |
+| `panel-port` | Where the panel runs. Takes effect the next time it starts | `9341` |
+
+All of it saves to `~/.config/flikka/config.json`, so the panel, the CLI and your agent always agree. Each value gets checked when you save it, so a typo in a path or a port that can't work gets refused with the reason instead of failing later.
+
+For one run or a script, an environment variable wins over the setting: `FLIKKA_VIDEOS`, `FLIKKA_SCREENSHOTS`, `FLIKKA_PROJECTS`, `FLIKKA_VOICES`, `FLIKKA_STYLES`, `FLIKKA_DEFAULT_VOICE`, `FLIKKA_WHISPER_MODEL`, `FLIKKA_BROWSER_APP`, `FLIKKA_BROWSER_SOURCE`, `FLIKKA_BROWSER_PROFILE`, `FLIKKA_BROWSER_PORT`, `FLIKKA_SCREENSHOT_CMD` and `FLIKKA_UI_PORT`. The Settings page shows when one of these is in charge.
 
 ## Updating and uninstalling
 

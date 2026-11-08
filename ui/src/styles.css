@@ -473,7 +473,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
 .settings-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
 .settings-head .muted { font-size: 12.5px; }
 .setting-list { display: flex; flex-direction: column; }
-.setting { display: grid; grid-template-columns: minmax(140px, 200px) minmax(0, 1fr) 96px; gap: 6px 16px; align-items: center; padding: 12px 0; border-top: 1px solid var(--line-soft); }
+.setting { display: grid; grid-template-columns: minmax(160px, 270px) minmax(0, 1fr) 96px; gap: 6px 16px; align-items: center; padding: 12px 0; border-top: 1px solid var(--line-soft); }
 .setting:first-child { border-top: 0; }
 .setting-name { display: flex; flex-direction: column; min-width: 0; }
 .setting-name b { font-weight: 500; }
@@ -481,6 +481,9 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
 .setting-control { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .setting-control input { font-family: var(--mono); font-size: 13px; }
 .setting-control .button-row { flex: none; flex-wrap: nowrap; }
+.setting-pair { flex: 1; display: flex; gap: 8px; min-width: 0; }
+.setting-pair select { flex: 0 1 240px; }
+.setting-pair input { flex: 1; min-width: 0; }
 .setting-control input:disabled { color: var(--muted); }
 .setting-source { justify-self: end; color: var(--faint); font-size: 11.5px; text-align: right; }
 .setting-source.settings { color: var(--text); }
@@ -489,5 +492,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
 @media (max-width: 720px) {
   .setting { grid-template-columns: minmax(0, 1fr) auto; }
   .setting-control, .setting-note { grid-column: 1 / -1; }
+  .setting-pair { flex-direction: column; }
+  .setting-pair select, .setting-pair input { flex: none; }
   .setting-source { grid-row: 1; grid-column: 2; }
 }
