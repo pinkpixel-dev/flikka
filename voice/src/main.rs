@@ -2,7 +2,7 @@
 //!
 //!   flikka-voice voices --voices <dir>
 //!       prints the saved voices as one JSON array
-//!   flikka-voice speak --model <dir> --voices <dir> [--cpu]
+//!   flikka-voice speak --model <dir> --voices <dir> [--cpu] [--cuda <libonnxruntime_providers_cuda.so>]
 //!       reads one job per line on stdin: {"id": "n1", "text": "...", "voice": "<voice id>", "speed": 1.0, "out": "/path.wav"}
 //!       writes one JSON line per event on stdout: {"event": "loaded", ...}, then {"event": "done", ...} or
 //!       {"event": "error", ...} per job. Exits when stdin closes.
@@ -63,6 +63,8 @@ fn main() {
             let model = flag(&args, "--model").unwrap_or_else(|| fail("--model <dir> is required"));
             let mut engine = ChatterboxEngine::new(model, voices_dir);
             engine.set_gpu(!args.iter().any(|a| a == "--cpu"));
+            // Tried before WebGPU; when it fails, `loaded` says why in `fallback` and WebGPU takes over.
+            engine.set_cuda(flag(&args, "--cuda"));
             let started = Instant::now();
             if let Err(error) = engine.load() {
                 fail(&error.to_string());
@@ -102,6 +104,6 @@ fn main() {
                 }
             }
         }
-        _ => fail("usage: flikka-voice voices --voices <dir> | speak --model <dir> --voices <dir> [--cpu]"),
+        _ => fail("usage: flikka-voice voices --voices <dir> | speak --model <dir> --voices <dir> [--cpu] [--cuda <plugin>]"),
     }
 }

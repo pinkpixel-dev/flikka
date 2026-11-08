@@ -28,6 +28,7 @@ Every command prints structured JSON to stdout.
 | `flikka project render <id>` | Renders the final 60 fps MP4 video through HyperFrames |
 | `flikka project new <name>` | Scaffolds a multi-scene film with voice narration |
 | `flikka voice say <name> "text"` | Speaks a line in a Kokoro voice or one of the user's own |
+| `flikka voice cuda [install]` | Whether the user's own voices run on CUDA (NVIDIA), or installs the plugin (183 MB unless Narra has it). Install only when the user asks |
 | `flikka shot` | Captures framed screenshots with desktop wallpaper backgrounds |
 | `flikka doctor` | Checks the system tools flikka needs and prints the command that installs anything missing |
 

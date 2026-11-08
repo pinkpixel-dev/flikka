@@ -46,6 +46,9 @@
 - The Voices page is back in the panel: listen to each voice's sample, try a line in it, record or upload a new one, and delete one (it goes to the Trash).
 - Lines in your voice are made again when you re-record that voice.
 - Your voices speak English only and need glibc 2.38 or newer. Their helper, `flikka-voice`, downloads by itself the first time one speaks (about 15 MB, checked against the tested file), and the AUR package installs it into `/usr/lib/flikka`.
+- Your voices can run on CUDA on NVIDIA cards, about 1.5 times faster than WebGPU. `flikka voice cuda install` (or the button in Settings) links Narra's CUDA plugin or downloads it (183 MB), and `flikka voice cuda` says whether it's ready. It needs CUDA 13 and cuDNN 9 on the system.
+- A new "Your voices run on" setting (`voice-gpu`): auto (CUDA when it's installed, otherwise WebGPU), webgpu or cpu.
+- `flikka app doctor` shows whether CUDA is set up for your voices on machines with an NVIDIA driver.
 
 ### 🎙️ Narration for recordings
 - Recordings can have a Kokoro voice talking over them now, with captions. Add a line with `flikka project edit <id> --say "0:02,Open the settings."`, or `--say "next,…"` to start right after the line before.

@@ -307,6 +307,18 @@ A few things to know:
 - It uses `flikka-voice`, a small helper program (about 15 MB). The AUR package installs it, and npm installs download it the first time one of your voices speaks, checked against the exact file that was tested. People who only use Kokoro's voices never download it.
 - `flikka-voice` needs glibc 2.38 or newer, which means roughly Ubuntu 24.04, Fedora 39, or anything newer. Kokoro's voices keep working on older systems.
 
+### CUDA for your voices
+
+Your voices run on WebGPU by default. On an NVIDIA card they can run on CUDA instead, which was about 1.5 times faster on my 4090 and loads a few seconds quicker:
+
+```bash
+flikka voice cuda install
+```
+
+That installs Microsoft's CUDA plugin for ONNX Runtime into `~/.flikka/cuda`. If Narra already has it, Flikka links Narra's copy. Otherwise it downloads it (183 MB, checked against the tested file). Settings has the same thing as a button under "Your voices run on".
+
+It needs CUDA 13 and cuDNN 9 installed on your system. `flikka voice cuda` shows whether everything's there and whether CUDA is in use, and `flikka app doctor` lists anything missing. The "Your voices run on" setting (`voice-gpu`) picks `auto` (CUDA when it's ready, otherwise WebGPU), `webgpu` or `cpu`. If CUDA fails to start for some reason, the line still gets spoken on WebGPU.
+
 ## Screenshots
 
 ```bash

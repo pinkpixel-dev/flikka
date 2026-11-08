@@ -8,6 +8,27 @@ const home = text => String(text ?? '').replace(/^\/home\/[^/]+/, '~');
 const show = item => item.value == null ? '' : ['folder', 'path', 'browser'].includes(item.type) ? home(item.value) : String(item.value);
 const browserLabels = {auto: 'Your default browser', 'google-chrome': 'Google Chrome', chromium: 'Chromium', brave: 'Brave', edge: 'Microsoft Edge', vivaldi: 'Vivaldi'};
 
+// Under "Your voices run on": whether CUDA is ready, and a button to install it. Nothing without an NVIDIA card.
+function Cuda({gpu}) {
+  const toast = useToast();
+  const [status, setStatus] = useState(null);
+  const [installing, setInstalling] = useState(false);
+  useEffect(() => { api('cuda-status').then(setStatus).catch(() => {}); }, [gpu]);
+  if (!status?.available) return null;
+  const install = async () => {
+    setInstalling(true);
+    try { setStatus(await api('cuda-install')); } catch (failure) { toast(failure.message); } finally { setInstalling(false); }
+  };
+  const missing = status.missing.length ? `Missing ${status.missing.join(', ')}.` : '';
+  const text = status.using ? 'Using CUDA.' : status.installed ? (missing || 'CUDA is installed. Pick auto to use it.') : `CUDA isn't installed. ${missing}`;
+  return <div className="button-row">
+    <small className="muted">{text.trim()}</small>
+    {!status.installed && <Button size="small" variant="ghost" disabled={installing}
+      tip={status.narra ? 'Link the CUDA plugin Narra already has' : 'Download Microsoft’s CUDA plugin (183 MB). Needs CUDA 13 and cuDNN 9'} onClick={install}>
+      {installing ? 'Installing…' : status.narra ? 'Use Narra’s CUDA' : 'Install CUDA'}</Button>}
+  </div>;
+}
+
 // One setting: a menu saves as soon as it's picked; text (a folder, a voice, a port, a command) saves on Enter or
 // Save. Set by an environment variable, it's locked and says which.
 function Setting({item, onSaved}) {
@@ -71,6 +92,7 @@ function Setting({item, onSaved}) {
     </div>
     <small className={`setting-source ${item.from}`}>{source}</small>
     {note && <p className="hint setting-note">{note}</p>}
+    {item.key === 'voice-gpu' && <div className="setting-note"><Cuda gpu={item.value}/></div>}
   </div>;
 }
 
