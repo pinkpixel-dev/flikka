@@ -15,8 +15,8 @@ test('film saves are checked against the schema and undo in order', async () => 
   await fs.writeFile(file, JSON.stringify(first, null, 2) + '\n');
   try {
     // A scene with no title, and a misspelled field: refused, nothing written.
-    await assert.rejects(saveFilm(file, {scenes: [{type: 'title'}]}), /title/);
-    await assert.rejects(saveFilm(file, {...first, captoins: false}), /captoins/);
+    await assert.rejects(saveFilm(file, {scenes: [{type: 'title'}]}), /^Error: Scene 1: missing "title"$/);
+    await assert.rejects(saveFilm(file, {...first, captoins: false}), /^Error: Film: unknown field "captoins"/);
     assert.deepEqual(await read(file), first);
 
     // Moving a scene, then a setting: two saves, two steps back.

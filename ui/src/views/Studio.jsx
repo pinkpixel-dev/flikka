@@ -90,7 +90,7 @@ export function Studio({project, refresh, onChange}) {
 
   return <div className="studio">
     <div className="stage-column">
-      <Player ref={player} {...source} fps={fps} onTime={setTime} note={showing === 'none' ? 'Render the film to watch it here.' : undefined}
+      <Player ref={player} {...source} fps={fps} onTime={setTime} note={showing === 'none' ? 'This project has no recording to edit.' : undefined}
         overlay={aim && timeline && <AimStage src={media(project.id, 'raw')} timeline={timeline} aim={aim} onChange={change => setAim(old => ({...old, ...change}))} onSave={saveAim} onCancel={() => setAim(null)}/>}>
         {aim && <AimBar aim={aim} saving={aiming} onChange={change => setAim(old => ({...old, ...change}))} onSave={saveAim} onCancel={() => setAim(null)}/>}
         {editable && !aim && <Button icon={Undo2} variant="ghost" size="small" tip="Undo the last edit (Ctrl+Z)" disabled={rendering} onClick={undo}/>}
