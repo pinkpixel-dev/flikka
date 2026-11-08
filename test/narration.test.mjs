@@ -102,6 +102,32 @@ test('narration edits: say, follow, reword, line settings, unsay and undo', asyn
   }
 });
 
+test('narration edits: split a line at a character or at words, and merge it back', async () => {
+  const folder = await fs.mkdtemp(path.join(os.tmpdir(), 'flikka-narration-'));
+  const file = path.join(folder, 'recording.project.json');
+  const lines = [{id: 'n1', text: 'Open the settings.', at: 1}, {id: 'n2', text: 'Pick a theme, then save it.', at: 5, until: 12, voice: 'bf_emma', gain: -2, fadeIn: 0.3}];
+  await fs.writeFile(file, JSON.stringify(recording({narration: {lines}})));
+  const read = async () => (JSON.parse(await fs.readFile(file, 'utf8'))).narration.lines;
+  try {
+    // The first half keeps its moment, the second follows it and keeps the until; both keep the voice and gain
+    // but lose the fade, since they're spoken again.
+    await editProject(file, ['--split', 'n2,then save']);
+    assert.deepEqual(await read(), [lines[0], {id: 'n2', text: 'Pick a theme,', at: 5, voice: 'bf_emma', gain: -2}, {id: 'n3', text: 'then save it.', at: null, until: 12, voice: 'bf_emma', gain: -2}]);
+    await editProject(file, ['--split', 'n3,5']);
+    assert.deepEqual((await read()).map(line => line.text), ['Open the settings.', 'Pick a theme,', 'then', 'save it.']);
+
+    // A merge joins a line onto the one before it, which keeps its moment, settings and the later until.
+    await editProject(file, ['--merge', 'n4', '--merge', 'n3']);
+    assert.deepEqual((await read())[1], {id: 'n2', text: 'Pick a theme, then save it.', at: 5, voice: 'bf_emma', gain: -2, until: 12});
+
+    await assert.rejects(editProject(file, ['--merge', 'n1']), /first line/);
+    await assert.rejects(editProject(file, ['--split', 'n1,nowhere']), /--split takes/);
+    await assert.rejects(editProject(file, ['--split', 'n1,0']), /--split takes/);
+  } finally {
+    await fs.rm(folder, {recursive: true, force: true});
+  }
+});
+
 test('the project check catches broken narration', () => {
   assert.throws(() => validate(recording({narration: {lines: [{id: 'n1', text: 'Hi', at: 30}]}})), /at must be a moment of the recording/);
   assert.throws(() => validate(recording({narration: {lines: [{id: 'n1', text: 'Hi', at: 1}, {id: 'n1', text: 'Again', at: 2}]}})), /two lines have the id "n1"/);

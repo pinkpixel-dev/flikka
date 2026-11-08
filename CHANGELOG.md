@@ -49,6 +49,9 @@
 - `--line id,…` changes one line: when it starts, when it should finish by (`until`), its voice and speed, trims and fades, gain, and mute. `--reword` changes its text, `--unsay` removes it, `--narrator` sets the voice for every line, and `--pronounce "word=sounds like"` fixes how a word is said without touching the captions.
 - The recording's own sound dips while a line plays (`--duck off` to keep it level), and music ducks under both.
 - `flikka project timeline` and the render result list every line with where it lands, and flag lines that run past their `until`, overlap the line before, or run past the end.
+- A Narration tab in the panel lists a recording's lines. Edit a line's words, voice and speed, play it, speak it (or speak it again), mute it or remove it, and click its time to jump there. Ctrl+Enter splits a line at the cursor and Ctrl+Backspace at the start merges it into the line above. Type a new line at the bottom and it lands at the playhead. A line that needs a look, like one that's too long for its moment, says so under its text.
+- `flikka project speak <id>` speaks the lines that aren't spoken yet without rendering, or one line with `--line n2` (add `--again` to speak it anew). The panel speaks lines through the same command, one job at a time.
+- `--split n2,"words"` (or a character position) cuts a line in two, and `--merge n3` joins a line onto the one before it. Both halves keep the voice, speed, gain and mute. The second half follows the first and keeps the `until`.
 
 ### ✂️ Editing
 - `flikka project edit --unzoom <time>` removes the zoom showing at that moment (works with `--output-time`).

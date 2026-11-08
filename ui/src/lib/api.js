@@ -14,6 +14,8 @@ export async function api(action, body = {}) {
 export const media = (id, kind) => `/media?token=${token}&id=${id}&kind=${kind}`;
 export const thumb = id => `/thumb?token=${token}&id=${id}`;
 export const shotURL = name => `/shot?token=${token}&name=${encodeURIComponent(name)}`;
+// A narration line's spoken clip, fresh each time (speaking a line again keeps its address).
+export const narrationClipURL = (id, line) => `/narration-clip?token=${token}&id=${id}&line=${line}&v=${Date.now()}`;
 export const voiceURL = (name, version, kind) => `/voice?token=${token}&name=${name}${kind ? '&kind=' + kind : ''}&v=${version}`;
 
 // A new voice: the body is the audio itself.

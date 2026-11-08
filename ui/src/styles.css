@@ -421,6 +421,34 @@ textarea.code { min-height: 96px; font: 12px/1.5 var(--mono); }
 textarea.bad, textarea.bad:focus-visible { border-color: var(--bad); box-shadow: 0 0 0 1px var(--bad); }
 .form-error { margin: 0; color: var(--bad); font-size: 12.5px; white-space: pre-line; }
 
+/* The edit column's tabs: the edits, or a recording's narration lines. */
+.inspector-tabs { display: flex; gap: 2px; padding: 10px 18px 0; border-bottom: 1px solid var(--line-soft); }
+.inspector-tabs button { height: 32px; padding: 0 12px; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; background: none; color: var(--muted);
+  font: 500 13px var(--sans); white-space: nowrap; transition: color .15s, border-color .15s; }
+.inspector-tabs button:hover { color: var(--text); }
+.inspector-tabs button[aria-selected=true] { color: var(--text); border-bottom-color: var(--text); }
+.inspector-tabs button:focus-visible { outline: 2px solid var(--text); outline-offset: -2px; border-radius: 6px; }
+
+/* Narration lines (ui/src/narration/Lines.jsx). */
+.line-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.line-card { display: flex; flex-direction: column; gap: 8px; padding: 10px; border: 1px solid var(--line-soft); border-radius: var(--radius); background: var(--surface); }
+.line-card.muted-line .line-text { color: var(--faint); }
+.line-head { display: flex; align-items: center; gap: 8px; min-height: 30px; }
+.line-head .chip { white-space: nowrap; }
+.line-head-end { margin-left: auto; display: flex; gap: 2px; }
+.line-time { padding: 2px 6px; border: 0; border-radius: 6px; background: var(--surface-2); color: var(--text); font: 12px var(--mono); transition: background-color .15s; }
+.line-time:hover:not(:disabled) { background: var(--surface-3); }
+.line-time:disabled { color: var(--faint); }
+.line-time:focus-visible { outline: 2px solid var(--text); outline-offset: 1px; }
+.line-id { color: var(--faint); font: 11.5px var(--mono); }
+.line-card .line-text { min-height: 0; resize: none; }
+.line-issues { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 2px; color: var(--warn); font-size: 12px; }
+.line-controls { display: flex; align-items: center; gap: 6px; }
+.line-controls select { flex: 1; min-width: 0; height: 30px; font-size: 12.5px; padding: 0 8px; }
+.line-controls select.line-speed { flex: 0 0 68px; }
+.line-add { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+.line-add textarea { min-height: 0; resize: none; }
+
 /* Render progress: the step and a bar; moving stripes while the step can't say how far. */
 .progress { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 .progress-text { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
