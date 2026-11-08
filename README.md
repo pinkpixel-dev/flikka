@@ -266,6 +266,15 @@ A film picks its narrator with `"voice": {"name": "..."}`. Without one, it uses 
 
 Kokoro is honest that it's thin outside English: a handful of voices per language, mostly graded C or D. They work, but don't expect `af_heart` quality.
 
+Write the narration in the voice's language and the rest follows it:
+
+- Sentences end where that language ends them, including `。！？` and the Hindi `।`.
+- Japanese and Chinese captions break by characters (up to 16 a line) instead of by words, and "too fast to read" uses a lower characters-per-second limit for them.
+- The check tells Whisper which language to listen for. Outside English it uses the `small` model unless you picked one in Settings, because the tiny one hears very little in other languages. The first run downloads it.
+- The "misheard words" check skips Japanese and Chinese, since there are no spaces to compare words by, and the report says so. For other languages it skips lines with numbers, because a number can come back as digits or as words.
+- `flikka doctor` lists `espeak-ng` as optional. Spanish, French, Hindi, Italian and Portuguese voices need it.
+- Japanese and Chinese captions need a font that has those characters, like Noto CJK. Without one they show up as empty boxes.
+
 Your own cloned voice isn't available yet. Kokoro can't clone one, so `flikka voice add` and the Voices page are switched off until there's a model that can.
 
 ## Screenshots

@@ -130,7 +130,7 @@ flikka project preview product-launch
 flikka project render product-launch
 ```
 
-Available Kokoro neural voices include `af_heart`, `af_bella`, `af_nicole`, `am_michael`, `bf_emma`, and `bm_george`. List all 54 with `flikka voice list`. The first letter is the language the voice reads in (`a` American, `b` British, `e` Spanish, `f` French, `h` Hindi, `i` Italian, `p` Brazilian Portuguese, `j` Japanese, `z` Mandarin), so write the narration in that language. English voices are much better than the rest. Japanese needs `flikka voice setup japanese` once. The user's own cloned voices aren't available yet.
+Available Kokoro neural voices include `af_heart`, `af_bella`, `af_nicole`, `am_michael`, `bf_emma`, and `bm_george`. List all 54 with `flikka voice list`. The first letter is the language the voice reads in (`a` American, `b` British, `e` Spanish, `f` French, `h` Hindi, `i` Italian, `p` Brazilian Portuguese, `j` Japanese, `z` Mandarin), so write the narration in that language. English voices are much better than the rest. Japanese needs `flikka voice setup japanese` once. The user's own cloned voices aren't available yet. Captions and the check follow the voice's language; for Japanese and Chinese the check can't compare words, so its `checkNotes` ask you to listen to the narration instead.
 
 ## Editing by What the Viewer Sees
 
