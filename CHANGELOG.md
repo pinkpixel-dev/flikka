@@ -71,6 +71,10 @@
 - `flikka project timeline` lists typing bursts, with where they were typed, so agents can zoom on them too.
 - `flikka project undo <id>` works for films as well, stepping back through saves made in the panel (up to 50, kept in the project's `history/`).
 
+### 🤖 Agent skills
+- `flikka app install` puts the agent skill in `~/.gemini/config/skills/flikka` for Antigravity too, next to Claude Code, Codex and the shared `~/.agents` folder.
+- `flikka app skills` installs just the skill, for every agent or the ones you name with `--agent claude,codex,antigravity,agents`, and `--remove` takes it out again. It leaves the command link and the desktop entry alone.
+
 ### 🐛 Fixes
 - Japanese and Chinese captions break between words instead of in the middle of one, keep Japanese verb endings with their word, and never start a line with closing punctuation or a small kana.
 - Japanese and Chinese titles and captions use Noto Sans JP or SC, now shipped with Flikka, so they render the same on every machine instead of as empty boxes where no such font is installed.

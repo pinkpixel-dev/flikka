@@ -317,7 +317,18 @@ Pick an area or a window and Flikka frames it on a backdrop, saves it to `~/Pict
 
 - `~/.claude/skills/flikka` for Claude Code
 - `~/.codex/skills/flikka` for Codex
+- `~/.gemini/config/skills/flikka` for Antigravity
 - `~/.agents/skills/flikka` for Gemini CLI and other agents that read the shared `.agents` folder
+
+If you only want the skill, or only for some agents, use `flikka app skills`. It doesn't touch the command link or the desktop entry:
+
+```bash
+flikka app skills                                # every agent above
+flikka app skills --agent claude,antigravity     # just these
+flikka app skills --agent codex --remove         # take it back out
+```
+
+From a git clone the skill is linked, so edits to `skills/flikka/SKILL.md` show up right away. Otherwise it's copied, and running the command again after an update refreshes it. If a `flikka` skill folder that Flikka didn't make is already there, it's left alone.
 
 After that, you can just ask your agent to "record yourself signing up on example.com" or "make a launch video from project 3f9a1c2e". The built-in help (`flikka help`, `flikka record help`, and so on) is written for agents too, with rules like "look before you click" and "never type passwords".
 
