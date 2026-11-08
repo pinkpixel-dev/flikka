@@ -26,6 +26,7 @@
 - While the video plays, the timeline follows the playhead. Scroll it yourself and it stays where you put it until you press play again.
 
 ### 📁 Folders and settings
+- `flikka app doctor` checks for `flikka-voice` and the Chatterbox model. Both download on first use, so neither fails the check, and the model shows as linked from Narra when your Narra copy is there. On a system older than glibc 2.38 it says the helper can't run there.
 - The default voice in Settings is a menu of Kokoro's 54 voices, grouped by language with Kokoro's own grades.
 - `flikka voice list` shows Kokoro's voices with their language, gender and grade.
 - `flikka app doctor` lists `espeak-ng` as optional (needed by the Spanish, French, Hindi, Italian and Portuguese voices) and gives its install command separately, so it never fails the check.
@@ -69,6 +70,7 @@
 - A film's sentences get their own tools. Films have a Narration tab in the panel now, next to Edit. It lists every scene's sentences, and each one can have its own voice and speed. You can play it, speak it again, edit its words, say a word differently with Ctrl+K, and see the words Check flags, all without a render. Changes save to film.json like any other film edit, so Ctrl+Z undoes them.
 - `say` in film.json can be a list now, so one sentence can have its own voice or speed: `["First, open it.", {"text": "Then save.", "voice": "bf_emma", "speed": 1.1}]`. A plain string works the same as before, and the panel only switches a scene to the list form when a sentence needs it, then back again when it doesn't.
 - `flikka project speak <id>` works on films, speaking the sentences that aren't spoken yet (`--scene 2 --sentence 1 --again` for one). `flikka project check <id> --lines` checks the spoken sentences for misheard words without a render.
+- A film's live preview shows right away instead of speaking every new sentence first. Sentences that aren't spoken yet get their captions and a length guessed from their words, and a note under the player says how many are ready. Speak them from the Narration tab, or render, and they play.
 
 ### ✂️ Editing
 - `flikka project edit --unzoom <time>` removes the zoom showing at that moment (works with `--output-time`).
@@ -83,6 +85,9 @@
 - `flikka app skills` installs just the skill, for every agent installed here or the ones you name with `--agent claude,codex,antigravity,agents` (named ones get it even if they aren't installed), and `--remove` takes it out again. It leaves the command link and the desktop entry alone.
 
 ### 🐛 Fixes
+- A say-as mark with a period in it, like `[St.](saint)`, no longer ends the sentence there.
+- `flikka project speak` works on a film that has never been rendered. It used to fail because the film's `.flikka-cache` folder didn't exist yet.
+- Japanese and Chinese captions on recordings (the mic's or the narration's) use Noto Sans JP or SC too, instead of falling back to Arial.
 - Japanese and Chinese captions break between words instead of in the middle of one, keep Japanese verb endings with their word, and never start a line with closing punctuation or a small kana.
 - Japanese and Chinese titles and captions use Noto Sans JP or SC, now shipped with Flikka, so they render the same on every machine instead of as empty boxes where no such font is installed.
 - `flikka voice setup japanese` is tested: after its one-time download, Japanese voices speak.

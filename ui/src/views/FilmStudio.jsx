@@ -153,6 +153,8 @@ export function FilmStudio({project, refresh, onChange}) {
       {problem && <div className="banner problem" role="alert">{problem}</div>}
       {rendering && <div className="banner">Rendering the film… the live preview plays meanwhile.</div>}
       {!rendering && !final && <div className="banner">Not exported yet. This is the live preview.</div>}
+      {showing === 'live' && preview?.narration && preview.narration.spoken < preview.narration.total &&
+        <div className="banner">{preview.narration.spoken} of {preview.narration.total} sentences spoken. The rest play once you render.</div>}
       {film && <Scenes scenes={scenes} timing={timing} selected={index} time={time} names={names} kinds={kinds} onSelect={open} onMove={move} onAdd={add}/>}
     </div>
     <Inspector project={project} render={render} rendering={rendering} changed={changed}

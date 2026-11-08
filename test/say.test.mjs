@@ -2,7 +2,7 @@
 // to the list form only when needed and back again, and the schema takes both forms.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {sayItems, sayFrom, editSay} from '../lib/say.mjs';
+import {sayItems, sayFrom, editSay, sentences} from '../lib/say.mjs';
 import {sceneSentences, schemaFile} from '../lib/film.mjs';
 import {validate} from '../lib/schema.mjs';
 import {readJSON} from '../lib/common.mjs';
@@ -36,4 +36,12 @@ test('the film schema takes say as a string or a list of strings and {text, voic
   assert.deepEqual(validate(schema, film(['Hello.', {text: 'Bye.', voice: 'bf_emma', speed: 1.2}])), []);
   assert.notDeepEqual(validate(schema, film([{voice: 'bf_emma'}])), []);
   assert.notDeepEqual(validate(schema, film([{text: 'Bye.', speed: 3}])), []);
+});
+
+test('a say-as mark with a period in it stays inside its sentence', () => {
+  assert.deepEqual(sentences('Visit [St.](saint) Louis today. Then rest.'), ['Visit [St.](saint) Louis today.', 'Then rest.']);
+  assert.deepEqual(sentences('Ask [Dr.](doctor) Lee'), ['Ask [Dr.](doctor) Lee']);
+  assert.deepEqual(sentences('Say [GIF](/ʤˈɪf/). Done.'), ['Say [GIF](/ʤˈɪf/).', 'Done.']);
+  // Brackets that aren't a mark are plain text.
+  assert.deepEqual(sentences('Hi [there] friend. Ok'), ['Hi [there] friend.', 'Ok']);
 });

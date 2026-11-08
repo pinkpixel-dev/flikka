@@ -188,7 +188,7 @@ export function Clip({project, clip, sourceUrl, events, clicks, transcript, webc
 // One caption, low in the middle of the video: the mic's (in a clip) and narration's (over the whole video) alike.
 function CaptionBox({text}) {
   const {width, height} = useVideoConfig();
-  return <div style={{position: 'absolute', bottom: height * 0.07, maxWidth: width * 0.8, padding: '14px 24px', background: '#10121ee8', color: 'white', fontFamily: 'Arial, sans-serif', fontWeight: 600, fontSize: Math.round(width / 40), borderRadius: 12, textAlign: 'center', lineHeight: 1.35}}>{text.trim()}</div>;
+  return <div style={{position: 'absolute', bottom: height * 0.07, maxWidth: width * 0.8, padding: '14px 24px', background: '#10121ee8', color: 'white', fontFamily: 'Arial, "Noto Sans JP Variable", "Noto Sans SC Variable", sans-serif', fontWeight: 600, fontSize: Math.round(width / 40), borderRadius: 12, textAlign: 'center', lineHeight: 1.35}}>{text.trim()}</div>;
 }
 
 // Narration captions, timed in seconds of the finished video (lib/narration.mjs), so cuts and speed don't move them.
