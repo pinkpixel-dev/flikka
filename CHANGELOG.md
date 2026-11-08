@@ -73,7 +73,8 @@
 
 ### 🤖 Agent skills
 - `flikka app install` puts the agent skill in `~/.gemini/config/skills/flikka` for Antigravity too, next to Claude Code, Codex and the shared `~/.agents` folder.
-- `flikka app skills` installs just the skill, for every agent or the ones you name with `--agent claude,codex,antigravity,agents`, and `--remove` takes it out again. It leaves the command link and the desktop entry alone.
+- `flikka app install` skips agents that aren't installed, so it no longer creates an empty `~/.claude`, `~/.codex` or `~/.gemini/config` on a machine without them. The shared `~/.agents` folder always gets the skill.
+- `flikka app skills` installs just the skill, for every agent installed here or the ones you name with `--agent claude,codex,antigravity,agents` (named ones get it even if they aren't installed), and `--remove` takes it out again. It leaves the command link and the desktop entry alone.
 
 ### 🐛 Fixes
 - Japanese and Chinese captions break between words instead of in the middle of one, keep Japanese verb endings with their word, and never start a line with closing punctuation or a small kana.

@@ -313,18 +313,20 @@ Pick an area or a window and Flikka frames it on a backdrop, saves it to `~/Pict
 
 ## Using it with AI agents
 
-`flikka app install` puts a Flikka skill where agents look for them:
+`flikka app install` puts a Flikka skill where your agents look for them, for each one that's installed:
 
 - `~/.claude/skills/flikka` for Claude Code
 - `~/.codex/skills/flikka` for Codex
 - `~/.gemini/config/skills/flikka` for Antigravity
 - `~/.agents/skills/flikka` for Gemini CLI and other agents that read the shared `.agents` folder
 
-If you only want the skill, or only for some agents, use `flikka app skills`. It doesn't touch the command link or the desktop entry:
+Agents that aren't installed are skipped, so no empty `~/.codex` shows up on a machine without Codex. The shared `~/.agents` folder always gets the skill. Antigravity counts as installed when `~/.gemini/antigravity` or `~/.gemini/config` exists, since Gemini CLI uses `~/.gemini` too.
+
+If you only want the skill, or want it for an agent Flikka skipped, use `flikka app skills`. It doesn't touch the command link or the desktop entry:
 
 ```bash
-flikka app skills                                # every agent above
-flikka app skills --agent claude,antigravity     # just these
+flikka app skills                                # every agent installed here
+flikka app skills --agent claude,antigravity     # just these, installed or not
 flikka app skills --agent codex --remove         # take it back out
 ```
 
