@@ -20,8 +20,11 @@ export function sayAsTarget(text, from, to) {
 }
 
 // How one word is said: like another spelling, or exact phonemes (Kokoro only), in this spot or everywhere in the
-// project. Preview speaks the line with it, in the line's voice.
-export function SayAs({project, line, text, target, ownVoice, onEdit, onClose}) {
+// project. Preview speaks the line with it, in the line's voice. `who`: which line, as /narration-try takes it
+// ({line} for a recording, {scene, sentence} for a film). onSave(text) saves the words; onPronounce(word, say,
+// unmarked) saves a pronunciation for every line (unmarked: the words without this spot's mark, or null). Both
+// resolve true when saved.
+export function SayAs({project, who, text, target, ownVoice, onSave, onPronounce, onClose}) {
   const toast = useToast();
   const [mode, setMode] = useState(isPhonemes(target.say) && !ownVoice ? 'phonemes' : 'sounds');
   const [value, setValue] = useState(target.say ? target.say.replace(/^\/|\/$/g, '') : '');
@@ -39,7 +42,7 @@ export function SayAs({project, line, text, target, ownVoice, onEdit, onClose}) 
   const preview = async () => {
     setTrying(true);
     try {
-      await api('narration-try', {id: project.id, line: line.id, text: marked});
+      await api('narration-try', {id: project.id, ...who, text: marked});
       audio.current?.pause();
       audio.current = new Audio(triedLineURL(project.id));
       await audio.current.play();
@@ -47,9 +50,7 @@ export function SayAs({project, line, text, target, ownVoice, onEdit, onClose}) 
     finally { setTrying(false); }
   };
   // In this spot: the mark goes in the line. Everywhere: a project pronunciation, and a mark here comes off.
-  const apply = () => onEdit(everywhere
-    ? [...(target.say ? [{reword: {line: line.id, text: unmarked}}] : []), {pronounce: {word: target.word, say}}]
-    : [{reword: {line: line.id, text: marked}}]).then(saved => saved && onClose());
+  const apply = () => (everywhere ? onPronounce(target.word, say, target.say ? unmarked : null) : onSave(marked)).then(saved => saved && onClose());
   const keys = event => {
     if (event.key === 'Escape') { event.preventDefault(); onClose(); }
     if (event.key === 'Enter' && ready) { event.preventDefault(); apply(); }
@@ -70,7 +71,7 @@ export function SayAs({project, line, text, target, ownVoice, onEdit, onClose}) 
     <Switch label="Everywhere in this project" tip="Every line says it this way, not just this spot" checked={everywhere} onChange={setEverywhere}/>
     <div className="button-row">
       <Button size="small" icon={Play} disabled={!ready || trying} tip="Hear this line said this way" onClick={preview}>{trying ? 'Speaking…' : 'Preview'}</Button>
-      {target.say && <Button size="small" tip="Say it the usual way again" onClick={() => onEdit([{reword: {line: line.id, text: unmarked}}]).then(saved => saved && onClose())}>Remove</Button>}
+      {target.say && <Button size="small" tip="Say it the usual way again" onClick={() => onSave(unmarked).then(saved => saved && onClose())}>Remove</Button>}
       <Button size="small" variant="primary" disabled={!ready} tip="Use it (Enter)" onClick={apply}>Apply</Button>
     </div>
   </div>;

@@ -11,7 +11,7 @@ import {SayAs, sayAsTarget} from './SayAs.jsx';
 // A recording's narration lines (project.narration, lib/narration.mjs), as the timeline places them: edit the
 // words, voice and speed, play a line, speak it (or again), split at the cursor and merge up, remove it, and add
 // one at the playhead. Every change goes through the same edit options the CLI has (flikka project edit).
-const speeds = [0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4, 1.5];
+export const speeds = [0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4, 1.5];
 
 // What a line needs looked at, from the timeline (lib/narration.mjs placeLines).
 const problems = line => [
@@ -31,7 +31,7 @@ const shortenPrompt = (project, line) => `In Flikka project ${project.id}, narra
   + `Save it with flikka project edit ${project.id} --reword "${line.id},<new words>", then flikka project speak ${project.id} --line ${line.id} and check it fits with flikka project timeline ${project.id}.`;
 
 // Where a word the check flagged sits in the text (any case, standing on its own), or -1.
-const findWord = (text, word) => {
+export const findWord = (text, word) => {
   const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   return text.search(new RegExp(`(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`, 'iu'));
 };
@@ -40,7 +40,7 @@ const findWord = (text, word) => {
 const savedPosition = (text, at) => text.slice(0, at).replace(/\s+/g, ' ').trimStart().length;
 const squeeze = text => text.replace(/\s+/g, ' ').trim();
 
-function VoiceOptions({voices}) {
+export function VoiceOptions({voices}) {
   const groups = [...new Set(voices.map(voice => voice.language))];
   return groups.map(group => <optgroup key={group} label={group}>
     {voices.filter(voice => voice.language === group).map(voice => <option key={voice.name} value={voice.name}>{voice.name}{voice.gender ? ` · ${voice.gender}` : ''}</option>)}
@@ -104,7 +104,9 @@ function LineCard({project, line, first, voices, narrator, speaking, playing, on
     <textarea ref={box} className="line-text" rows={Math.min(6, Math.max(1, Math.ceil(draft.length / 34)))} value={draft} aria-label={`Line ${line.id}`}
       data-tip="Enter saves. Ctrl+K says a word differently. Ctrl+Enter splits at the cursor, Ctrl+Backspace at the start merges into the line above."
       onChange={event => setDraft(event.target.value)} onBlur={save} onKeyDown={keys}/>
-    {sayAs && <SayAs project={project} line={line} text={draft} target={sayAs} ownVoice={cloned} onEdit={onEdit} onClose={() => { setSayAs(null); box.current?.focus(); }}/>}
+    {sayAs && <SayAs project={project} who={{line: line.id}} text={draft} target={sayAs} ownVoice={cloned} onClose={() => { setSayAs(null); box.current?.focus(); }}
+      onSave={text => onEdit([{reword: {line: line.id, text}}])}
+      onPronounce={(word, say, unmarked) => onEdit([...(unmarked ? [{reword: {line: line.id, text: unmarked}}] : []), {pronounce: {word, say}}])}/>}
     {issues.length > 0 && <ul className="line-issues">{issues.map(issue => <li key={issue}>{issue}</li>)}</ul>}
     {line.misheard?.length > 0 && <div className="line-misheard">
       <span>May be misheard:</span>

@@ -17,7 +17,7 @@ const corners = [['bottom-right', 'Bottom right'], ['bottom-left', 'Bottom left'
 
 // The right column of a project: export, edits that write to the project (the live preview follows), and the
 // agent prompt, details and steps. `edit(action, body)` saves one edit and refreshes. `children` (a film's scene
-// editor) go under Export. `narration` (a recording's line list) gets its own tab beside the edits.
+// editor) go under Export. `narration` (a recording's lines, a film's sentences) gets its own tab beside the edits.
 export function Inspector({project, edit, render, rendering, changed, children, narration}) {
   const toast = useToast();
   const [copied, flash] = useFlash();
@@ -51,14 +51,14 @@ export function Inspector({project, edit, render, rendering, changed, children, 
       {project.render?.state === 'failed' && !rendering && <p className="form-error" role="alert">The last render failed: {project.render.error}</p>}
     </Section>
 
-    {children}
-
     {narration && <div className="inspector-tabs" role="tablist" aria-label="What to edit">
       <button type="button" role="tab" aria-selected={tab === 'edit'} onClick={() => setTab('edit')}>Edit</button>
       <button type="button" role="tab" aria-selected={tab === 'narration'} onClick={() => setTab('narration')}>Narration</button>
     </div>}
 
     {narration && tab === 'narration' ? narration : <>
+    {children}
+
     {project.switches && Object.keys(project.switches).length > 0 && <Section title="In the video">
       {Object.entries(project.switches).map(([kind, on]) => kind === 'zooms'
         ? <label key={kind} className="line" data-tip="Picking again replaces the zooms with automatic ones (Ctrl+Z undoes)"><span>Auto zoom</span>

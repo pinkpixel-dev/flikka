@@ -231,8 +231,46 @@
     },
     "common": {
       "say": {
-        "type": "string",
-        "description": "What the narrator says in this scene; the scene stretches to fit it."
+        "description": "What the narrator says in this scene; the scene stretches to fit it. Usually a string. A list gives sentences their own voice or speed: strings in the film's voice, and {text, voice, speed} items, e.g. [\"First, open the settings.\", {\"text\": \"Then save.\", \"voice\": \"bf_emma\"}]. Say-as marks like [read](red) or [GIF](/ʤˈɪf/) change how one word is said.",
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "text"
+                  ],
+                  "properties": {
+                    "text": {
+                      "type": "string",
+                      "description": "One or more sentences."
+                    },
+                    "voice": {
+                      "type": "string",
+                      "description": "Who reads them: a Kokoro voice or one of yours (flikka voice list). Default: the film's voice."
+                    },
+                    "speed": {
+                      "type": "number",
+                      "minimum": 0.7,
+                      "maximum": 1.5,
+                      "description": "How fast, default the film's speed."
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ]
       },
       "duration": {
         "type": "number",

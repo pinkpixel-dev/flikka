@@ -15,7 +15,8 @@ export const media = (id, kind) => `/media?token=${token}&id=${id}&kind=${kind}`
 export const thumb = id => `/thumb?token=${token}&id=${id}`;
 export const shotURL = name => `/shot?token=${token}&name=${encodeURIComponent(name)}`;
 // A narration line's spoken clip, fresh each time (speaking a line again keeps its address).
-export const narrationClipURL = (id, line) => `/narration-clip?token=${token}&id=${id}&line=${line}&v=${Date.now()}`;
+// `film`: {scene, sentence} for a film's sentence (both count from 1) instead of a recording's line.
+export const narrationClipURL = (id, line, film) => `/narration-clip?token=${token}&id=${id}&${film ? `scene=${film.scene}&sentence=${film.sentence}` : `line=${line}`}&v=${Date.now()}`;
 export const triedLineURL = id => `/narration-try?token=${token}&id=${id}&v=${Date.now()}`;
 export const voiceURL = (name, version, kind) => `/voice?token=${token}&name=${name}${kind ? '&kind=' + kind : ''}&v=${version}`;
 

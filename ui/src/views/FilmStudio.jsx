@@ -7,6 +7,7 @@ import {Inspector} from '../components/Inspector.jsx';
 import {Player} from '../components/Player.jsx';
 import {Scenes} from '../components/Scenes.jsx';
 import {FilmEditor, newScene, sceneKinds} from '../components/SceneForm.jsx';
+import {FilmNarration} from '../narration/Sentences.jsx';
 import {Button} from '../components/ui.jsx';
 
 // The film with the open form's draft in it: a scene's (index ≥ 0) or the settings' (index -1, keys kept in order).
@@ -36,6 +37,8 @@ export function FilmStudio({project, refresh, onChange}) {
   const [saving, setSaving] = useState(false);
   const [changed, setChanged] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [lines, setLines] = useState(null);
+  const [version, setVersion] = useState(0);
   const final = project.final;
   const showing = final ? shown : 'live';
 
@@ -49,13 +52,19 @@ export function FilmStudio({project, refresh, onChange}) {
     api('film', {id: project.id}).then(next => current && setFilm(next.film)).catch(failure => current && toast(failure.message));
     return () => { current = false; };
   }, [project.id, project.edited]);
+  // Its sentences: spoken yet, and what the words check heard (again after speaking or checking).
+  useEffect(() => {
+    let current = true;
+    api('film-lines', {id: project.id}).then(next => current && setLines(next)).catch(() => {});
+    return () => { current = false; };
+  }, [project.id, project.edited, version]);
   useEffect(() => {
     if (showing !== 'live') return;
     let current = true;
     api('project-preview', {id: project.id}).then(next => { if (current) { setPreview({...next, src: next.src + '?v=' + Date.now()}); setProblem(null); } })
       .catch(failure => current && setProblem(failure.message));
     return () => { current = false; };
-  }, [project.id, project.edited, showing]);
+  }, [project.id, project.edited, showing, version]);
   // A new export shows itself.
   const exported = final?.output + final?.elapsedSeconds;
   const firstExport = useRef(exported);
@@ -146,7 +155,9 @@ export function FilmStudio({project, refresh, onChange}) {
       {!rendering && !final && <div className="banner">Not exported yet. This is the live preview.</div>}
       {film && <Scenes scenes={scenes} timing={timing} selected={index} time={time} names={names} kinds={kinds} onSelect={open} onMove={move} onAdd={add}/>}
     </div>
-    <Inspector project={project} render={render} rendering={rendering} changed={changed}>
+    <Inspector project={project} render={render} rendering={rendering} changed={changed}
+      narration={film && <FilmNarration project={project} film={current()} lines={lines} timing={timing} onSave={next => save(next)}
+        onSeek={seconds => player.current?.seek(seconds)} onChanged={() => setVersion(old => old + 1)}/>}>
       {film && schema && value && <FilmEditor schema={schema} film={film} index={index} value={value} dirty={draft != null} saving={saving} errors={errors}
         recordings={recordings} onChange={setDraft} onSave={() => save(current())} onRevert={() => { setDraft(null); setErrors(null); }} onRemove={remove}/>}
     </Inspector>

@@ -59,6 +59,11 @@
 - A line that still runs over gets a word budget, `shortenTo`, in `flikka project timeline` and the render result. Shorten in the panel copies a prompt for your agent with the line, how long it runs over and that budget. Flikka doesn't call a model itself.
 - `--split n2,"words"` (or a character position) cuts a line in two, and `--merge n3` joins a line onto the one before it. Both halves keep the voice, speed, gain and mute. The second half follows the first and keeps the `until`.
 
+### 🎞️ Narration for films
+- A film's sentences get their own tools. Films have a Narration tab in the panel now, next to Edit. It lists every scene's sentences, and each one can have its own voice and speed. You can play it, speak it again, edit its words, say a word differently with Ctrl+K, and see the words Check flags, all without a render. Changes save to film.json like any other film edit, so Ctrl+Z undoes them.
+- `say` in film.json can be a list now, so one sentence can have its own voice or speed: `["First, open it.", {"text": "Then save.", "voice": "bf_emma", "speed": 1.1}]`. A plain string works the same as before, and the panel only switches a scene to the list form when a sentence needs it, then back again when it doesn't.
+- `flikka project speak <id>` works on films, speaking the sentences that aren't spoken yet (`--scene 2 --sentence 1 --again` for one). `flikka project check <id> --lines` checks the spoken sentences for misheard words without a render.
+
 ### ✂️ Editing
 - `flikka project edit --unzoom <time>` removes the zoom showing at that moment (works with `--output-time`).
 - `flikka project edit --padding <px>`, `--radius <px>` and `--shadow on|off` set the frame around the recording. Padding goes up to a third of the video's short side and corners up to 200 px, and the error says the limit when you go past it.
