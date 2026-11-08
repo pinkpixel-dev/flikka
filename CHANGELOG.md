@@ -15,12 +15,15 @@
 - The zoom switch is now an Auto zoom picker: clicks and typing, just clicks, just typing, or off.
 - Zooms work from the keyboard too: with the timeline focused, `[` and `]` jump to the previous or next zoom and choose it, and Enter chooses the one under the playhead. Then A aims it, Delete removes it and Esc lets go.
 - A Frame section in the edit column: pick the video's shape (square, landscape, portrait or vertical), the wallpaper behind the recording, the padding around it, how round its corners are, and whether it has a shadow. The live preview updates after each change, and Ctrl+Z undoes it. A run of arrow-key presses on a slider saves as one edit.
+- Films have a home in the panel now. The live film plays with its narration and music, and a strip under the player shows every scene, as wide as it is long. Click a scene to open it and jump there, drag it (or press Alt+← →) to move it, and add a new one from the Add menu. The open scene's fields sit on the right, drawn from the film schema, with each field's description as its tooltip. Ctrl+S saves, Ctrl+Z undoes, and a save that doesn't fit the schema is refused with the reason.
+- `flikka project live <id>` opens the film in the panel instead of its own page. Edits an agent makes to film.json show up there too.
 
 ### ✂️ Editing
 - `flikka project edit --unzoom <time>` removes the zoom showing at that moment (works with `--output-time`).
 - `flikka project edit --padding <px>`, `--radius <px>` and `--shadow on|off` set the frame around the recording. Padding goes up to a third of the video's short side and corners up to 200 px, and the error says the limit when you go past it.
 - `--zooms clicks` and `--zooms typing` (and `--auto-zoom clicks|typing`) zoom on only one kind of moment.
 - `flikka project timeline` lists typing bursts, with where they were typed, so agents can zoom on them too.
+- `flikka project undo <id>` works for films as well, stepping back through saves made in the panel (up to 50, kept in the project's `history/`).
 
 ### 🐛 Fixes
 - The live preview no longer fails with `EEXIST` when an edit and a reload (or two quick edits) rebuild it at the same moment. Preview builds for a project now wait their turn.

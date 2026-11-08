@@ -376,3 +376,45 @@ audio { width: 100%; height: 36px; color-scheme: dark; }
 .aim-bar { display: flex; align-items: center; gap: 6px; }
 .aim-bar select { width: auto; height: 30px; font-size: 12.5px; }
 .aim-hint { font-size: 12.5px; color: var(--muted); white-space: nowrap; }
+
+/* A film: its scenes under the player, each as wide as it is long; drag one to move it. */
+.scenes { display: flex; align-items: center; gap: 10px; padding: 10px 16px 14px; border-top: 1px solid var(--line-soft); background: var(--surface); user-select: none; }
+.scenes > .button[aria-pressed=true] { background: var(--surface-3); border-color: var(--text); color: var(--text); }
+.scene-list { display: flex; gap: 6px; flex: 1; min-width: 0; margin: 0; padding: 2px 5px; list-style: none; overflow-x: auto; }
+.scene-list li { position: relative; display: flex; flex: 1 1 0; min-width: 96px; }
+.scene-list li.drop-before::before, .scene-list li.drop-after::after { content: ''; position: absolute; top: 2px; bottom: 2px; width: 2px; border-radius: 1px; background: var(--text); }
+.scene-list li.drop-before::before { left: -4px; }
+.scene-list li.drop-after::after { right: -4px; }
+.scene-chip {
+  position: relative; flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; padding: 7px 10px; overflow: hidden;
+  border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); color: var(--text); font: 13px/1.35 var(--sans); text-align: left;
+  cursor: grab; touch-action: pan-y; transition: border-color .15s, opacity .15s;
+}
+.scene-chip:hover { border-color: var(--surface-3); }
+.scene-chip:active { cursor: grabbing; }
+.scene-chip:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+.scene-chip[aria-pressed=true] { border-color: var(--text); }
+.scene-chip.lifted { opacity: .4; }
+.scene-chip > span { position: relative; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.scene-chip > .scene-progress { position: absolute; inset: 0; background: var(--surface-2); transform-origin: left; pointer-events: none; }
+.scene-kind { color: var(--faint); font-size: 11.5px; }
+.scene-time { color: var(--muted); font: 11.5px var(--mono); }
+.scene-add { position: relative; flex: none; display: flex; align-items: center; }
+.scene-add svg { position: absolute; left: 10px; color: var(--muted); pointer-events: none; }
+.scene-add select { width: auto; height: 34px; padding-left: 30px; font-size: 13px; }
+.banner.problem { color: var(--bad); white-space: pre-line; }
+
+/* The open scene's fields. */
+.fields { display: flex; flex-direction: column; gap: 12px; }
+.fields .field.unset > span { color: var(--faint); }
+.fields select, .fields input[type=text], .fields input[type=number] { height: 34px; font-size: 13.5px; }
+.required { color: var(--warn); }
+textarea {
+  width: 100%; min-height: 64px; padding: 8px 11px; border: 1px solid var(--line); border-radius: var(--radius); resize: vertical;
+  background: var(--bg); color: var(--text); font: 13.5px/1.45 var(--sans); transition: border-color .15s;
+}
+textarea:hover { border-color: var(--surface-3); }
+textarea:focus-visible { outline: none; border-color: var(--text); box-shadow: 0 0 0 1px var(--text); }
+textarea.code { min-height: 96px; font: 12px/1.5 var(--mono); }
+textarea.bad, textarea.bad:focus-visible { border-color: var(--bad); box-shadow: 0 0 0 1px var(--bad); }
+.form-error { margin: 0; color: var(--bad); font-size: 12.5px; white-space: pre-line; }

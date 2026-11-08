@@ -1,6 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {Undo2} from 'lucide-react';
 import {api, media} from '../lib/api.js';
+import {usePlayerKeys} from '../lib/hooks.js';
 import {useToast} from '../lib/toast.js';
 import {AimBar, AimStage, aimFrame} from '../components/Aim.jsx';
 import {Inspector} from '../components/Inspector.jsx';
@@ -71,8 +72,6 @@ export function Studio({project, refresh, onChange}) {
     try { await timelineEdit({unzoom: (zoom.from + zoom.to) / 2, zoom: {from: zoom.from, to: zoom.to, x: +x.toFixed(4), y: +y.toFixed(4), scale}}); setAim(null); } catch {}
     finally { setAiming(false); }
   };
-  const undoLatest = useRef(undo);
-  undoLatest.current = undo;
   const render = async () => {
     if (busy) return;
     setBusy(true); setChanged(false); toast('');
@@ -81,25 +80,7 @@ export function Studio({project, refresh, onChange}) {
   };
   const rendering = busy || project.state === 'rendering';
 
-  // Space or K plays and pauses, ← → step a frame (Shift: a second), Home and End, M mutes, Ctrl+Z undoes. Not
-  // while typing; the focused timeline handles its own arrows.
-  useEffect(() => {
-    const keys = event => {
-      if ((event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.toLowerCase() === 'z' && !event.target.closest('input, textarea, [contenteditable]')) {
-        event.preventDefault(); if (editable) undoLatest.current(); return;
-      }
-      if (event.target.closest('input, select, textarea, [contenteditable]') || event.metaKey || event.ctrlKey || event.altKey) return;
-      const controls = player.current;
-      if (!controls) return;
-      const actions = {' ': () => controls.toggle(), k: () => controls.toggle(), m: () => controls.mute(), Home: () => controls.seek(0), End: () => controls.seek(controls.duration),
-        ArrowLeft: () => event.shiftKey ? controls.seek(controls.time - 1) : controls.step(-1), ArrowRight: () => event.shiftKey ? controls.seek(controls.time + 1) : controls.step(1)};
-      const action = actions[event.key];
-      if (!action || (event.key === ' ' && event.target.closest('button, a, summary'))) return;
-      event.preventDefault(); action();
-    };
-    addEventListener('keydown', keys);
-    return () => removeEventListener('keydown', keys);
-  }, []);
+  usePlayerKeys(player, editable ? undo : null);
 
   const final = project.final;
   const source = showing === 'final' ? {src: media(project.id, 'final') + '&v=' + final.elapsedSeconds, video: true, width: final.width, height: final.height}

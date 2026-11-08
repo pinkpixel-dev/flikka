@@ -244,7 +244,7 @@ flikka project live launch
 flikka project render launch
 ```
 
-`preview` gives you one picture per scene plus a layout check, which is quick. `live` plays the film in your browser and reloads every time you save `film.json`. `render` makes the video and then checks it for frozen frames, music too loud under the voice, captions too fast to read, and words a listener might mishear. Every issue comes with a timestamp and a frame to look at.
+`preview` gives you one picture per scene plus a layout check, which is quick. `live` opens the film in the panel, where it plays right away with narration and music. You can reorder scenes by dragging them, add new ones and edit each scene's fields, and it reloads every time `film.json` changes. `render` makes the video and then checks it for frozen frames, music too loud under the voice, captions too fast to read, and words a listener might mishear. Every issue comes with a timestamp and a frame to look at.
 
 ## Voices
 

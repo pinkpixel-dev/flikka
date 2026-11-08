@@ -24,7 +24,7 @@ Every command prints structured JSON to stdout.
 | `flikka project edit <id>` | Configures clips, auto-zooms, idle cuts, cursor overlay (--cursor on/off), background styling |
 | `flikka project timeline <id>` | Lists what happens in the finished video, in its own seconds: kept parts, cuts, zooms, clicks, speech |
 | `flikka project frames <id> --at 3,1:20` | Labelled frames of the edit in one picture, each stamped with video time and recording time |
-| `flikka project undo <id>` | Puts the project back as it was before the last saved edit |
+| `flikka project undo <id>` | Puts the project back as it was before the last saved edit (for films: the last save from the panel) |
 | `flikka project render <id>` | Renders the final 60 fps MP4 video through HyperFrames |
 | `flikka project new <name>` | Scaffolds a multi-scene film with voice narration |
 | `flikka voice say <name> "text"` | Synthesizes speech using Kokoro neural voices on CUDA/CPU |
@@ -123,7 +123,7 @@ flikka project new product-launch
 #   {"type": "recording", "source": "demo.mp4", "say": "Record yourself effortlessly."}
 # ]
 
-# 3. Preview frames
+# 3. Preview frames (or open it in the panel for the user: flikka project live product-launch)
 flikka project preview product-launch
 
 # 4. Render and check

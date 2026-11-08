@@ -7,6 +7,7 @@ import {useToast} from '../lib/toast.js';
 import {Button, ConfirmButton} from '../components/ui.jsx';
 import {LiveRecording} from './LiveRecording.jsx';
 import {Studio} from './Studio.jsx';
+import {FilmStudio} from './FilmStudio.jsx';
 
 // One project: recording live, or its video with the timeline and the edits. Read again every 0.7 s (steps,
 // the timer, an agent's edits and renders).
@@ -56,6 +57,7 @@ export function Project({id, onChange}) {
           onConfirm={() => api('project-remove', {id}).then(() => { location.hash = '#new'; onChange(); }).catch(failure => toast(failure.message))}>Delete</ConfirmButton>
       </div>
     </header>
-    {live ? <LiveRecording project={project} refresh={load} onChange={onChange}/> : <Studio project={project} refresh={load} onChange={onChange}/>}
+    {live ? <LiveRecording project={project} refresh={load} onChange={onChange}/> : project.film ? <FilmStudio project={project} refresh={load} onChange={onChange}/>
+      : <Studio project={project} refresh={load} onChange={onChange}/>}
   </div>;
 }

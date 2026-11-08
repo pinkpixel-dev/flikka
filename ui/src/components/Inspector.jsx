@@ -16,8 +16,9 @@ const speeds = [0.5, 0.75, 1, 1.25, 1.5, 2, 3];
 const corners = [['bottom-right', 'Bottom right'], ['bottom-left', 'Bottom left'], ['top-right', 'Top right'], ['top-left', 'Top left']];
 
 // The right column of a project: export, edits that write to the project (the live preview follows), and the
-// agent prompt, details and steps. `edit(action, body)` saves one edit and refreshes.
-export function Inspector({project, edit, render, rendering, changed}) {
+// agent prompt, details and steps. `edit(action, body)` saves one edit and refreshes. `children` (a film's scene
+// editor) go under Export.
+export function Inspector({project, edit, render, rendering, changed, children}) {
   const toast = useToast();
   const [copied, flash] = useFlash();
   const [size, setSize] = useState(null);
@@ -40,6 +41,8 @@ export function Inspector({project, edit, render, rendering, changed}) {
       <Button className="wide" variant={changed || !final ? 'primary' : undefined} icon={Play} disabled={rendering || (!project.recording && !project.film)} onClick={render}
         tip="Export the video with every edit">{rendering ? 'Rendering…' : changed ? 'Render with changes' : final ? 'Render again' : 'Render'}</Button>
     </Section>
+
+    {children}
 
     {project.switches && Object.keys(project.switches).length > 0 && <Section title="In the video">
       {Object.entries(project.switches).map(([kind, on]) => kind === 'zooms'
