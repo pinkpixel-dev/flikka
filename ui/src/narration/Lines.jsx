@@ -1,9 +1,10 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {AudioLines, Pause, Play, Plus, RotateCcw, Trash2, Volume2, VolumeX} from 'lucide-react';
+import {AudioLines, Pause, Play, Plus, RotateCcw, Speech, Trash2, Volume2, VolumeX, X} from 'lucide-react';
 import {api, narrationClipURL} from '../lib/api.js';
 import {clock} from '../lib/format.js';
 import {useToast} from '../lib/toast.js';
 import {Button, ConfirmButton, Section} from '../components/ui.jsx';
+import {SayAs, sayAsTarget} from './SayAs.jsx';
 
 // A recording's narration lines (project.narration, lib/narration.mjs), as the timeline places them: edit the
 // words, voice and speed, play a line, speak it (or again), split at the cursor and merge up, remove it, and add
@@ -29,8 +30,16 @@ function VoiceOptions({voices}) {
   </optgroup>);
 }
 
-function LineCard({line, first, voices, narrator, speaking, playing, onPlay, onSpeak, onEdit, onSeek}) {
+function LineCard({project, line, first, voices, narrator, speaking, playing, onPlay, onSpeak, onEdit, onSeek}) {
   const [draft, setDraft] = useState(line.text);
+  const [sayAs, setSayAs] = useState(null);
+  const box = useRef(null);
+  // Say as: the word under the cursor or selection (Ctrl+K or the button).
+  const openSayAs = () => {
+    const area = box.current;
+    const target = area && sayAsTarget(draft, area.selectionStart, area.selectionEnd);
+    if (target) setSayAs(target); else { area?.focus(); }
+  };
   useEffect(() => setDraft(line.text), [line.text]);
   const changed = squeeze(draft) !== line.text;
   // The words as typed go in with a split or merge, so nothing typed is lost (one edit, one undo step).
@@ -39,6 +48,7 @@ function LineCard({line, first, voices, narrator, speaking, playing, onPlay, onS
   const keys = event => {
     const box = event.currentTarget;
     if (event.key === 'Escape') { setDraft(line.text); box.blur(); return; }
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); openSayAs(); return; }
     if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
       event.preventDefault();
       const at = savedPosition(draft, box.selectionStart);
@@ -54,6 +64,7 @@ function LineCard({line, first, voices, narrator, speaking, playing, onPlay, onS
   };
   const issues = problems(line);
   const ownVoice = line.voice === narrator?.voice ? '' : line.voice;
+  const cloned = voices.some(voice => voice.own && voice.name === line.voice);
   const ownSpeed = line.speed === narrator?.speed ? '' : String(line.speed);
 
   return <li className={'line-card' + (line.muted ? ' muted-line' : '')}>
@@ -71,9 +82,10 @@ function LineCard({line, first, voices, narrator, speaking, playing, onPlay, onS
         <ConfirmButton size="small" variant="ghost" icon={Trash2} tip="Remove this line (Ctrl+Z undoes)" armed="Remove?" onConfirm={() => onEdit([{remove: line.id}])}/>
       </span>
     </div>
-    <textarea className="line-text" rows={Math.min(6, Math.max(1, Math.ceil(draft.length / 34)))} value={draft} aria-label={`Line ${line.id}`}
-      data-tip="Enter saves. Ctrl+Enter splits at the cursor, Ctrl+Backspace at the start merges into the line above."
+    <textarea ref={box} className="line-text" rows={Math.min(6, Math.max(1, Math.ceil(draft.length / 34)))} value={draft} aria-label={`Line ${line.id}`}
+      data-tip="Enter saves. Ctrl+K says a word differently. Ctrl+Enter splits at the cursor, Ctrl+Backspace at the start merges into the line above."
       onChange={event => setDraft(event.target.value)} onBlur={save} onKeyDown={keys}/>
+    {sayAs && <SayAs project={project} line={line} text={draft} target={sayAs} ownVoice={cloned} onEdit={onEdit} onClose={() => { setSayAs(null); box.current?.focus(); }}/>}
     {issues.length > 0 && <ul className="line-issues">{issues.map(issue => <li key={issue}>{issue}</li>)}</ul>}
     <div className="line-controls">
       <select aria-label="Voice" data-tip="Who reads this line" value={ownVoice} onChange={event => onEdit([{set: {line: line.id, voice: event.target.value}}])}>
@@ -84,6 +96,8 @@ function LineCard({line, first, voices, narrator, speaking, playing, onPlay, onS
         <option value="">{narrator ? `${narrator.speed}×` : '1×'}</option>
         {speeds.filter(speed => speed !== narrator?.speed).map(speed => <option key={speed} value={String(speed)}>{speed}×</option>)}
       </select>
+      <Button size="small" variant="ghost" icon={Speech} tip="Say a word differently: put the cursor on it first (Ctrl+K)" aria-pressed={Boolean(sayAs)}
+        onMouseDown={event => event.preventDefault()} onClick={() => sayAs ? setSayAs(null) : openSayAs()}/>
     </div>
   </li>;
 }
@@ -130,7 +144,14 @@ export function Narration({project, timeline, time, onSeek, onEdit, onSpoken}) {
         {!voices.some(voice => voice.name === narrator.voice) && <option value={narrator.voice}>{narrator.voice}</option>}
         <VoiceOptions voices={voices}/>
       </select></label>}
-    {lines.length ? <ol className="line-list">{lines.map((line, index) => <LineCard key={line.id} line={line} first={index === 0} voices={voices} narrator={narrator}
+    {narrator?.pronounce && <div className="pronounce">
+      <span className="field-label">Said this way everywhere</span>
+      <ul>{Object.entries(narrator.pronounce).map(([word, sound]) => <li key={word}>
+        <span>{word}</span><span className={'pronounce-sound' + (sound.startsWith('/') ? ' phonemes' : '')}>{sound}</span>
+        <Button size="small" variant="ghost" icon={X} tip={`Say ${word} the usual way again`} onClick={() => onEdit([{pronounce: {word, say: ''}}])}/>
+      </li>)}</ul>
+    </div>}
+    {lines.length ? <ol className="line-list">{lines.map((line, index) => <LineCard key={line.id} project={project} line={line} first={index === 0} voices={voices} narrator={narrator}
       speaking={speaking.has(line.id) || (speaking.has('all') && !line.made)} playing={playing === line.id} onPlay={() => play(line.id)}
       onSpeak={speak} onEdit={onEdit} onSeek={onSeek}/>)}</ol>
       : <p className="hint">No narration yet. Write a line and it’s read at the playhead.</p>}

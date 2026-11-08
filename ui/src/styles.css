@@ -446,6 +446,20 @@ textarea.bad, textarea.bad:focus-visible { border-color: var(--bad); box-shadow:
 .line-controls { display: flex; align-items: center; gap: 6px; }
 .line-controls select { flex: 1; min-width: 0; height: 30px; font-size: 12.5px; padding: 0 8px; }
 .line-controls select.line-speed { flex: 0 0 68px; }
+.say-as { display: flex; flex-direction: column; gap: 8px; padding: 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); }
+.say-as-head { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+.say-as-head strong { color: var(--text); font-weight: 600; }
+.say-as-head .button { margin-left: auto; }
+.say-as > .segmented { display: flex; margin-left: 0; }
+.say-as > .segmented button { flex: 1; white-space: nowrap; }
+.say-as input.phonemes { font-family: var(--mono); }
+.say-as .button-row { justify-content: flex-end; }
+.pronounce { display: flex; flex-direction: column; gap: 4px; }
+.pronounce ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; }
+.pronounce li { display: flex; align-items: center; gap: 10px; min-height: 30px; font-size: 13px; }
+.pronounce-sound { color: var(--muted); min-width: 0; overflow-wrap: anywhere; }
+.pronounce-sound.phonemes { font-family: var(--mono); font-size: 12.5px; }
+.pronounce li .button { margin-left: auto; }
 .line-add { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
 .line-add textarea { min-height: 0; resize: none; }
 
