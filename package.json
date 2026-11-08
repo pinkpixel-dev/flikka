@@ -57,6 +57,8 @@
   "dependencies": {
     "@fontsource-variable/geist": "5.3.0",
     "@fontsource-variable/geist-mono": "5.3.0",
+    "@fontsource-variable/noto-sans-jp": "5.3.1",
+    "@fontsource-variable/noto-sans-sc": "5.3.1",
     "@hyperframes/core": "0.8.223",
     "@hyperframes/engine": "0.8.223",
     "@hyperframes/player": "0.8.223",

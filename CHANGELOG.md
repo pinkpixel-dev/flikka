@@ -41,6 +41,9 @@
 - `flikka project undo <id>` works for films as well, stepping back through saves made in the panel (up to 50, kept in the project's `history/`).
 
 ### 🐛 Fixes
+- Japanese and Chinese captions break between words instead of in the middle of one, keep Japanese verb endings with their word, and never start a line with closing punctuation or a small kana.
+- Japanese and Chinese titles and captions use Noto Sans JP or SC, now shipped with Flikka, so they render the same on every machine instead of as empty boxes where no such font is installed.
+- `flikka voice setup japanese` is tested: after its one-time download, Japanese voices speak.
 - Narration in other languages reads properly. Sentences end at `。！？` and the Hindi `।` too, Japanese and Chinese captions break by characters instead of running on as one line, and "too fast to read" uses limits that fit those languages.
 - The film check listens in the narration's language. It tells Whisper the language, uses the `small` model outside English (unless you picked one), keeps accented letters together, and skips the misheard-words check for Japanese and Chinese with a note saying so, instead of flagging lines that sound fine.
 - Kokoro now reads every voice in its own language. Before, every voice used American English rules, so British voices pronounced words the American way and other languages came out garbled. Narration for non-American voices is made again once.
