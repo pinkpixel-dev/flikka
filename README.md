@@ -120,7 +120,7 @@ flikka record stop
 flikka project render 3f9a1c2e
 ```
 
-The finished video lands in `~/Documents/flikka/`. Videos are square (1080×1080) by default, which looks good almost everywhere.
+The finished video lands in `~/Videos/flikka/`. Videos are square (1080×1080) by default, which looks good almost everywhere.
 
 ### Open the panel
 
@@ -261,7 +261,7 @@ A film picks its narrator with `"voice": {"name": "..."}`. The default is `af_he
 flikka shot
 ```
 
-Pick an area or a window and Flikka frames it on a backdrop, saves it to `~/Documents/flikka/shots`, and copies it to your clipboard. `--background`, `--plain` and `--from file.png` change how it's made.
+Pick an area or a window and Flikka frames it on a backdrop, saves it to `~/Pictures/flikka`, and copies it to your clipboard. `--background`, `--plain` and `--from file.png` change how it's made.
 
 ## Using it with AI agents
 
@@ -278,14 +278,26 @@ After that, you can just ask your agent to "record yourself signing up on exampl
 | What | Where |
 |---|---|
 | Projects | `~/.flikka/projects/<id>/` |
-| Finished videos | `~/Documents/flikka/` |
-| Screenshots | `~/Documents/flikka/shots/` |
+| Finished videos | `~/Videos/flikka/` |
+| Screenshots | `~/Pictures/flikka/` |
 | Your voices and styles | `~/.flikka/voices/`, `~/.flikka/styles/` |
 | Downloaded tools | `~/.flikka/bin/` |
 | Anything Flikka can rebuild | `~/.cache/flikka/` |
 | Activity log | `~/.flikka/trace.log` |
 
-`FLIKKA_DIR` changes where finished videos go, and `FLIKKA_PROJECTS` moves the projects folder.
+Videos and screenshots go in your desktop's own Videos and Pictures folders, so if yours are renamed or in another language (like `~/Vidéos`), Flikka uses those.
+
+You can move any of the first four rows. Open **Settings** in the panel, or use the CLI:
+
+```bash
+flikka app config                                # where everything goes right now, and why
+flikka app config set videos ~/Videos/demos      # videos, screenshots, projects, voices or styles
+flikka app config unset videos                   # back to the default
+```
+
+Both save to `~/.config/flikka/config.json`, so the panel, the CLI and your agent all agree. Files that are already saved stay where they are, so move them yourself if you want them together.
+
+For one run or a script, an environment variable wins over the setting: `FLIKKA_VIDEOS`, `FLIKKA_SCREENSHOTS`, `FLIKKA_PROJECTS`, `FLIKKA_VOICES` or `FLIKKA_STYLES`.
 
 ## Updating and uninstalling
 

@@ -14,7 +14,7 @@ export function Shots({onCount}) {
   const load = () => api('shots').then(list => { setShots(old => JSON.stringify(old) === JSON.stringify(list) ? old : list); onCount(list.length); });
   usePoll(load, 3000);
   return <div className="page">
-    <header className="page-head"><h1>Screenshots</h1><span className="muted">Take one with <code>flikka shot</code>. Saved in ~/Documents/flikka/shots.</span></header>
+    <header className="page-head"><h1>Screenshots</h1><span className="muted">Take one with <code>flikka shot</code>. Saved in your screenshots folder (<a href="#settings">Settings</a>).</span></header>
     {shots?.length === 0 && <div className="empty">No screenshots yet. Run <code>flikka shot</code> to pick an area or a window.</div>}
     <div className="shot-grid">
       {shots?.map(shot => <figure key={shot.name} className="shot">

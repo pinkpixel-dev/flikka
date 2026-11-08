@@ -21,6 +21,12 @@
 - Films report their render progress now, frame by frame, like recordings do.
 - Press `?` (or Shortcuts at the bottom of the sidebar) for a sheet of every keyboard shortcut in the panel.
 
+### 📁 Folders and settings
+- Finished videos now go to `~/Videos/flikka` and screenshots to `~/Pictures/flikka`, instead of `~/Documents/flikka`. Both follow the desktop's own Videos and Pictures folders, so a renamed or translated one (like `~/Vidéos`) works too.
+- A Settings page in the panel, and `flikka app config` in the CLI, let you move the videos, screenshots, projects, voices and styles folders. Both save to `~/.config/flikka/config.json`, so the panel, the CLI and agents all agree, and the panel picks up a change right away. Each folder shows whether it's the default, changed in Settings, or set by an environment variable.
+- New environment variables for one-off overrides: `FLIKKA_VIDEOS` (`FLIKKA_DIR` still works), `FLIKKA_SCREENSHOTS`, `FLIKKA_PROJECTS`, `FLIKKA_VOICES` and `FLIKKA_STYLES`. They win over the settings file.
+- The terminal's state files moved from the videos folder into `~/.flikka`.
+
 ### ✂️ Editing
 - `flikka project edit --unzoom <time>` removes the zoom showing at that moment (works with `--output-time`).
 - `flikka project edit --padding <px>`, `--radius <px>` and `--shadow on|off` set the frame around the recording. Padding goes up to a third of the video's short side and corners up to 200 px, and the error says the limit when you go past it.

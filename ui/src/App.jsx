@@ -9,11 +9,12 @@ import {NewRecording} from './views/NewRecording.jsx';
 import {Project} from './views/Project.jsx';
 import {Shots} from './views/Shots.jsx';
 import {Voices} from './views/Voices.jsx';
+import {Settings} from './views/Settings.jsx';
 
 export function App() {
   const hash = useHash();
   const [projectId] = hash.match(/^project\/([\w-]+)$/)?.slice(1) || [];
-  const view = projectId ? 'project' : ['shots', 'voices'].includes(hash) ? hash : 'new';
+  const view = projectId ? 'project' : ['shots', 'voices', 'settings'].includes(hash) ? hash : 'new';
   const [projects, setProjects] = useState(null);
   const [counts, setCounts] = useState({shots: 0, voices: 0});
   const [message, setMessage] = useState('');
@@ -29,7 +30,7 @@ export function App() {
   const queue = action => body => api(action, body).catch(failure => toast(failure.message)).finally(() => { loadRenders(); loadList(); });
   usePoll(() => api('shots').then(list => setCounts(old => ({...old, shots: list.length}))), 3000);
   useEffect(() => { api('voices').then(list => setCounts(old => ({...old, voices: list.length}))).catch(() => {}); }, [view]);
-  useEffect(() => { toast(''); if (view === 'shots' || view === 'voices') monitor.stop(); }, [hash]);
+  useEffect(() => { toast(''); if (['shots', 'voices', 'settings'].includes(view)) monitor.stop(); }, [hash]);
   useEffect(() => { if (!location.hash) history.replaceState(null, '', '#new'); }, []);
 
   return <ToastContext.Provider value={toast}>
@@ -42,6 +43,7 @@ export function App() {
         {view === 'project' && <Project key={projectId} id={projectId} onChange={loadList}/>}
         {view === 'shots' && <Shots onCount={shots => setCounts(old => ({...old, shots}))}/>}
         {view === 'voices' && <Voices onCount={voices => setCounts(old => ({...old, voices}))}/>}
+        {view === 'settings' && <Settings/>}
       </main>
     </div>
     <Tooltips/>

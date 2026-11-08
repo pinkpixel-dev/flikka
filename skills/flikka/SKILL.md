@@ -80,7 +80,7 @@ Stopping writes `recording.mp4`, generates `recording.project.json`, trims idle 
 flikka project preview <id>
 
 # Render the final 60 fps MP4 video
-flikka project render <id> --out ~/Documents/flikka/demo.mp4
+flikka project render <id> --out ~/Videos/flikka/demo.mp4
 ```
 
 ## Desktop Screen Recording Workflow
