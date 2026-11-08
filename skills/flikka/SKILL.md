@@ -15,7 +15,7 @@ Every command prints structured JSON to stdout.
 |---|---|
 | `flikka record browser <url>` | Opens an isolated Chromium instance and records inside the page |
 | `flikka record screen` | Records the Linux desktop display using hardware acceleration |
-| `flikka record screen --no-cursor` | Records screen or window without the mouse cursor |
+| `flikka record screen --no-cursor` | Starts with the mouse cursor hidden. A whole display on Wayland logs the pointer instead of baking it in (when `flikka-cursor` is installed and the portal supports it), so `flikka project edit <id> --cursor on\|off` can show or hide it later; check `cursorBaked` in the project. A window or region recorded this way has no pointer at all |
 | `flikka record look` | Inspects interactive elements on the page with numeric references |
 | `flikka record click <target>` | Glides the mouse and clicks an element |
 | `flikka record type <target> "text"` | Types with human keystroke timing |

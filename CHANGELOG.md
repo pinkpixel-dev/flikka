@@ -72,6 +72,13 @@
 - `flikka project speak <id>` works on films, speaking the sentences that aren't spoken yet (`--scene 2 --sentence 1 --again` for one). `flikka project check <id> --lines` checks the spoken sentences for misheard words without a render.
 - A film's live preview shows right away instead of speaking every new sentence first. Sentences that aren't spoken yet get their captions and a length guessed from their words, and a note under the player says how many are ready. Speak them from the Narration tab, or render, and they play.
 
+### 🖱️ Screen recordings
+- Recording a whole display on Wayland no longer bakes the mouse pointer into the video. Flikka logs where it is and draws it at render time, like it does for browser demos, so the cursor overlay switch (or `--cursor on|off`) can show or hide it after recording. `--no-cursor` now just starts it hidden.
+- The pointer comes from `flikka-cursor`, a small new helper in the same download as `flikka-voice`. It's fetched in the background the first time you record a display, and your desktop asks you to pick the screen once.
+- Windows, regions, and desktops whose screencast portal can't report the pointer separately keep it in the video, like before.
+- A paused and resumed recording handles the pointer the same way in every part.
+- `flikka app doctor` lists `flikka-cursor` on Wayland. It's optional, since screen recordings work without it.
+
 ### ✂️ Editing
 - `flikka project edit --unzoom <time>` removes the zoom showing at that moment (works with `--output-time`).
 - `flikka project edit --padding <px>`, `--radius <px>` and `--shadow on|off` set the frame around the recording. Padding goes up to a third of the video's short side and corners up to 200 px, and the error says the limit when you go past it.
