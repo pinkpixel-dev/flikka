@@ -1,8 +1,10 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {AudioLines, Pause, Play, Plus, RotateCcw, Speech, Trash2, Volume2, VolumeX, X} from 'lucide-react';
+import {AudioLines, Copy, Gauge, Pause, Play, Plus, RotateCcw, Speech, Trash2, Volume2, VolumeX, X} from 'lucide-react';
 import {api, narrationClipURL} from '../lib/api.js';
 import {clock} from '../lib/format.js';
 import {useToast} from '../lib/toast.js';
+import {useFlash} from '../lib/hooks.js';
+import {plainText} from '../../../lib/marks.mjs';
 import {Button, ConfirmButton, Section} from '../components/ui.jsx';
 import {SayAs, sayAsTarget} from './SayAs.jsx';
 
@@ -19,6 +21,15 @@ const problems = line => [
   line.snapped && 'Its moment was cut',
 ].filter(Boolean);
 
+// Fit stops here (lib/narration.mjs maxFitSpeed); past it the words need shortening.
+const maxFitSpeed = 1.3;
+
+// Shorten is your agent's job: a prompt with the line, how long it runs over and its word budget.
+const shortenPrompt = (project, line) => `In Flikka project ${project.id}, narration line ${line.id} runs ${line.overrun.toFixed(1)} s too long for its moment. `
+  + `Rewrite it in ${line.shortenTo} words or fewer, keeping what it says: "${plainText(line.text)}". `
+  + (plainText(line.text) !== line.text ? `Its text has say-as marks, [word](how it sounds): keep them on any of those words you keep. The text as stored: "${line.text}". ` : '')
+  + `Save it with flikka project edit ${project.id} --reword "${line.id},<new words>", then flikka project speak ${project.id} --line ${line.id} and check it fits with flikka project timeline ${project.id}.`;
+
 // Where the cursor sits in the words as they'll be saved (spaces squeezed, the start trimmed), for a split.
 const savedPosition = (text, at) => text.slice(0, at).replace(/\s+/g, ' ').trimStart().length;
 const squeeze = text => text.replace(/\s+/g, ' ').trim();
@@ -30,7 +41,8 @@ function VoiceOptions({voices}) {
   </optgroup>);
 }
 
-function LineCard({project, line, first, voices, narrator, speaking, playing, onPlay, onSpeak, onEdit, onSeek}) {
+function LineCard({project, line, first, voices, narrator, speaking, playing, onPlay, onSpeak, onFit, onEdit, onSeek}) {
+  const [copied, flash] = useFlash();
   const [draft, setDraft] = useState(line.text);
   const [sayAs, setSayAs] = useState(null);
   const box = useRef(null);
@@ -87,6 +99,12 @@ function LineCard({project, line, first, voices, narrator, speaking, playing, on
       onChange={event => setDraft(event.target.value)} onBlur={save} onKeyDown={keys}/>
     {sayAs && <SayAs project={project} line={line} text={draft} target={sayAs} ownVoice={cloned} onEdit={onEdit} onClose={() => { setSayAs(null); box.current?.focus(); }}/>}
     {issues.length > 0 && <ul className="line-issues">{issues.map(issue => <li key={issue}>{issue}</li>)}</ul>}
+    {line.overrun > 0 && <div className="line-fix">
+      <Button size="small" icon={Gauge} disabled={speaking || line.speed >= maxFitSpeed}
+        tip={line.speed >= maxFitSpeed ? `Already at ${maxFitSpeed}×, as fast as Fit goes: shorten it` : `Read it faster until it fits (up to ${maxFitSpeed}×), then speak it again`} onClick={() => onFit(line.id)}>Fit</Button>
+      {line.shortenTo && <Button size="small" icon={Copy} tip={`Copy a prompt asking your agent to say it in ${line.shortenTo} words or fewer`}
+        onClick={() => navigator.clipboard.writeText(shortenPrompt(project, line)).then(() => flash('shorten'))}>{copied === 'shorten' ? 'Copied' : 'Shorten'}</Button>}
+    </div>}
     <div className="line-controls">
       <select aria-label="Voice" data-tip="Who reads this line" value={ownVoice} onChange={event => onEdit([{set: {line: line.id, voice: event.target.value}}])}>
         <option value="">Narrator</option>
@@ -123,6 +141,16 @@ export function Narration({project, timeline, time, onSeek, onEdit, onSpoken}) {
     catch (failure) { toast(failure.message); }
     finally { setSpeaking(old => { const next = new Set(old); next.delete(key); return next; }); }
   };
+  const fit = async line => {
+    setSpeaking(old => new Set(old).add(line));
+    try {
+      const {fitted} = await api('narration-fit', {id: project.id, line});
+      const result = fitted.find(item => item.id === line);
+      if (result && !result.fits) toast(result.note);
+      onSpoken();
+    } catch (failure) { toast(failure.message); }
+    finally { setSpeaking(old => { const next = new Set(old); next.delete(line); return next; }); }
+  };
   const play = id => {
     audio.current?.pause();
     if (playing === id) { setPlaying(null); return; }
@@ -153,7 +181,7 @@ export function Narration({project, timeline, time, onSeek, onEdit, onSpoken}) {
     </div>}
     {lines.length ? <ol className="line-list">{lines.map((line, index) => <LineCard key={line.id} project={project} line={line} first={index === 0} voices={voices} narrator={narrator}
       speaking={speaking.has(line.id) || (speaking.has('all') && !line.made)} playing={playing === line.id} onPlay={() => play(line.id)}
-      onSpeak={speak} onEdit={onEdit} onSeek={onSeek}/>)}</ol>
+      onSpeak={speak} onFit={fit} onEdit={onEdit} onSeek={onSeek}/>)}</ol>
       : <p className="hint">No narration yet. Write a line and it’s read at the playhead.</p>}
     <form className="line-add" onSubmit={add}>
       <textarea rows={2} value={said} placeholder={`Say something at ${clock(time)}`} aria-label="New line"

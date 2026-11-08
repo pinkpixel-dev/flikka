@@ -135,3 +135,19 @@ test('the project check catches broken narration', () => {
   assert.throws(() => validate(recording({narration: {lines: [], voise: 'af_heart'}})), /unknown field "voise"/);
   assert.doesNotThrow(() => validate(recording({narration: {voice: 'af_heart', duck: false, lines: [{id: 'n1', text: 'Hi', at: null}]}})));
 });
+
+test('Fit asks for just enough speed, capped at 1.3×, and Shorten gets a word budget', async () => {
+  const {fitSpeed, shortenTo, maxFitSpeed} = await import('../lib/narration.mjs');
+  // 2.88 s of speech in 2.5 s of room at 1×: 1.15 × 1.03 headroom, rounded up.
+  assert.equal(fitSpeed(1, 2.88, 2.5), 1.19);
+  assert.equal(fitSpeed(1.2, 4, 2), maxFitSpeed);
+  assert.equal(fitSpeed(maxFitSpeed, 4, 2), null);
+  assert.equal(fitSpeed(1, 2, 0), null);
+  // Ten words in 4 s with 3 s of room: 7 words fit (less 5%), marks counted as their word.
+  assert.equal(shortenTo('one two three four five six seven eight nine [ten](tenn)', 4, 3), 7);
+  assert.equal(shortenTo('one two three four', 4, 0.5), 3);
+  // placeLines gives a line that runs over its word budget.
+  const project = recording({narration: {lines: [{id: 'n1', text: 'one two three four five six seven eight nine ten', at: 1, until: 4}]}});
+  const [line] = placeLines(project, new Map([['n1', 4]]));
+  assert.deepEqual([+line.overrun.toFixed(2), line.shortenTo], [1, 7]);
+});

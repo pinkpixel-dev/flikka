@@ -443,6 +443,7 @@ textarea.bad, textarea.bad:focus-visible { border-color: var(--bad); box-shadow:
 .line-id { color: var(--faint); font: 11.5px var(--mono); }
 .line-card .line-text { min-height: 0; resize: none; }
 .line-issues { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 2px; color: var(--warn); font-size: 12px; }
+.line-fix { display: flex; gap: 6px; }
 .line-controls { display: flex; align-items: center; gap: 6px; }
 .line-controls select { flex: 1; min-width: 0; height: 30px; font-size: 12.5px; padding: 0 8px; }
 .line-controls select.line-speed { flex: 0 0 68px; }

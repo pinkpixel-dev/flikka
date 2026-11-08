@@ -115,6 +115,6 @@ export function Studio({project, refresh, onChange}) {
     </div>
     <Inspector project={project} edit={edit} render={render} rendering={rendering} changed={changed}
       narration={editable && <Narration project={project} timeline={timeline} time={time} onSeek={seconds => player.current?.seek(seconds)}
-        onEdit={narrationEdit} onSpoken={() => setVersion(old => old + 1)}/>}/>
+        onEdit={narrationEdit} onSpoken={() => { setVersion(old => old + 1); refresh(); }}/>}/>
   </div>;
 }
