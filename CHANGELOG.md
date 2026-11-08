@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.4.0 - Unreleased
+## 0.4.0 - November 8, 2026
 
 ### 🎬 Panel
 - The panel is now a dark, full-window app built in React. Projects stay in the sidebar, and a project's page puts the video front and center with its edits on the right.
@@ -30,7 +30,6 @@
 - The default voice in Settings is a menu of Kokoro's 54 voices, grouped by language with Kokoro's own grades.
 - `flikka voice list` shows Kokoro's voices with their language, gender and grade.
 - `flikka app doctor` lists `espeak-ng` as optional (needed by the Spanish, French, Hindi, Italian and Portuguese voices) and gives its install command separately, so it never fails the check.
-- Your own voices are switched off for now. Kokoro can't clone a voice, so a recorded sample was never actually used, and films quietly fell back to the default voice. `flikka voice add` and the Voices page come back once there's a model that can clone.
 - Finished videos now go to `~/Videos/flikka` and screenshots to `~/Pictures/flikka`, instead of `~/Documents/flikka`. Both follow the desktop's own Videos and Pictures folders, so a renamed or translated one (like `~/Vidéos`) works too.
 - A Settings page in the panel, and `flikka app config` in the CLI, cover everything that used to need an environment variable: the videos, screenshots, projects, voices and styles folders, the default voice, the transcription model, which browser records demos (and its sign-ins, profile and port), your own screenshot command, and the panel's port. Both save to `~/.config/flikka/config.json`, so the panel, the CLI and agents all agree, and the panel picks up a change right away. Each setting shows whether it's the default, changed in Settings, or set by an environment variable, and a value that can't work is refused with the reason.
 - New environment variables for one-off overrides: `FLIKKA_VIDEOS` (`FLIKKA_DIR` still works) and `FLIKKA_SCREENSHOTS`. Every environment variable wins over the settings file.
@@ -110,6 +109,10 @@
 
 ### 🧹 Maintenance
 - Added `@fontsource-variable/geist`, `@fontsource-variable/geist-mono` and `lucide-react` for the panel's fonts and icons, bundled locally.
+- The helpers come from the `voice-v0.2.0` release now: `flikka-voice` with CUDA support, plus the new `flikka-cursor`, in one archive pinned by its sha256.
+
+### 🏷️ Versioning
+- Bumped to 0.4.0.
 
 ## 0.3.0 - October 31, 2026
 
