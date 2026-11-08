@@ -21,6 +21,9 @@
 - Renders wait their turn. Hit Render on a few projects and they go one at a time, listed in the sidebar with the step each one is on and how far along it is. Take a waiting one out of line with its ×. Finished and failed ones stay listed until you clear them, and a failed render says why on its project page too.
 - Films report their render progress now, frame by frame, like recordings do.
 - Press `?` (or Shortcuts at the bottom of the sidebar) for a sheet of every keyboard shortcut in the panel.
+- Zoom into the timeline. Use the − and + buttons, `+` and `-` with the timeline focused, or Ctrl+wheel, which zooms around the pointer. `0` fits the whole video again. Zoomed all the way in, about 2 seconds fill the timeline, and the ruler shows tenths once its marks are under a second apart.
+- A strip under the timeline shows the whole video, with a box around the part in view. Drag the box to scroll, drag its edges to zoom, or click the strip to jump there. With the box focused, the arrow keys scroll it (Shift for a whole view), and so do Home and End. While zoomed in, the mouse wheel scrolls sideways.
+- While the video plays, the timeline follows the playhead. Scroll it yourself and it stays where you put it until you press play again.
 
 ### 📁 Folders and settings
 - The default voice in Settings is a menu of Kokoro's 54 voices, grouped by language with Kokoro's own grades.

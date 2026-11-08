@@ -9,7 +9,7 @@ const groups = [
   ['Editing', [[['Ctrl', 'Z'], 'Undo the last edit'], [['Ctrl', 'S'], 'Save the open scene (films)']]],
   ['Timeline, when focused', [[['←', '→'], 'Move the playhead a frame (Shift: a second)'], [['Enter'], 'Cut the selection, or choose the zoom under the playhead'],
     [['[', ']'], 'Previous or next zoom'], [['Z'], 'Pick the click or typing nearest the playhead'], [['A'], 'Aim the chosen zoom'],
-    [['Delete'], 'Remove the chosen zoom'], [['Alt', '←', '→'], 'Nudge the chosen narration line a frame (Shift: 0.1 s)'], [['Esc'], 'Clear the selection']]],
+    [['Delete'], 'Remove the chosen zoom'], [['Alt', '←', '→'], 'Nudge the chosen narration line a frame (Shift: 0.1 s)'], [['+', '-'], 'Zoom in or out (or Ctrl+wheel)'], [['0'], 'Fit the whole video'], [['Esc'], 'Clear the selection']]],
   ['Aiming a zoom', [[['←', '↑', '↓', '→'], 'Move where it looks (Shift: further)'], [['Enter'], 'Save'], [['Esc'], 'Cancel']]],
   ['Film scenes', [[['Alt', '←', '→'], 'Move the focused scene']]],
   ['Anywhere', [[['?'], 'Show these shortcuts']]],

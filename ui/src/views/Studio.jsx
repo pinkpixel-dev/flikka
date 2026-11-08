@@ -16,6 +16,7 @@ export function Studio({project, refresh, onChange}) {
   const toast = useToast();
   const player = useRef(null);
   const [time, setTime] = useState(0);
+  const [playing, setPlaying] = useState(false);
   const [shown, setShown] = useState(project.final && project.state !== 'rendering' ? 'final' : 'live');
   const [preview, setPreview] = useState(null);
   const [timeline, setTimeline] = useState(null);
@@ -98,7 +99,7 @@ export function Studio({project, refresh, onChange}) {
 
   return <div className="studio">
     <div className="stage-column">
-      <Player ref={player} {...source} fps={fps} onTime={setTime} note={showing === 'none' ? 'This project has no recording to edit.' : undefined}
+      <Player ref={player} {...source} fps={fps} onTime={setTime} onPlaying={setPlaying} note={showing === 'none' ? 'This project has no recording to edit.' : undefined}
         overlay={aim && timeline && <AimStage src={media(project.id, 'raw')} timeline={timeline} aim={aim} onChange={change => setAim(old => ({...old, ...change}))} onSave={saveAim} onCancel={() => setAim(null)}/>}>
         {aim && <AimBar aim={aim} saving={aiming} onChange={change => setAim(old => ({...old, ...change}))} onSave={saveAim} onCancel={() => setAim(null)}/>}
         {editable && !aim && <Button icon={Undo2} variant="ghost" size="small" tip="Undo the last edit (Ctrl+Z)" disabled={rendering} onClick={undo}/>}
@@ -112,7 +113,7 @@ export function Studio({project, refresh, onChange}) {
       {showing === 'live' && preview?.narration && preview.narration.spoken < preview.narration.total &&
         <div className="banner">{preview.narration.spoken} of {preview.narration.total} narration lines spoken. The rest play once you render.</div>}
       {stale && <div className="banner">The timeline shows the edit as it is now. Render to update the exported video.</div>}
-      {editable && timeline && <Timeline project={project.id} timeline={timeline} time={time} fps={fps} stale={stale} onEdit={timelineEdit} onNarration={narrationEdit} onAim={startAim} onSeek={seconds => player.current?.seek(seconds)}/>}
+      {editable && timeline && <Timeline project={project.id} timeline={timeline} time={time} playing={playing} fps={fps} stale={stale} onEdit={timelineEdit} onNarration={narrationEdit} onAim={startAim} onSeek={seconds => player.current?.seek(seconds)}/>}
     </div>
     <Inspector project={project} edit={edit} render={render} rendering={rendering} changed={changed}
       narration={editable && <Narration project={project} timeline={timeline} time={time} onSeek={seconds => player.current?.seek(seconds)}

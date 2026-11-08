@@ -1,9 +1,11 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {Crosshair, Scissors, Trash2, X, ZoomIn} from 'lucide-react';
+import {Crosshair, Maximize2, Minus, Plus, Scissors, Trash2, X, ZoomIn} from 'lucide-react';
 import {clock, timecode} from '../lib/format.js';
 import {Button} from './ui.jsx';
 import {Wave} from '../timeline/Wave.jsx';
 import {dragShape, lineChange, lineShape} from '../timeline/lines.js';
+import {Overview} from '../timeline/Overview.jsx';
+import {useZoom} from '../timeline/useZoom.js';
 
 // Under the player: what the finished video holds (flikka project timeline), in its own seconds. Clips with the
 // cuts between them, camera moves, overlays, clicks and markers, and the words spoken.
@@ -14,14 +16,15 @@ import {dragShape, lineChange, lineShape} from '../timeline/lines.js';
 //   Events: click a click or a typing burst (or press Z near one) to zoom in right there.
 //   Narration: drag a line to move it, or its edges to trim it. Click one to choose it.
 // Keys: [ and ] jump to the previous or next zoom and choose it, Enter chooses the zoom under the playhead, Alt+← →
-// nudges the chosen narration line a frame (Shift: a tenth of a second).
+// nudges the chosen narration line a frame (Shift: a tenth of a second), + and - zoom, 0 fits the whole video.
+// Ctrl+wheel zooms around the pointer, and zoomed in, the wheel scrolls sideways (lib: ../timeline/useZoom.js).
 // Edges snap to the playhead, clip edges, other zooms and narration lines, then to whole frames.
 const steps = [0.5, 1, 2, 5, 10, 15, 30, 60, 120, 300];
 const scales = [1.25, 1.5, 2, 2.5, 3];
 const at = (seconds, duration) => `${(seconds / duration) * 100}%`;
 const span = (from, to, duration) => ({left: at(from, duration), width: `max(2px, ${((to - from) / duration) * 100}%)`});
 
-export function Timeline({project, timeline, time, onSeek, onEdit, onNarration, onAim, fps, stale}) {
+export function Timeline({project, timeline, time, playing, onSeek, onEdit, onNarration, onAim, fps, stale}) {
   const strip = useRef();
   const [width, setWidth] = useState(800);
   const [drag, setDrag] = useState(null);
@@ -39,6 +42,7 @@ export function Timeline({project, timeline, time, onSeek, onEdit, onNarration, 
   useEffect(() => { setSaving(null); setChosen(null); setSelection(null); setPicked(null); }, [timeline]);
 
   const duration = Math.max(0.01, timeline.duration);
+  const zoom = useZoom(duration, time, playing);
   const tick = steps.find(step => (step / duration) * width >= 72) || steps.at(-1);
   const ticks = Array.from({length: Math.floor(duration / tick) + 1}, (_, index) => index * tick);
   // Edits stay in the recording part of the video, not the intro or outro cards.
@@ -204,6 +208,7 @@ export function Timeline({project, timeline, time, onSeek, onEdit, onNarration, 
     else if ((event.key === 'Delete' || event.key === 'Backspace') && chosen !== null) { handled(); remove(chosen); }
     else if (event.key.toLowerCase() === 'z' && !event.ctrlKey && !event.metaKey && !event.altKey) { handled(); pickNearest(); }
     else if (event.key.toLowerCase() === 'a' && chosen !== null && onAim && !event.ctrlKey && !event.metaKey && !event.altKey) { handled(); aimAt(timeline.zooms[chosen]); }
+    else if (['+', '=', '-', '0'].includes(event.key) && !event.ctrlKey && !event.metaKey && !event.altKey) { handled(); ({'+': zoom.zoomIn, '=': zoom.zoomIn, '-': zoom.zoomOut, '0': zoom.fit})[event.key](); }
     else if (event.key === 'Escape' && (selection || chosen !== null || picked || chosenLine)) { handled(); setSelection(null); setChosen(null); setPicked(null); setChosenLine(null); }
   };
 
@@ -268,11 +273,19 @@ export function Timeline({project, timeline, time, onSeek, onEdit, onNarration, 
   const pickedEvent = picked && !saving ? events(picked.kind, picked.index) : null;
   const tools = selection && !saving ? {where: (selection.from + selection.to) / 2, row: 'clips'} : chosenZoom ? {where: (chosenZoom.from + chosenZoom.to) / 2, row: 'camera'}
     : pickedEvent ? {where: pickedEvent.at ?? (pickedEvent.from + pickedEvent.to) / 2, row: 'events', top: 20 + 26 * rows.findIndex(row => row.name === 'Events')} : null;
+  const zoomed = zoom.zoom > 1.001;
   return <div className={`timeline ${stale ? 'stale' : ''} ${drag?.moved ? 'dragging' : ''}`}>
-    <div className="timeline-labels"><span/>{rows.map(row => <span key={row.name} data-tip={row.tip}>{row.name}</span>)}</div>
-    <div className="timeline-track" ref={strip} role="slider" tabIndex={0} aria-label="Timeline" aria-valuemin={0} aria-valuemax={+duration.toFixed(2)} aria-valuenow={+time.toFixed(2)}
+    <div className="timeline-labels">
+      <div className="timeline-zoom">
+        <button type="button" data-tip="Zoom out (-)" aria-label="Zoom out" disabled={!zoomed} onClick={zoom.zoomOut}><Minus size={13} strokeWidth={1.8} aria-hidden/></button>
+        <button type="button" data-tip="Zoom in (+, or Ctrl+wheel)" aria-label="Zoom in" disabled={zoom.zoom >= zoom.maxZoom - 0.001} onClick={zoom.zoomIn}><Plus size={13} strokeWidth={1.8} aria-hidden/></button>
+      </div>
+      {rows.map(row => <span key={row.name} data-tip={row.tip}>{row.name}</span>)}
+    </div>
+    <div className="timeline-view" ref={zoom.viewport}>
+    <div className="timeline-track" ref={strip} style={{width: `${zoom.zoom * 100}%`}} role="slider" tabIndex={0} aria-label="Timeline" aria-valuemin={0} aria-valuemax={+duration.toFixed(2)} aria-valuenow={+time.toFixed(2)}
       aria-valuetext={timecode(time)} onKeyDown={keys} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={() => setDrag(null)}>
-      <div className="ruler">{ticks.map(second => <span key={second} style={{left: at(second, duration)}}>{clock(second)}</span>)}</div>
+      <div className="ruler">{ticks.map(second => <span key={second} style={{left: at(second, duration)}}>{tick < 1 ? timecode(second).slice(0, -1) : clock(second)}</span>)}</div>
       {rows.map(row => <div className="lane" key={row.name} data-lane={row.lane}>{row.items}</div>)}
       <div className="playhead" style={{transform: `translateX(${Math.min(1, time / duration) * width}px)`}} aria-hidden/>
       {tools && <div className={`timeline-tools on-${tools.row}`} style={{left: `clamp(110px, ${at(tools.where, duration)}, calc(100% - 110px))`, top: tools.top}} onPointerDown={event => event.stopPropagation()}>
@@ -291,6 +304,12 @@ export function Timeline({project, timeline, time, onSeek, onEdit, onNarration, 
         </>}
       </div>}
     </div>
+    </div>
+    {/* Always there, so zooming doesn't move the rows. At 1× the box covers it all; drag its edges to zoom. */}
+    <>
+      <div className="timeline-zoom"><button type="button" data-tip="Fit the whole video (0)" aria-label="Fit the whole video" disabled={!zoomed} onClick={zoom.fit}><Maximize2 size={13} strokeWidth={1.8} aria-hidden/></button></div>
+      <Overview timeline={timeline} time={time} view={zoom.view} minWidth={1 / zoom.maxZoom} onScrollTo={zoom.scrollToFraction} onShowRange={zoom.showRange}/>
+    </>
   </div>;
 }
 

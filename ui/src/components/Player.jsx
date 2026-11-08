@@ -6,7 +6,7 @@ import {Button} from './ui.jsx';
 // The big player: a <hyperframes-player> for the exported video (video mode) or the live composition. It keeps
 // its moment when a new version of the source loads. `fps` is what a frame step moves by. `overlay` covers the
 // stage (aiming a zoom), `children` go in the transport bar.
-export function Player({src, video, width, height, fps, onTime, ref, note, overlay, children}) {
+export function Player({src, video, width, height, fps, onTime, onPlaying, ref, note, overlay, children}) {
   const element = useRef(null);
   const [state, setState] = useState({time: 0, duration: 0, playing: false, muted: false, ready: false});
   const resume = useRef(0);
@@ -43,6 +43,11 @@ export function Player({src, video, width, height, fps, onTime, ref, note, overl
     for (const [name, listener] of Object.entries(events)) player.addEventListener(name, listener);
     return () => { for (const [name, listener] of Object.entries(events)) player.removeEventListener(name, listener); };
   }, [src]);
+
+  // Whether it's playing, for the timeline to follow the playhead.
+  const playingListener = useRef(onPlaying);
+  playingListener.current = onPlaying;
+  useEffect(() => { playingListener.current?.(state.playing); }, [state.playing]);
 
   // The playhead every frame while it plays (timeupdate only comes about 10 times a second).
   useEffect(() => {
