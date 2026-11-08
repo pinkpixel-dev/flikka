@@ -62,6 +62,17 @@ export function Meter({level}) {
   return <div className="meter" aria-hidden><div style={{transform: `scaleX(${level})`}}/></div>;
 }
 
+// How far a render is: the step it's on and a bar (moving stripes while the step can't say how far).
+// `render`: {step, progress} with progress 0…1 or null.
+export function Progress({render, compact}) {
+  const known = render.progress != null, percent = known ? Math.round(render.progress * 100) : null;
+  return <div className={`progress ${compact ? 'compact' : ''}`}>
+    <div className="progress-text"><span>{render.step}</span>{known && <span>{percent}%</span>}</div>
+    <div className={`progress-bar ${known ? '' : 'unknown'}`} role="progressbar" aria-label={render.step} aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent ?? undefined}>
+      <div style={known ? {transform: `scaleX(${render.progress})`} : undefined}/></div>
+  </div>;
+}
+
 // One tooltip for the page: it follows whatever element with data-tip is under the mouse or has keyboard focus,
 // placed above it (below when there's no room), and never clipped by a scrolling panel.
 export function Tooltips() {

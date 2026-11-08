@@ -13,5 +13,5 @@ export const when = time => {
   return day + ' ' + date.toLocaleTimeString(undefined, {hour: '2-digit', minute: '2-digit'});
 };
 
-export const states = {recording: 'Recording', paused: 'Paused', finalizing: 'Finishing', rendering: 'Rendering', ready: 'Ready', saved: 'Not rendered', error: 'Failed', starting: 'Starting', unknown: 'Unknown'};
+export const states = {recording: 'Recording', paused: 'Paused', finalizing: 'Finishing', rendering: 'Rendering', queued: 'Waiting', ready: 'Ready', saved: 'Not rendered', error: 'Failed', starting: 'Starting', unknown: 'Unknown'};
 export const recordingStates = ['starting', 'recording', 'paused'];

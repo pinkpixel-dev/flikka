@@ -74,7 +74,7 @@ export function Studio({project, refresh, onChange}) {
   };
   const render = async () => {
     if (busy) return;
-    setBusy(true); setChanged(false); toast('');
+    setBusy(true); toast('');
     try { await api('render', {id: project.id}); } catch (failure) { toast(failure.message); }
     finally { setBusy(false); refresh(); onChange(); }
   };

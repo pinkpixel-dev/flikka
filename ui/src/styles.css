@@ -353,7 +353,9 @@ audio { width: 100%; height: 36px; color-scheme: dark; }
 }
 @media (max-width: 820px) {
   .shell { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); height: auto; min-height: 100vh; overflow: visible; }
-  .sidebar { max-height: 40vh; border-right: 0; border-bottom: 1px solid var(--line-soft); }
+  .sidebar { max-height: 40vh; overflow-y: auto; border-right: 0; border-bottom: 1px solid var(--line-soft); }
+  .sidebar .list { flex: none; overflow: visible; }
+  .renders ul { max-height: none; }
   .studio { grid-template-columns: minmax(0, 1fr); }
   .inspector { border-left: 0; border-top: 1px solid var(--line-soft); }
   .player-wrap { min-height: 50vh; }
@@ -418,3 +420,49 @@ textarea:focus-visible { outline: none; border-color: var(--text); box-shadow: 0
 textarea.code { min-height: 96px; font: 12px/1.5 var(--mono); }
 textarea.bad, textarea.bad:focus-visible { border-color: var(--bad); box-shadow: 0 0 0 1px var(--bad); }
 .form-error { margin: 0; color: var(--bad); font-size: 12.5px; white-space: pre-line; }
+
+/* Render progress: the step and a bar; moving stripes while the step can't say how far. */
+.progress { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.progress-text { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.progress-text span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.progress-bar { height: 4px; border-radius: 999px; background: var(--surface-3); overflow: hidden; }
+.progress-bar div { height: 100%; background: var(--warn); transform-origin: left; transition: transform .4s var(--ease); }
+.progress-bar.unknown div { width: 23%; animation: slide 1.3s ease-in-out infinite; }
+.progress.compact .progress-text { font-size: 11px; }
+.progress.compact .progress-bar { height: 3px; }
+
+/* The render queue in the sidebar. */
+.renders { padding: 0 8px 6px; border-bottom: 1px solid var(--line-soft); }
+.renders-title { display: flex; align-items: center; justify-content: space-between; padding: 12px 10px 6px; }
+.text-button { padding: 2px 4px; border: 0; border-radius: 4px; background: none; color: var(--muted); font: 500 12px var(--sans); }
+.text-button:hover { color: var(--text); }
+.renders ul { display: flex; flex-direction: column; gap: 1px; margin: 0; padding: 0; list-style: none; max-height: 220px; overflow-y: auto; }
+.render-item { display: flex; align-items: center; gap: 4px; border-radius: var(--radius); transition: background-color .15s; }
+.render-item:hover { background: var(--surface); }
+.render-item a { flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0; padding: 7px 10px; color: inherit; text-decoration: none; border-radius: var(--radius); }
+.render-item b { font-weight: 500; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.render-item small { color: var(--faint); font-size: 11.5px; }
+.render-item.done small { color: var(--ok); }
+.render-item.failed small { color: var(--bad); }
+.render-item .button { margin-right: 4px; }
+
+.sidebar-foot { padding: 8px; border-top: 1px solid var(--line-soft); }
+.shortcuts-button { width: 100%; justify-content: flex-start; }
+
+/* The shortcuts sheet. */
+dialog.shortcuts { width: min(760px, calc(100vw - 32px)); max-height: calc(100vh - 48px); padding: 0; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); color: var(--text); overflow: auto; }
+dialog.shortcuts[open] { animation: pop .25s var(--ease); }
+dialog.shortcuts::backdrop { background: oklch(0.1 0.005 265 / 0.6); }
+.shortcuts > header { position: sticky; top: 0; display: flex; align-items: center; justify-content: space-between; padding: 14px 16px 12px 20px; border-bottom: 1px solid var(--line-soft); background: var(--surface); }
+.shortcuts h2 { margin: 0; font-size: 15px; font-weight: 600; }
+.shortcut-groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px 32px; padding: 18px 20px 22px; }
+.shortcut-groups h3 { margin: 0 0 8px; }
+.shortcut-groups dl { margin: 0; display: flex; flex-direction: column; gap: 7px; }
+.shortcut-groups dl div { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 12px; align-items: baseline; }
+.shortcut-groups dt { display: flex; flex-wrap: wrap; gap: 4px; }
+.shortcut-groups dd { margin: 0; color: var(--muted); font-size: 13px; }
+kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0 6px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; background: var(--surface-2); color: var(--text); font: 500 11.5px var(--mono); }
+@media (max-width: 480px) {
+  .shortcut-groups { grid-template-columns: minmax(0, 1fr); padding: 14px 16px 18px; }
+  .shortcut-groups dl div { grid-template-columns: 96px minmax(0, 1fr); }
+}

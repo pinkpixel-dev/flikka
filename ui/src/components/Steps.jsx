@@ -14,7 +14,7 @@ export function Steps({project}) {
   if (!list.length && project.state === 'ready') return null;
   const total = list.length ? (list.reduce((sum, step) => sum + ((step.ended || Date.now()) - step.started), 0) / 1000).toFixed(1) + ' s' : '';
   return <section className="section steps">
-    <button type="button" className="disclosure" aria-expanded={open} onClick={() => setOpen(!open)}>
+    <button type="button" className="disclosure" aria-expanded={open} data-tip={open ? 'Hide the steps' : 'Show each step and how long it took'} onClick={() => setOpen(!open)}>
       <ChevronRight size={15} aria-hidden/><h3>How it was made</h3><span className="muted">{list.length ? `${list.length} steps · ${total}` : ''}</span>
     </button>
     {open && phases.map(([phase, title]) => {

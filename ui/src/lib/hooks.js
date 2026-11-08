@@ -50,6 +50,8 @@ export function usePlayerKeys(player, undo) {
   latest.current = undo;
   useEffect(() => {
     const keys = event => {
+      // Not behind the shortcuts sheet (or any open dialog).
+      if (document.querySelector('dialog[open]')) return;
       if ((event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.toLowerCase() === 'z' && !event.target.closest('input, textarea, [contenteditable]')) {
         event.preventDefault(); latest.current?.(); return;
       }

@@ -1,10 +1,10 @@
 import React, {useState} from 'react';
-import {Clipboard, Copy, FolderOpen, Play} from 'lucide-react';
+import {Clipboard, Copy, FolderOpen, Play, X} from 'lucide-react';
 import {api} from '../lib/api.js';
 import {clock} from '../lib/format.js';
 import {useFlash} from '../lib/hooks.js';
 import {useToast} from '../lib/toast.js';
-import {Button, Section, Switch} from './ui.jsx';
+import {Button, Progress, Section, Switch} from './ui.jsx';
 import {Steps} from './Steps.jsx';
 import {Frame} from './Frame.jsx';
 
@@ -27,6 +27,9 @@ export function Inspector({project, edit, render, rendering, changed, children})
     ['Cut', project.kept != null && project.duration ? (project.duration - project.kept).toFixed(1) + ' s' : null], ['Zooms', project.zooms],
     ['Source', project.size && `${project.size} · ${project.fps} fps`], ['Output', final && `${final.width}×${final.height}`]].filter(([, value]) => value != null && value !== '');
   const copy = (what, text) => navigator.clipboard.writeText(text).then(() => flash(what));
+  // Renders wait their turn (one at a time): a waiting one can be taken out of the queue.
+  const queued = project.render?.state === 'queued';
+  const cancel = () => api('render-cancel', {id: project.id}).catch(failure => toast(failure.message));
 
   return <aside className="inspector" aria-label="Edit">
     <Section title="Export">
@@ -38,8 +41,13 @@ export function Inspector({project, edit, render, rendering, changed, children})
           <Button size="small" icon={FolderOpen} tip="Open the folder with the video" onClick={() => api('reveal', {id: project.id, kind: 'final'}).catch(failure => toast(failure.message))}>Show</Button>
         </div>
       </div>}
-      <Button className="wide" variant={changed || !final ? 'primary' : undefined} icon={Play} disabled={rendering || (!project.recording && !project.film)} onClick={render}
-        tip="Export the video with every edit">{rendering ? 'Rendering…' : changed ? 'Render with changes' : final ? 'Render again' : 'Render'}</Button>
+      {queued ? <>
+        <p className="hint">Waiting for {project.render.ahead === 1 ? 'one render' : project.render.ahead + ' renders'} to finish first.</p>
+        <Button className="wide" icon={X} tip="Take this render out of the queue" onClick={cancel}>Cancel render</Button>
+      </> : <Button className="wide" variant={changed || !final ? 'primary' : undefined} icon={Play} disabled={rendering || (!project.recording && !project.film)} onClick={render}
+        tip="Export the video with every edit. Renders wait their turn, one at a time.">{rendering ? 'Rendering…' : changed ? 'Render with changes' : final ? 'Render again' : 'Render'}</Button>}
+      {project.render?.state === 'rendering' && <Progress render={project.render}/>}
+      {project.render?.state === 'failed' && !rendering && <p className="form-error" role="alert">The last render failed: {project.render.error}</p>}
     </Section>
 
     {children}
@@ -55,7 +63,7 @@ export function Inspector({project, edit, render, rendering, changed, children})
     {project.look && <Frame look={project.look} edit={edit}/>}
 
     {project.speed && <Section title="Speed">
-      <select aria-label="Playback speed" value={String(project.speed.whole)} onChange={event => edit('project-speed', {speed: Number(event.target.value)})}>
+      <select aria-label="Playback speed" data-tip="How fast the whole video plays (Ctrl+Z undoes)" value={String(project.speed.whole)} onChange={event => edit('project-speed', {speed: Number(event.target.value)})}>
         {[...new Set([...speeds, project.speed.whole])].sort((a, b) => a - b).map(speed => <option key={speed} value={speed}>{speed === 1 ? '1× as recorded' : speed + '×'}</option>)}
       </select>
       {project.speed.parts && <p className="hint">Some parts have their own speed. Picking here resets them.</p>}
@@ -63,10 +71,10 @@ export function Inspector({project, edit, render, rendering, changed, children})
 
     {project.camera && <Section title="Camera">
       <Switch label="Round" tip="A circle, or a rounded rectangle" checked={project.camera.round} onChange={round => edit('project-camera', {camera: {round}})}/>
-      <label className="line"><span>Size</span><input type="range" min="0.1" max="0.45" step="0.01" value={size ?? project.camera.size ?? 0.2}
+      <label className="line" data-tip="How big the bubble is"><span>Size</span><input type="range" min="0.1" max="0.45" step="0.01" value={size ?? project.camera.size ?? 0.2}
         onChange={event => setSize(Number(event.target.value))} onPointerUp={() => size != null && edit('project-camera', {camera: {size}}).then(() => setSize(null))}
         onKeyUp={() => size != null && edit('project-camera', {camera: {size}}).then(() => setSize(null))}/></label>
-      <label className="line"><span>Corner</span><select value={project.camera.position || 'bottom-right'} onChange={event => edit('project-camera', {camera: {position: event.target.value}})}>
+      <label className="line" data-tip="Which corner the bubble sits in"><span>Corner</span><select value={project.camera.position || 'bottom-right'} onChange={event => edit('project-camera', {camera: {position: event.target.value}})}>
         {corners.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
     </Section>}
 

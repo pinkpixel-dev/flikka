@@ -61,7 +61,7 @@ export function AimStage({src, timeline, aim, onChange, onSave, onCancel}) {
 export function AimBar({aim, saving, onChange, onSave, onCancel}) {
   return <div className="aim-bar" onKeyDown={event => { if (event.key === 'Escape') { event.preventDefault(); onCancel(); } }}>
     <span className="aim-hint">Click where the zoom should look</span>
-    <select aria-label="Zoom scale" value={aim.scale} onChange={event => onChange({scale: Number(event.target.value)})}>
+    <select aria-label="Zoom scale" data-tip="How close the zoom gets" value={aim.scale} onChange={event => onChange({scale: Number(event.target.value)})}>
       {[...new Set([...scales, aim.scale])].sort((a, b) => a - b).map(scale => <option key={scale} value={scale}>{scale}×</option>)}</select>
     <Button size="small" variant="ghost" icon={X} tip="Cancel (Esc)" disabled={saving} onClick={onCancel}/>
     <Button size="small" variant="primary" icon={Check} tip="Save the zoom (Enter)" disabled={saving} onClick={onSave}>{saving ? 'Saving…' : 'Save'}</Button>

@@ -235,7 +235,7 @@ export function Timeline({timeline, time, onSeek, onEdit, onAim, fps, stale}) {
           <Button size="small" icon={ZoomIn} tip={`Zoom in on this ${picked.kind === 'click' ? 'click' : 'typing'} (Enter)`} onClick={zoomHere} autoFocus>Zoom here</Button>
           <Button size="small" variant="ghost" icon={X} tip="Close (Esc)" onClick={() => setPicked(null)}/>
         </> : <>
-          <select aria-label="Zoom scale" value={chosenZoom.scale} onChange={event => rescale(chosen, Number(event.target.value))}>
+          <select aria-label="Zoom scale" data-tip="How close this zoom gets" value={chosenZoom.scale} onChange={event => rescale(chosen, Number(event.target.value))}>
             {[...new Set([...scales, chosenZoom.scale])].sort((a, b) => a - b).map(scale => <option key={scale} value={scale}>{scale}×</option>)}</select>
           {onAim && <Button size="small" variant="ghost" icon={Crosshair} tip="Aim: pick the spot on the recording (A)" onClick={() => aimAt(chosenZoom)}/>}
           <Button size="small" variant="ghost" icon={Trash2} tip="Remove this zoom (Delete)" onClick={() => remove(chosen)}/>

@@ -7,7 +7,7 @@
 - One player handles both the exported video and the live preview, and it stays on the same moment when you switch between them or an edit reloads the preview.
 - Step through frame by frame with the buttons or the arrow keys. Space plays and pauses, Shift plus an arrow jumps a second, and M mutes.
 - A timeline under the player shows the kept clips, cuts, zooms, spotlights, overlays, clicks, markers and spoken lines. Click or drag on it to scrub.
-- Every button has a tooltip, on hover and on keyboard focus.
+- Every button, menu and field has a tooltip, on hover and on keyboard focus.
 - Edit right on the timeline: drag across the clips to cut a part, drag on the Camera row to add a zoom, drag a zoom to move it or its edges to resize it, and click one to change its scale or remove it. Edges snap to the playhead, clip edges and whole frames.
 - Undo button and Ctrl+Z for the last edit.
 - Pick which moments get a zoom: click a click or a typing burst on the timeline (or press Z near one) and choose Zoom here.
@@ -17,6 +17,9 @@
 - A Frame section in the edit column: pick the video's shape (square, landscape, portrait or vertical), the wallpaper behind the recording, the padding around it, how round its corners are, and whether it has a shadow. The live preview updates after each change, and Ctrl+Z undoes it. A run of arrow-key presses on a slider saves as one edit.
 - Films have a home in the panel now. The live film plays with its narration and music, and a strip under the player shows every scene, as wide as it is long. Click a scene to open it and jump there, drag it (or press Alt+← →) to move it, and add a new one from the Add menu. The open scene's fields sit on the right, drawn from the film schema, with each field's description as its tooltip. Ctrl+S saves, Ctrl+Z undoes, and a save that doesn't fit the schema is refused with the reason.
 - `flikka project live <id>` opens the film in the panel instead of its own page. Edits an agent makes to film.json show up there too.
+- Renders wait their turn. Hit Render on a few projects and they go one at a time, listed in the sidebar with the step each one is on and how far along it is. Take a waiting one out of line with its ×. Finished and failed ones stay listed until you clear them, and a failed render says why on its project page too.
+- Films report their render progress now, frame by frame, like recordings do.
+- Press `?` (or Shortcuts at the bottom of the sidebar) for a sheet of every keyboard shortcut in the panel.
 
 ### ✂️ Editing
 - `flikka project edit --unzoom <time>` removes the zoom showing at that moment (works with `--output-time`).

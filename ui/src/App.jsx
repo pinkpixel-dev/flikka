@@ -22,6 +22,11 @@ export function App() {
   // The list every 3 s: an agent may record or render meanwhile.
   const loadList = useCallback(() => api('projects').then(setProjects), []);
   usePoll(loadList, 3000);
+  // The render queue, each second: it moves on its own.
+  const [renders, setRenders] = useState([]);
+  const loadRenders = useCallback(() => api('renders').then(next => setRenders(old => JSON.stringify(old) === JSON.stringify(next) ? old : next)), []);
+  usePoll(loadRenders, 1000);
+  const queue = action => body => api(action, body).catch(failure => toast(failure.message)).finally(() => { loadRenders(); loadList(); });
   usePoll(() => api('shots').then(list => setCounts(old => ({...old, shots: list.length}))), 3000);
   useEffect(() => { api('voices').then(list => setCounts(old => ({...old, voices: list.length}))).catch(() => {}); }, [view]);
   useEffect(() => { toast(''); if (view === 'shots' || view === 'voices') monitor.stop(); }, [hash]);
@@ -29,9 +34,10 @@ export function App() {
 
   return <ToastContext.Provider value={toast}>
     <div className={`shell view-${view}`}>
-      <Sidebar projects={projects} current={projectId} view={view} counts={counts}/>
+      <Sidebar projects={projects} current={projectId} view={view} counts={counts} renders={renders}
+        onCancelRender={id => queue('render-cancel')({id})} onClearRenders={() => queue('renders-clear')()}/>
       <main className="main">
-        {message && <div className="toast" role="alert"><span>{message}</span><button type="button" className="toast-close" aria-label="Dismiss" onClick={() => toast('')}>×</button></div>}
+        {message && <div className="toast" role="alert"><span>{message}</span><button type="button" className="toast-close" aria-label="Dismiss" data-tip="Dismiss" onClick={() => toast('')}>×</button></div>}
         {view === 'new' && <NewRecording/>}
         {view === 'project' && <Project key={projectId} id={projectId} onChange={loadList}/>}
         {view === 'shots' && <Shots onCount={shots => setCounts(old => ({...old, shots}))}/>}

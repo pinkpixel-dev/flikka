@@ -81,11 +81,11 @@ export function NewRecording() {
     <header className="page-head"><h1>New recording</h1></header>
     <div className="setup-grid">
       <fieldset className="panel form" disabled={starting}>
-        <label className="field"><span>Name</span><input type="text" value={setup.name} maxLength={80} onChange={event => change({name: event.target.value})}/></label>
+        <label className="field" data-tip="The project's name in the list"><span>Name</span><input type="text" value={setup.name} maxLength={80} onChange={event => change({name: event.target.value})}/></label>
         <div className="field">
           <span className="field-label" id="sourceLabel">What to record</span>
           <div className="with-action">
-            <select aria-labelledby="sourceLabel" value={setup.source} onChange={event => change({source: event.target.value})}>
+            <select aria-labelledby="sourceLabel" data-tip="A whole screen, or one window" value={setup.source} onChange={event => change({source: event.target.value})}>
               {!sources && <option>Loading…</option>}
               {sources?.displays.map(display => <option key={'d' + display.index} value={'display:' + display.index}>Screen {display.index + 1} · {display.width} × {display.height}</option>)}
               {sources?.windows.map(item => <option key={'w' + item.id} value={'window:' + item.id}>{item.app} · {item.title || 'Untitled'}</option>)}
@@ -96,13 +96,13 @@ export function NewRecording() {
         <Switch label="Only a region" tip="Crop inside the screen or window" checked={setup.useRegion} onChange={useRegion => change({useRegion})}/>
         {setup.useRegion && <div className="row four">
           {[['x', 'Left'], ['y', 'Top'], ['w', 'Width'], ['h', 'Height']].map(([key, label]) =>
-            <label className="field" key={key}><span>{label}</span><input type="number" min={key === 'w' || key === 'h' ? 2 : 0} value={setup.region[key]}
+            <label className="field" key={key} data-tip={`${label} of the region, in pixels`}><span>{label}</span><input type="number" min={key === 'w' || key === 'h' ? 2 : 0} value={setup.region[key]}
               onChange={event => change({region: {...setup.region, [key]: Number(event.target.value)}})}/></label>)}
         </div>}
         <div className="row">
-          <label className="field"><span>Microphone</span><select value={setup.mic} onChange={event => change({mic: event.target.value})}>
+          <label className="field" data-tip="Your voice, from this mic"><span>Microphone</span><select value={setup.mic} onChange={event => change({mic: event.target.value})}>
             <option value="">Off</option>{sources?.microphones.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
-          <label className="field"><span>Camera bubble</span><select value={setup.camera} onChange={event => change({camera: event.target.value})}>
+          <label className="field" data-tip="You in a bubble in the corner, from this camera"><span>Camera bubble</span><select value={setup.camera} onChange={event => change({camera: event.target.value})}>
             <option value="">Off</option>{sources?.cameras.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
         </div>
         <div className="switches">
@@ -111,9 +111,9 @@ export function NewRecording() {
           <Switch label="Hide cursor" tip="Record without the mouse pointer" checked={setup.hideCursor} onChange={hideCursor => change({hideCursor})}/>
         </div>
         <div className="row">
-          <label className="field"><span>Frame rate</span><select value={setup.fps} onChange={event => change({fps: event.target.value})}>
+          <label className="field" data-tip="60 is smoother, 30 makes smaller files"><span>Frame rate</span><select value={setup.fps} onChange={event => change({fps: event.target.value})}>
             <option value="60">60 fps</option><option value="30">30 fps · smaller</option></select></label>
-          <label className="field"><span>Countdown</span><select value={setup.delay} onChange={event => change({delay: event.target.value})}>
+          <label className="field" data-tip="Time to get ready before it starts"><span>Countdown</span><select value={setup.delay} onChange={event => change({delay: event.target.value})}>
             <option value="3">3 s</option><option value="5">5 s</option><option value="0">None</option></select></label>
         </div>
       </fieldset>

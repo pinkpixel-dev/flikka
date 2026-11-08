@@ -44,7 +44,7 @@ function Voice({voice, onRemove}) {
     <p className="muted">Made {when(voice.created)} · “{voice.said}”</p>
     <audio controls preload="none" src={voiceURL(voice.name, voice.created)}/>
     <div className="say">
-      <input type="text" placeholder="Type something to hear it in this voice" maxLength={600} value={text} onChange={event => setText(event.target.value)} onKeyDown={event => event.key === 'Enter' && say()}/>
+      <input type="text" data-tip="Press Enter to hear it" placeholder="Type something to hear it in this voice" maxLength={600} value={text} onChange={event => setText(event.target.value)} onKeyDown={event => event.key === 'Enter' && say()}/>
       <Button icon={Volume2} disabled={speaking} onClick={say} tip="Speak it in this voice">{speaking ? 'Speaking…' : 'Say it'}</Button>
     </div>
     {said && <audio ref={result} controls src={voiceURL(voice.name, said, 'try')}/>}
@@ -103,7 +103,7 @@ function AddVoice({onAdded}) {
 
   return <div className="panel add-voice">
     <h2>Add a voice</h2>
-    <label className="field"><span>Name</span><input type="text" placeholder="me" maxLength={40} value={name} onChange={event => setName(event.target.value)}/></label>
+    <label className="field" data-tip="What you call this voice in a film's voice setting"><span>Name</span><input type="text" placeholder="me" maxLength={40} value={name} onChange={event => setName(event.target.value)}/></label>
     <div className="field-label">Read this aloud, in your normal demo voice (about 15 seconds)</div>
     <p className="script">{script}</p>
     <Meter level={level}/>
