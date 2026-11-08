@@ -181,8 +181,23 @@ export function Clip({project, clip, sourceUrl, events, clicks, transcript, webc
         <Video src={webcam.url} muted playbackRate={rate} trimBefore={Math.round((Math.max(0, clip.start - webcam.start) + (webcam.sourceOffset || 0)) * fps)} objectFit="cover" style={{width: '100%', height: '100%'}}/>
       </Sequence>
     </div>}
-    {caption && <div style={{position: 'absolute', bottom: height * 0.07, maxWidth: width * 0.8, padding: '14px 24px', background: '#10121ee8', color: 'white', fontFamily: 'Arial, sans-serif', fontWeight: 600, fontSize: Math.round(width / 40), borderRadius: 12, textAlign: 'center', lineHeight: 1.35}}>{caption.text.trim()}</div>}
+    {caption && <CaptionBox text={caption.text}/>}
   </AbsoluteFill>;
+}
+
+// One caption, low in the middle of the video: the mic's (in a clip) and narration's (over the whole video) alike.
+function CaptionBox({text}) {
+  const {width, height} = useVideoConfig();
+  return <div style={{position: 'absolute', bottom: height * 0.07, maxWidth: width * 0.8, padding: '14px 24px', background: '#10121ee8', color: 'white', fontFamily: 'Arial, sans-serif', fontWeight: 600, fontSize: Math.round(width / 40), borderRadius: 12, textAlign: 'center', lineHeight: 1.35}}>{text.trim()}</div>;
+}
+
+// Narration captions, timed in seconds of the finished video (lib/narration.mjs), so cuts and speed don't move them.
+function NarrationCaptions({captions}) {
+  const frame = useCurrentFrame();
+  const {fps} = useVideoConfig();
+  const time = frame / fps;
+  const caption = captions.find(item => time >= item.start && time < item.end);
+  return caption ? <AbsoluteFill style={{justifyContent: 'center', alignItems: 'center'}}><CaptionBox text={caption.text}/></AbsoluteFill> : null;
 }
 
 // An intro or outro card: the text rises in, and fades out at the end (frames: how long it shows).
@@ -229,7 +244,8 @@ export function Demo(props) {
   const sequences = playedClips(project).map((clip, index) => {
     const duration = clipFrames(clip, fps);
     starts.push(offset);
-    const sequence = <Sequence key={index} from={offset} durationInFrames={duration} premountFor={fps}><Clip {...props} clip={clip} rate={clip.speed}/></Sequence>;
+    // With narration captions, the mic's transcript isn't captioned too.
+    const sequence = <Sequence key={index} from={offset} durationInFrames={duration} premountFor={fps}><Clip {...props} {...(props.captions && {transcript: []})} clip={clip} rate={clip.speed}/></Sequence>;
     offset += duration;
     return sequence;
   });
@@ -244,6 +260,7 @@ export function Demo(props) {
     {project.intro && <Sequence durationInFrames={Math.round(project.intro.duration * fps)} premountFor={fps}><Title text={project.intro.text} frames={Math.round(project.intro.duration * fps)}/></Sequence>}
     {sequences}
     {fades}
+    {props.captions?.length > 0 && <NarrationCaptions captions={props.captions}/>}
     {props.music && <Music music={props.music}/>}
     {project.outro && <Sequence from={offset} durationInFrames={Math.round(project.outro.duration * fps)} premountFor={fps}><Title text={project.outro.text} frames={Math.round(project.outro.duration * fps)}/></Sequence>}
   </AbsoluteFill>;

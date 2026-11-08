@@ -33,6 +33,13 @@
 - Picking a browser by name for demos (like `brave`) now says so when it isn't installed, instead of falling back to another one.
 - The terminal's state files moved from the videos folder into `~/.flikka`.
 
+### 🎙️ Narration for recordings
+- Recordings can have a Kokoro voice talking over them now, with captions. Add a line with `flikka project edit <id> --say "0:02,Open the settings."`, or `--say "next,…"` to start right after the line before.
+- Each line is pinned to a moment of the recording, so cutting, speeding up or freezing parts later moves the line along with what it talks about. A line whose moment gets cut starts where the video picks up again.
+- `--line id,…` changes one line: when it starts, when it should finish by (`until`), its voice and speed, trims and fades, gain, and mute. `--reword` changes its text, `--unsay` removes it, `--narrator` sets the voice for every line, and `--pronounce "word=sounds like"` fixes how a word is said without touching the captions.
+- The recording's own sound dips while a line plays (`--duck off` to keep it level), and music ducks under both.
+- `flikka project timeline` and the render result list every line with where it lands, and flag lines that run past their `until`, overlap the line before, or run past the end.
+
 ### ✂️ Editing
 - `flikka project edit --unzoom <time>` removes the zoom showing at that moment (works with `--output-time`).
 - `flikka project edit --padding <px>`, `--radius <px>` and `--shadow on|off` set the frame around the recording. Padding goes up to a third of the video's short side and corners up to 200 px, and the error says the limit when you go past it.

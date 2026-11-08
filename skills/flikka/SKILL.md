@@ -152,6 +152,21 @@ For a finished feel: `--intro "text"` and `--outro "seconds,text"` add title car
 
 To change how the video frames the recording: `--preset square|landscape|portrait|vertical` sets the shape, `--background aurora|sunset|ocean|meadow|graphite|midnight` (or any CSS background) sets the wallpaper, `--padding 64` and `--radius 20` set the margin and corner rounding in video pixels, and `--shadow on|off` toggles the shadow under the recording.
 
+## Narrating a Recording
+
+A recording can have a Kokoro voice talking over it, with captions. Each line is pinned to a moment of the recording, so when you cut or speed things up later, the line moves along with what it talks about.
+
+```bash
+flikka project edit <id> --output-time --say "0:02,First, open the settings." --say "next,Then switch on sync."
+flikka project edit <id> --output-time --line "n2,until=0:09"   # it should finish by then
+flikka project render <id>                                       # report.narration: where every line landed
+flikka project edit <id> --reword "n2,Then turn on sync."        # too long? say less
+```
+
+`--say next,"text"` starts a line right after the one before it. `flikka project timeline` lists every line with its id, and `--line id,key=value` changes one: `at`, `until`, `voice`, `speed`, `trim-start`, `trim-end`, `fade-in`, `fade-out`, `gain` (dB) and `mute`. `--narrator bf_emma` picks the voice for every line that doesn't choose its own, and `--pronounce "Memlake=Mem-lake"` fixes how a word is said without changing the captions.
+
+Read `narration` in the render result before finishing. A line with `overrun` is longer than its `until` allows (shorten the text, or raise its `speed` up to 1.5), `overlaps` means it starts before the line before it ends, `runsPast` means it goes past the end of the recording, and `snapped` means its moment was cut, so it starts where the video picks up again. The recording's own sound dips while a line plays (`--duck off` to stop that), and narration captions replace the mic's captions.
+
 ## Sharing Finished Videos
 
 ```bash
