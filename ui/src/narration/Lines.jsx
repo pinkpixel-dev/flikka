@@ -1,5 +1,5 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {AudioLines, Copy, Gauge, Pause, Play, Plus, RotateCcw, Speech, Trash2, Volume2, VolumeX, X} from 'lucide-react';
+import {AudioLines, Copy, Ear, Gauge, Pause, Play, Plus, RotateCcw, Speech, Trash2, Volume2, VolumeX, X} from 'lucide-react';
 import {api, narrationClipURL} from '../lib/api.js';
 import {clock} from '../lib/format.js';
 import {useToast} from '../lib/toast.js';
@@ -30,6 +30,12 @@ const shortenPrompt = (project, line) => `In Flikka project ${project.id}, narra
   + (plainText(line.text) !== line.text ? `Its text has say-as marks, [word](how it sounds): keep them on any of those words you keep. The text as stored: "${line.text}". ` : '')
   + `Save it with flikka project edit ${project.id} --reword "${line.id},<new words>", then flikka project speak ${project.id} --line ${line.id} and check it fits with flikka project timeline ${project.id}.`;
 
+// Where a word the check flagged sits in the text (any case, standing on its own), or -1.
+const findWord = (text, word) => {
+  const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return text.search(new RegExp(`(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`, 'iu'));
+};
+
 // Where the cursor sits in the words as they'll be saved (spaces squeezed, the start trimmed), for a split.
 const savedPosition = (text, at) => text.slice(0, at).replace(/\s+/g, ' ').trimStart().length;
 const squeeze = text => text.replace(/\s+/g, ' ').trim();
@@ -42,6 +48,7 @@ function VoiceOptions({voices}) {
 }
 
 function LineCard({project, line, first, voices, narrator, speaking, playing, onPlay, onSpeak, onFit, onEdit, onSeek}) {
+  const toast = useToast();
   const [copied, flash] = useFlash();
   const [draft, setDraft] = useState(line.text);
   const [sayAs, setSayAs] = useState(null);
@@ -99,6 +106,14 @@ function LineCard({project, line, first, voices, narrator, speaking, playing, on
       onChange={event => setDraft(event.target.value)} onBlur={save} onKeyDown={keys}/>
     {sayAs && <SayAs project={project} line={line} text={draft} target={sayAs} ownVoice={cloned} onEdit={onEdit} onClose={() => { setSayAs(null); box.current?.focus(); }}/>}
     {issues.length > 0 && <ul className="line-issues">{issues.map(issue => <li key={issue}>{issue}</li>)}</ul>}
+    {line.misheard?.length > 0 && <div className="line-misheard">
+      <span>May be misheard:</span>
+      {line.misheard.map(word => <button key={word} type="button" className="chip word-chip" data-tip={`Say "${word}" differently`} onClick={() => {
+        const at = findWord(draft, word);
+        const target = at >= 0 && sayAsTarget(draft, at, at + word.length);
+        if (target) setSayAs(target); else toast(`"${word}" isn’t in the words any more`);
+      }}>{word}</button>)}
+    </div>}
     {line.overrun > 0 && <div className="line-fix">
       <Button size="small" icon={Gauge} disabled={speaking || line.speed >= maxFitSpeed}
         tip={line.speed >= maxFitSpeed ? `Already at ${maxFitSpeed}×, as fast as Fit goes: shorten it` : `Read it faster until it fits (up to ${maxFitSpeed}×), then speak it again`} onClick={() => onFit(line.id)}>Fit</Button>
@@ -151,6 +166,17 @@ export function Narration({project, timeline, time, onSeek, onEdit, onSpoken}) {
     } catch (failure) { toast(failure.message); }
     finally { setSpeaking(old => { const next = new Set(old); next.delete(line); return next; }); }
   };
+  // The words check: Whisper hears every spoken line not heard yet and the timeline shows what it may mishear.
+  const check = async () => {
+    setSpeaking(old => new Set(old).add('check'));
+    try {
+      const result = await api('narration-check', {id: project.id});
+      const flagged = result.lines.filter(line => line.misheard.length).length;
+      toast(flagged ? `${flagged === 1 ? '1 line' : flagged + ' lines'} may be misheard: click a word to say it differently` : 'Every spoken line sounds right');
+      onSpoken();
+    } catch (failure) { toast(failure.message); }
+    finally { setSpeaking(old => { const next = new Set(old); next.delete('check'); return next; }); }
+  };
   const play = id => {
     audio.current?.pause();
     if (playing === id) { setPlaying(null); return; }
@@ -165,8 +191,13 @@ export function Narration({project, timeline, time, onSeek, onEdit, onSpoken}) {
     onEdit([{add: {at: time, text: said}}]).then(saved => saved && setSaid(''));
   };
 
-  return <Section title={lines.length === 1 ? '1 line' : `${lines.length} lines`} aside={unspoken > 0 && <Button size="small" icon={AudioLines} disabled={speaking.has('all')} tip="Speak every line that isn’t spoken yet"
-    onClick={() => speak()}>{speaking.has('all') ? 'Speaking…' : `Speak ${unspoken}`}</Button>}>
+  const spoken = lines.length - unspoken;
+  return <Section title={lines.length === 1 ? '1 line' : `${lines.length} lines`} aside={<div className="button-row">
+    {spoken > 0 && <Button size="small" icon={Ear} disabled={speaking.has('check')} tip="Listen to the spoken lines with Whisper and flag words a listener may mishear"
+      onClick={check}>{speaking.has('check') ? 'Checking…' : 'Check'}</Button>}
+    {unspoken > 0 && <Button size="small" icon={AudioLines} disabled={speaking.has('all')} tip="Speak every line that isn’t spoken yet"
+      onClick={() => speak()}>{speaking.has('all') ? 'Speaking…' : `Speak ${unspoken}`}</Button>}
+  </div>}>
     {narrator && <label className="line" data-tip="Reads every line that doesn’t pick its own voice"><span>Narrator</span>
       <select value={narrator.voice} onChange={event => onEdit([{narrator: event.target.value}])}>
         {!voices.some(voice => voice.name === narrator.voice) && <option value={narrator.voice}>{narrator.voice}</option>}

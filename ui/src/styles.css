@@ -444,6 +444,10 @@ textarea.bad, textarea.bad:focus-visible { border-color: var(--bad); box-shadow:
 .line-card .line-text { min-height: 0; resize: none; }
 .line-issues { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 2px; color: var(--warn); font-size: 12px; }
 .line-fix { display: flex; gap: 6px; }
+.line-misheard { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 12px; color: var(--warn); }
+.word-chip { border: 1px solid var(--line); color: var(--text); cursor: pointer; transition: border-color .15s, background-color .15s; }
+.word-chip:hover { border-color: var(--surface-3); background: var(--surface-3); }
+.word-chip:focus-visible { outline: 2px solid var(--text); outline-offset: 1px; }
 .line-controls { display: flex; align-items: center; gap: 6px; }
 .line-controls select { flex: 1; min-width: 0; height: 30px; font-size: 12.5px; padding: 0 8px; }
 .line-controls select.line-speed { flex: 0 0 68px; }

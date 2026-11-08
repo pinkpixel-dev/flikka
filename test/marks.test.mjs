@@ -37,3 +37,11 @@ test('--say-as writes a mark, --split refuses to cut inside one', () => {
   editNarration(project, ['--say-as', 'n1,GIF='], 0, {});
   assert.equal(project.narration.lines[0].text, 'Open the GIF settings.');
 });
+
+test('the words check flags names a listener may not hear, but not numbers, joins or plurals', async () => {
+  const {missingWords} = await import('../lib/check.mjs');
+  const heard = ' Flicka records the whale and desktop with three GPU screen recorders.'.split(/(?= )/);
+  assert.deepEqual(missingWords('Flikka records the Wayland desktop with 3 gpu-screen-recorder.', heard), ['flikka', 'wayland']);
+  // Marks are checked as their plain word (lib/narration.mjs lineChecks uses plainText).
+  assert.deepEqual(missingWords(plainText('The [GIF](/ʤˈɪf/) loops.'), [' The', ' GIF', ' loops.']), []);
+});
