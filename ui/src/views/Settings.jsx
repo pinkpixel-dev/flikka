@@ -7,12 +7,10 @@ import {Button} from '../components/ui.jsx';
 const home = text => String(text ?? '').replace(/^\/home\/[^/]+/, '~');
 const show = item => item.value == null ? '' : ['folder', 'path', 'browser'].includes(item.type) ? home(item.value) : String(item.value);
 const browserLabels = {auto: 'Your default browser', 'google-chrome': 'Google Chrome', chromium: 'Chromium', brave: 'Brave', edge: 'Microsoft Edge', vivaldi: 'Vivaldi'};
-// Kokoro voices to suggest beside your own (any Kokoro name works).
-const kokoro = ['af_heart', 'af_bella', 'am_michael', 'bf_emma'];
 
 // One setting: a menu saves as soon as it's picked; text (a folder, a voice, a port, a command) saves on Enter or
 // Save. Set by an environment variable, it's locked and says which.
-function Setting({item, voices, onSaved}) {
+function Setting({item, onSaved}) {
   const toast = useToast();
   const [text, setText] = useState(show(item));
   const [custom, setCustom] = useState(false);
@@ -45,13 +43,21 @@ function Setting({item, voices, onSaved}) {
         <option value="path">Another browser (a path)…</option></select>
       {byPath && field({tip: 'The path to a Chromium-based browser. Enter saves.', props: {placeholder: '/usr/bin/thorium-browser'}})}
     </div>;
-  } else if (item.type === 'voice') control = <>{field({tip: 'One of your voices, or a Kokoro voice like af_heart. Enter saves.', props: {list: 'setting-voices'}})}
-    <datalist id="setting-voices">{[...voices, ...kokoro].map(name => <option key={name} value={name}/>)}</datalist></>;
+  } else if (item.type === 'voice') {
+    // Kokoro's voices by language, each with Kokoro's own grade: the language comes with the voice.
+    const languages = [...new Set(item.voices.map(voice => voice.language))];
+    control = <select aria-label={item.label} value={item.value} disabled={locked || saving} data-tip={tip || 'Grades are Kokoro\u2019s own: A is best. Languages other than English are thin in Kokoro.'}
+      onChange={event => save(event.target.value)}>
+      {languages.map(language => <optgroup key={language} label={language}>
+        {item.voices.filter(voice => voice.language === language).map(voice => <option key={voice.name} value={voice.name}>
+          {voice.name} · {voice.gender}{voice.grade ? ` · ${voice.grade}` : ''}{voice.name === item.default ? ' (default)' : ''}</option>)}
+      </optgroup>)}</select>;
+  }
   else if (item.type === 'port') control = field({tip: 'A number from 1024 to 65535. Enter saves.', props: {type: 'number', min: 1024, max: 65535, inputMode: 'numeric'}});
   else control = field({tip: item.type === 'command' ? 'Use %o where it saves the PNG, like: grim -g "$(slurp)" %o' : 'A full path, like ~/Videos/demos. Enter saves.'});
 
   const source = locked ? `Set by ${item.variable}` : item.from === 'settings' ? 'Changed here' : 'Default';
-  const typed = !['choice'].includes(item.type) && !(item.type === 'browser' && !custom && item.choices.includes(item.value));
+  const typed = !['choice', 'voice'].includes(item.type) && !(item.type === 'browser' && !custom && item.choices.includes(item.value));
   return <div className="setting">
     <div className="setting-name"><b>{item.label}</b><small>{item.about}</small></div>
     <div className="setting-control">
@@ -73,16 +79,15 @@ function Setting({item, voices, onSaved}) {
 export function Settings() {
   const toast = useToast();
   const [data, setData] = useState(null);
-  const [voices, setVoices] = useState([]);
   const load = () => api('settings').then(setData).catch(failure => toast(failure.message));
-  useEffect(() => { load(); api('voices').then(list => setVoices(list.map(voice => voice.name))).catch(() => {}); }, []);
+  useEffect(() => { load(); }, []);
   const groups = data ? [...new Set(data.settings.map(item => item.group))] : [];
   return <div className="page settings">
     <header className="page-head"><h1>Settings</h1></header>
     {data?.problem && <div className="banner problem" role="alert">{data.problem}</div>}
     {groups.map(group => <section key={group} className="panel">
       <header className="settings-head"><h2>{group}</h2>{group === 'Folders' && <span className="muted">Files already saved stay where they are when you change one.</span>}</header>
-      <div className="setting-list">{data.settings.filter(item => item.group === group).map(item => <Setting key={item.key} item={item} voices={voices} onSaved={load}/>)}</div>
+      <div className="setting-list">{data.settings.filter(item => item.group === group).map(item => <Setting key={item.key} item={item} onSaved={load}/>)}</div>
     </section>)}
     {data && <p className="hint">Saved in <code>{home(data.file)}</code>, which <code>flikka app config</code> and your agent use too.</p>}
   </div>;

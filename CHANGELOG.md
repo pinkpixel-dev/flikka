@@ -22,6 +22,9 @@
 - Press `?` (or Shortcuts at the bottom of the sidebar) for a sheet of every keyboard shortcut in the panel.
 
 ### 📁 Folders and settings
+- The default voice in Settings is a menu of Kokoro's 54 voices, grouped by language with Kokoro's own grades.
+- `flikka voice list` shows Kokoro's voices with their language, gender and grade.
+- Your own voices are switched off for now. Kokoro can't clone a voice, so a recorded sample was never actually used, and films quietly fell back to the default voice. `flikka voice add` and the Voices page come back once there's a model that can clone.
 - Finished videos now go to `~/Videos/flikka` and screenshots to `~/Pictures/flikka`, instead of `~/Documents/flikka`. Both follow the desktop's own Videos and Pictures folders, so a renamed or translated one (like `~/Vidéos`) works too.
 - A Settings page in the panel, and `flikka app config` in the CLI, cover everything that used to need an environment variable: the videos, screenshots, projects, voices and styles folders, the default voice, the transcription model, which browser records demos (and its sign-ins, profile and port), your own screenshot command, and the panel's port. Both save to `~/.config/flikka/config.json`, so the panel, the CLI and agents all agree, and the panel picks up a change right away. Each setting shows whether it's the default, changed in Settings, or set by an environment variable, and a value that can't work is refused with the reason.
 - New environment variables for one-off overrides: `FLIKKA_VIDEOS` (`FLIKKA_DIR` still works) and `FLIKKA_SCREENSHOTS`. Every environment variable wins over the settings file.
@@ -37,6 +40,8 @@
 - `flikka project undo <id>` works for films as well, stepping back through saves made in the panel (up to 50, kept in the project's `history/`).
 
 ### 🐛 Fixes
+- Kokoro now reads every voice in its own language. Before, every voice used American English rules, so British voices pronounced words the American way and other languages came out garbled. Narration for non-American voices is made again once.
+- Mandarin voices work (their extra package downloads by itself), and Japanese voices say how to get their one-time dictionary: `flikka voice setup japanese`.
 - The live preview no longer fails with `EEXIST` when an edit and a reload (or two quick edits) rebuild it at the same moment. Preview builds for a project now wait their turn.
 - Recording a window that never changes no longer leaves a broken project stuck in "finalizing" with its session still running. On Wayland a completely still window sends no frames at all, so Stop now says that plainly, marks the recording as failed and closes the session.
 

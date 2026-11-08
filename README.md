@@ -253,7 +253,20 @@ flikka voice list
 flikka voice say af_heart "Testing one two three" --out test.wav
 ```
 
-A film picks its narrator with `"voice": {"name": "..."}`. The default is `af_heart`, one of Kokoro's built-in voices.
+A film picks its narrator with `"voice": {"name": "..."}`. Without one, it uses the default voice from Settings, which starts out as `af_heart`.
+
+`flikka voice list` shows all 54 of Kokoro's voices with their language and Kokoro's own quality grade. The first letter of a voice's name is the language it speaks:
+
+| Letter | Language | Good to know |
+|---|---|---|
+| `a`, `b` | American and British English | The best voices by far, like `af_heart` and `af_bella` |
+| `e`, `f`, `h`, `i`, `p` | Spanish, French, Hindi, Italian, Brazilian Portuguese | Needs `espeak-ng` installed |
+| `z` | Mandarin Chinese | Its extra package downloads by itself the first time |
+| `j` | Japanese | Run `flikka voice setup japanese` once first (a dictionary download of about 500 MB) |
+
+Kokoro is honest that it's thin outside English: a handful of voices per language, mostly graded C or D. They work, but don't expect `af_heart` quality.
+
+Your own cloned voice isn't available yet. Kokoro can't clone one, so `flikka voice add` and the Voices page are switched off until there's a model that can.
 
 ## Screenshots
 
@@ -280,7 +293,7 @@ After that, you can just ask your agent to "record yourself signing up on exampl
 | Projects | `~/.flikka/projects/<id>/` |
 | Finished videos | `~/Videos/flikka/` |
 | Screenshots | `~/Pictures/flikka/` |
-| Your voices and styles | `~/.flikka/voices/`, `~/.flikka/styles/` |
+| Your film styles | `~/.flikka/styles/` |
 | Downloaded tools | `~/.flikka/bin/` |
 | Anything Flikka can rebuild | `~/.cache/flikka/` |
 | Activity log | `~/.flikka/trace.log` |
@@ -303,9 +316,9 @@ Everything else you might want to change lives in the same place, the panel's **
 
 | Setting | What it does | Default |
 |---|---|---|
-| `videos`, `screenshots`, `projects`, `voices`, `styles` | Where each kind of file goes | See the table above |
-| `voice` | The narrator when a film or `flikka voice say` doesn't name one. One of your own voices, or a Kokoro voice like `am_michael` | `af_heart` |
-| `whisper-model` | The speech-to-text model that checks narration and reads your voice samples: `tiny`, `base`, `small`, `medium` or `large-v3`. Bigger is more accurate, and slower | `tiny` |
+| `videos`, `screenshots`, `projects`, `styles` | Where each kind of file goes | See the table above |
+| `voice` | The narrator when a film doesn't name one. Any voice from `flikka voice list`, and its language comes with it | `af_heart` |
+| `whisper-model` | The speech-to-text model that checks narration and transcribes recordings: `tiny`, `base`, `small`, `medium` or `large-v3`. Bigger is more accurate, and slower | `tiny` |
 | `browser` | What records browser demos: `auto` (your default browser), `google-chrome`, `chromium`, `brave`, `edge`, `vivaldi`, or the path to another Chromium-based browser | `auto` |
 | `browser-source` | A browser profile folder whose sign-ins the demo browser starts with | That browser's own profile |
 | `browser-profile` | Where the demo browser keeps its own copy of the profile | `~/.flikka/browser-<name>` |
@@ -315,7 +328,7 @@ Everything else you might want to change lives in the same place, the panel's **
 
 All of it saves to `~/.config/flikka/config.json`, so the panel, the CLI and your agent always agree. Each value gets checked when you save it, so a typo in a path or a port that can't work gets refused with the reason instead of failing later.
 
-For one run or a script, an environment variable wins over the setting: `FLIKKA_VIDEOS`, `FLIKKA_SCREENSHOTS`, `FLIKKA_PROJECTS`, `FLIKKA_VOICES`, `FLIKKA_STYLES`, `FLIKKA_DEFAULT_VOICE`, `FLIKKA_WHISPER_MODEL`, `FLIKKA_BROWSER_APP`, `FLIKKA_BROWSER_SOURCE`, `FLIKKA_BROWSER_PROFILE`, `FLIKKA_BROWSER_PORT`, `FLIKKA_SCREENSHOT_CMD` and `FLIKKA_UI_PORT`. The Settings page shows when one of these is in charge.
+For one run or a script, an environment variable wins over the setting: `FLIKKA_VIDEOS`, `FLIKKA_SCREENSHOTS`, `FLIKKA_PROJECTS`, `FLIKKA_STYLES`, `FLIKKA_DEFAULT_VOICE`, `FLIKKA_WHISPER_MODEL`, `FLIKKA_BROWSER_APP`, `FLIKKA_BROWSER_SOURCE`, `FLIKKA_BROWSER_PROFILE`, `FLIKKA_BROWSER_PORT`, `FLIKKA_SCREENSHOT_CMD` and `FLIKKA_UI_PORT`. The Settings page shows when one of these is in charge.
 
 ## Updating and uninstalling
 

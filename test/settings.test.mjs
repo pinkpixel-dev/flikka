@@ -42,7 +42,9 @@ test('folders come from the environment, then settings, then the desktop folders
 
     // The other kinds: each checked, saved, and read back through setting().
     assert.equal(common.setting('voice'), 'af_heart');
-    await assert.rejects(setSetting('voice', 'Nobody Here'), /No voice/);
+    await assert.rejects(setSetting('voice', 'Nobody Here'), /Kokoro has no voice/);
+    await assert.rejects(setSetting('voice', 'xx_madeup'), /Kokoro has no voice/);
+    await assert.rejects(setSetting('voices', '~/v'), /No setting "voices"/);
     await setSetting('voice', 'am_michael');
     assert.equal(common.setting('voice'), 'am_michael');
     await assert.rejects(setSetting('whisper-model', 'enormous'), /Pick one of tiny/);
