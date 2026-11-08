@@ -300,7 +300,7 @@ A few things to know:
 - Your voices speak English only. Chatterbox Nano doesn't do other languages.
 - The first line in a run takes about 15 seconds longer while the model loads. After that, each line takes about as long as it lasts (on the GPU).
 - The first time, Flikka downloads the model (about 550 MB) into `~/.flikka/models/chatterbox`. If Narra already has it, Flikka links Narra's copy instead, so nothing downloads and no extra disk space is used.
-- It needs `flikka-voice`, a small helper program. Right now that means building it from a source checkout with `cd voice && cargo build --release`. I'm planning for releases to download it on their own, but that isn't set up yet.
+- It uses `flikka-voice`, a small helper program (about 15 MB). The AUR package installs it, and npm installs download it the first time one of your voices speaks, checked against the exact file that was tested. People who only use Kokoro's voices never download it.
 - `flikka-voice` needs glibc 2.38 or newer, which means roughly Ubuntu 24.04, Fedora 39, or anything newer. Kokoro's voices keep working on older systems.
 
 ## Screenshots

@@ -40,7 +40,7 @@
 - `flikka voice import narra` copies the voices you made in Narra, and the model is linked from Narra's copy when it's there, so nothing downloads twice.
 - The Voices page is back in the panel: listen to each voice's sample, try a line in it, record or upload a new one, and delete one (it goes to the Trash).
 - Lines in your voice are made again when you re-record that voice.
-- Your voices speak English only, and need the `flikka-voice` helper (built from `voice/` for now) and glibc 2.38 or newer.
+- Your voices speak English only and need glibc 2.38 or newer. Their helper, `flikka-voice`, downloads by itself the first time one speaks (about 15 MB, checked against the tested file), and the AUR package installs it into `/usr/lib/flikka`.
 
 ### 🎙️ Narration for recordings
 - Recordings can have a Kokoro voice talking over them now, with captions. Add a line with `flikka project edit <id> --say "0:02,Open the settings."`, or `--say "next,…"` to start right after the line before.
