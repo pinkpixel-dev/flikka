@@ -33,6 +33,15 @@
 - Picking a browser by name for demos (like `brave`) now says so when it isn't installed, instead of falling back to another one.
 - The terminal's state files moved from the videos folder into `~/.flikka`.
 
+### 🗣️ Your own voice
+- Narrate in your own voice. `flikka voice add "My voice" --consent` records about 15 seconds from your mic (or takes `--from` a voice note or video), cleans it, checks the words, and keeps the best 10 seconds. Chatterbox Nano speaks it, on your own machine.
+- Your voices work anywhere a Kokoro voice does: films, narration over recordings (`--narrator "My voice"` or `--line n2,voice=My voice`), `flikka voice say`, and the default voice in Settings.
+- `--consent` is required to add a voice, confirming it's yours or that you have permission to use it. The panel asks the same thing with a switch before it records.
+- `flikka voice import narra` copies the voices you made in Narra, and the model is linked from Narra's copy when it's there, so nothing downloads twice.
+- The Voices page is back in the panel: listen to each voice's sample, try a line in it, record or upload a new one, and delete one (it goes to the Trash).
+- Lines in your voice are made again when you re-record that voice.
+- Your voices speak English only, and need the `flikka-voice` helper (built from `voice/` for now) and glibc 2.38 or newer.
+
 ### 🎙️ Narration for recordings
 - Recordings can have a Kokoro voice talking over them now, with captions. Add a line with `flikka project edit <id> --say "0:02,Open the settings."`, or `--say "next,…"` to start right after the line before.
 - Each line is pinned to a moment of the recording, so cutting, speeding up or freezing parts later moves the line along with what it talks about. A line whose moment gets cut starts where the video picks up again.

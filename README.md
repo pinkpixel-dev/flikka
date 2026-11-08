@@ -275,7 +275,33 @@ Write the narration in the voice's language and the rest follows it:
 - `flikka doctor` lists `espeak-ng` as optional. Spanish, French, Hindi, Italian and Portuguese voices need it.
 - Japanese and Chinese text uses Noto Sans JP or SC, which ship with Flikka. Any film with that text (or a Japanese or Mandarin voice) gets the font, so titles and captions never show up as empty boxes, offline too. Latin text keeps the style's own font.
 
-Your own cloned voice isn't available yet. Kokoro can't clone one, so `flikka voice add` and the Voices page are switched off until there's a model that can.
+### Your own voice
+
+Flikka can also narrate in your own voice. It copies a voice from about 10 seconds of you talking, using Chatterbox Nano (the same engine Narra uses), and it runs entirely on your machine.
+
+```bash
+flikka voice add "My voice" --consent              # read the text it shows, for about 15 seconds
+flikka voice add "My voice" --consent --from note.m4a   # or use a voice note or a video
+flikka voice say "My voice" "Hello, this is my voice."
+```
+
+`--consent` is required. It's you confirming the voice is yours, or that you have permission to use it. Flikka cleans the recording, checks the words with Whisper, and keeps the best 10 seconds. Adding a voice with a name you already used replaces that voice. The panel's Voices page does the same thing, with a record button and a permission switch.
+
+After that, your voice works anywhere a Kokoro voice does: `"voice": {"name": "My voice"}` in a film, `--narrator "My voice"` on a recording, or as the default voice in Settings. Names are matched without caring about case, so quote the ones with spaces.
+
+If you already made voices in Narra, copy them across once:
+
+```bash
+flikka voice import narra
+```
+
+A few things to know:
+
+- Your voices speak English only. Chatterbox Nano doesn't do other languages.
+- The first line in a run takes about 15 seconds longer while the model loads. After that, each line takes about as long as it lasts (on the GPU).
+- The first time, Flikka downloads the model (about 550 MB) into `~/.flikka/models/chatterbox`. If Narra already has it, Flikka links Narra's copy instead, so nothing downloads and no extra disk space is used.
+- It needs `flikka-voice`, a small helper program. Right now that means building it from a source checkout with `cd voice && cargo build --release`. I'm planning for releases to download it on their own, but that isn't set up yet.
+- `flikka-voice` needs glibc 2.38 or newer, which means roughly Ubuntu 24.04, Fedora 39, or anything newer. Kokoro's voices keep working on older systems.
 
 ## Screenshots
 

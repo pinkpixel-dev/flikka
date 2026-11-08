@@ -1,7 +1,7 @@
 [package]
 name = "flikka-voice"
 version = "0.0.0"
-description = "Spike: Narra's Chatterbox Nano engine as a headless helper for Flikka"
+description = "Narra's Chatterbox Nano engine as a headless helper Flikka runs for your own voices"
 license = "Apache-2.0"
 publish = false
 edition = "2021"

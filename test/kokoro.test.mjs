@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {kokoroVoices, kokoroLanguages, voiceLanguage} from '../lib/kokoro.mjs';
 import {voiceCommand} from '../lib/voice.mjs';
 
-test('a voice speaks its own language, and own voices wait for a cloning model', async () => {
+test('a voice speaks its own language, and adding your own voice needs consent', async () => {
   assert.equal(voiceLanguage('af_heart'), 'a');
   assert.equal(voiceLanguage('bf_emma'), 'b');
   assert.equal(voiceLanguage('ff_siwis'), 'f');
@@ -12,7 +12,8 @@ test('a voice speaks its own language, and own voices wait for a cloning model',
   assert.equal(voiceLanguage('me'), null);
   assert.equal(kokoroVoices.length, 54);
   assert.ok(kokoroVoices.every(voice => kokoroLanguages[voice.code]));
-  assert.deepEqual(await voiceCommand(['list']), kokoroVoices);
-  await assert.rejects(voiceCommand(['add', 'me']), /aren’t available yet/);
-  await assert.rejects(voiceCommand(['say', 'me', 'hi']), /Kokoro has no voice "me"/);
+  // Kokoro's voices come first; yours (if any) follow them.
+  assert.deepEqual((await voiceCommand(['list'])).slice(0, kokoroVoices.length), kokoroVoices);
+  await assert.rejects(voiceCommand(['add', 'me']), /--consent/);
+  await assert.rejects(voiceCommand(['say', 'nobody-here', 'hi']), /There's no voice "nobody-here"/);
 });

@@ -44,13 +44,13 @@ function Setting({item, onSaved}) {
       {byPath && field({tip: 'The path to a Chromium-based browser. Enter saves.', props: {placeholder: '/usr/bin/thorium-browser'}})}
     </div>;
   } else if (item.type === 'voice') {
-    // Kokoro's voices by language, each with Kokoro's own grade: the language comes with the voice.
+    // Kokoro's voices by language, each with Kokoro's own grade (the language comes with the voice), then yours.
     const languages = [...new Set(item.voices.map(voice => voice.language))];
     control = <select aria-label={item.label} value={item.value} disabled={locked || saving} data-tip={tip || 'Grades are Kokoro\u2019s own: A is best. Languages other than English are thin in Kokoro.'}
       onChange={event => save(event.target.value)}>
       {languages.map(language => <optgroup key={language} label={language}>
         {item.voices.filter(voice => voice.language === language).map(voice => <option key={voice.name} value={voice.name}>
-          {voice.name} · {voice.gender}{voice.grade ? ` · ${voice.grade}` : ''}{voice.name === item.default ? ' (default)' : ''}</option>)}
+          {voice.name}{voice.gender ? ` · ${voice.gender}` : ''}{voice.grade ? ` · ${voice.grade}` : ''}{voice.name === item.default ? ' (default)' : ''}</option>)}
       </optgroup>)}</select>;
   }
   else if (item.type === 'port') control = field({tip: 'A number from 1024 to 65535. Enter saves.', props: {type: 'number', min: 1024, max: 65535, inputMode: 'numeric'}});

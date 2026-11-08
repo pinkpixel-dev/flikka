@@ -17,8 +17,8 @@ export const shotURL = name => `/shot?token=${token}&name=${encodeURIComponent(n
 export const voiceURL = (name, version, kind) => `/voice?token=${token}&name=${name}${kind ? '&kind=' + kind : ''}&v=${version}`;
 
 // A new voice: the body is the audio itself.
-export async function uploadVoice(name, blob) {
-  const response = await fetch('/voice-add?name=' + encodeURIComponent(name), {method: 'POST', headers: {Authorization: 'Bearer ' + token}, body: blob});
+export async function uploadVoice(name, blob, consent) {
+  const response = await fetch('/voice-add?name=' + encodeURIComponent(name) + (consent ? '&consent=1' : ''), {method: 'POST', headers: {Authorization: 'Bearer ' + token}, body: blob});
   const result = await response.json();
   if (!response.ok) throw Error(result.error);
   return result;

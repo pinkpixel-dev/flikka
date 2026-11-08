@@ -27,7 +27,7 @@ Every command prints structured JSON to stdout.
 | `flikka project undo <id>` | Puts the project back as it was before the last saved edit (for films: the last save from the panel) |
 | `flikka project render <id>` | Renders the final 60 fps MP4 video through HyperFrames |
 | `flikka project new <name>` | Scaffolds a multi-scene film with voice narration |
-| `flikka voice say <name> "text"` | Synthesizes speech using Kokoro neural voices on CUDA/CPU |
+| `flikka voice say <name> "text"` | Speaks a line in a Kokoro voice or one of the user's own |
 | `flikka shot` | Captures framed screenshots with desktop wallpaper backgrounds |
 | `flikka doctor` | Checks the system tools flikka needs and prints the command that installs anything missing |
 
@@ -130,7 +130,7 @@ flikka project preview product-launch
 flikka project render product-launch
 ```
 
-Available Kokoro neural voices include `af_heart`, `af_bella`, `af_nicole`, `am_michael`, `bf_emma`, and `bm_george`. List all 54 with `flikka voice list`. The first letter is the language the voice reads in (`a` American, `b` British, `e` Spanish, `f` French, `h` Hindi, `i` Italian, `p` Brazilian Portuguese, `j` Japanese, `z` Mandarin), so write the narration in that language. English voices are much better than the rest. Japanese needs `flikka voice setup japanese` once. The user's own cloned voices aren't available yet. Captions and the check follow the voice's language; for Japanese and Chinese the check can't compare words, so its `checkNotes` ask you to listen to the narration instead.
+Available Kokoro neural voices include `af_heart`, `af_bella`, `af_nicole`, `am_michael`, `bf_emma`, and `bm_george`. List all 54 with `flikka voice list`. The first letter is the language the voice reads in (`a` American, `b` British, `e` Spanish, `f` French, `h` Hindi, `i` Italian, `p` Brazilian Portuguese, `j` Japanese, `z` Mandarin), so write the narration in that language. English voices are much better than the rest. Japanese needs `flikka voice setup japanese` once. The user's own voices show in `flikka voice list` with `"own": true` and are used by their name, like `"voice": {"name": "My voice"}` or `--narrator "My voice"`. They speak English only, and the first line takes about 15 s longer while the model loads. Never add, import or remove one of the user's voices unless they asked. Captions and the check follow the voice's language; for Japanese and Chinese the check can't compare words, so its `checkNotes` ask you to listen to the narration instead.
 
 ## Editing by What the Viewer Sees
 

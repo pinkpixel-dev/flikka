@@ -1,11 +1,11 @@
 import React from 'react';
-import {Camera, Clapperboard, Image, Settings} from 'lucide-react';
+import {AudioLines, Camera, Clapperboard, Image, Settings} from 'lucide-react';
 import {thumb} from '../lib/api.js';
 import {clock, states, when} from '../lib/format.js';
 import {Renders} from './Renders.jsx';
 import {Shortcuts} from './Shortcuts.jsx';
 
-// New recording, screenshots and settings, the render queue, then every project, newest first.
+// New recording, screenshots, voices and settings, the render queue, then every project, newest first.
 export function Sidebar({projects, current, view, counts, renders, onCancelRender, onClearRenders}) {
   return <aside className="sidebar">
     <div className="brand"><span className="brand-mark" aria-hidden/>flikka</div>
@@ -13,6 +13,7 @@ export function Sidebar({projects, current, view, counts, renders, onCancelRende
       <Camera size={17} strokeWidth={1.8} aria-hidden/>New recording</a>
     <nav className="nav" aria-label="Library">
       <a href="#shots" data-tip="Framed screenshots you've taken" className={view === 'shots' ? 'on' : ''} aria-current={view === 'shots' ? 'page' : undefined}><Image size={16} strokeWidth={1.8} aria-hidden/>Screenshots<span>{counts.shots || ''}</span></a>
+      <a href="#voices" data-tip="Your own voices for narration" className={view === 'voices' ? 'on' : ''} aria-current={view === 'voices' ? 'page' : undefined}><AudioLines size={16} strokeWidth={1.8} aria-hidden/>Voices<span>{counts.voices || ''}</span></a>
       <a href="#settings" data-tip="Folders, voice, demo browser, screenshots and ports" className={view === 'settings' ? 'on' : ''} aria-current={view === 'settings' ? 'page' : undefined}><Settings size={16} strokeWidth={1.8} aria-hidden/>Settings</a>
     </nav>
     <Renders items={renders} onCancel={onCancelRender} onClear={onClearRenders}/>
