@@ -1,0 +1,28 @@
+[package]
+name = "flikka-voice"
+version = "0.0.0"
+description = "Spike: Narra's Chatterbox Nano engine as a headless helper for Flikka"
+license = "Apache-2.0"
+publish = false
+edition = "2021"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+hound = "3.5"
+ort = { version = "=2.0.0-rc.13", features = ["webgpu", "half"] }
+half = "2"
+tokenizers = { version = "0.23", default-features = false, features = ["onig"] }
+wsola = "0.1"
+thiserror = "2"
+sha2 = "0.11"
+trash = "5"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+strip = true
+
+[profile.dev.package."*"]
+opt-level = 3
