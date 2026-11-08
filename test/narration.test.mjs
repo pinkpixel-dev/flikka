@@ -102,6 +102,49 @@ test('narration edits: say, follow, reword, line settings, unsay and undo', asyn
   }
 });
 
+test('moving a line keeps the lines in time order, and the lines following it go along', async () => {
+  const folder = await fs.mkdtemp(path.join(os.tmpdir(), 'flikka-narration-'));
+  const file = path.join(folder, 'recording.project.json');
+  await fs.writeFile(file, JSON.stringify(recording({narration: {lines: [
+    {id: 'n1', text: 'One.', at: 2}, {id: 'n2', text: 'Two.', at: null}, {id: 'n3', text: 'Three.', at: 8}, {id: 'n4', text: 'Four.', at: 12, trimStart: 0.25},
+  ]}})));
+  const order = async () => JSON.parse(await fs.readFile(file, 'utf8')).narration.lines.map(line => line.id);
+  try {
+    // n1 moves past n3: n2 follows n1, so it goes along.
+    await editProject(file, ['--line', 'n1,at=10']);
+    assert.deepEqual(await order(), ['n3', 'n1', 'n2', 'n4']);
+    // A following line that's moved gets a moment of its own.
+    await editProject(file, ['--line', 'n2,at=1']);
+    assert.deepEqual(await order(), ['n2', 'n3', 'n1', 'n4']);
+    // The timeline shows a line's trims, so the panel can draw and change them.
+    const timeline = await timelineProject(file);
+    assert.equal(timeline.narration.find(line => line.id === 'n4').trimStart, 0.25);
+  } finally {
+    await fs.rm(folder, {recursive: true, force: true});
+  }
+});
+
+test('timeline lines: a move snaps an end to a nearby edge, trims stay inside the clip', async () => {
+  const {dragShape, lineChange, lineShape} = await import('../ui/src/timeline/lines.js');
+  const frame = value => Math.round(value * 30) / 30;
+  const line = {id: 'n1', text: 'Hello there.', from: 2, to: 4, trimStart: 0.5, trimEnd: 0.5, room: 3};
+  const context = {edges: [6.1], reach: 0.15, frame, first: 0, last: 20};
+  assert.deepEqual(lineShape(line), {from: 2, to: 4, trimStart: 0.5, trimEnd: 0.5, full: 3});
+  // Moved 2 s: the end lands at 6, near the edge at 6.1, so it snaps there. until moves along (room 3 s).
+  const moved = dragShape(line, {mode: 'line', shift: 2, now: 0}, context);
+  assert.deepEqual([round(moved.from), round(moved.to)], [4.1, 6.1]);
+  assert.deepEqual(lineChange(line, 'line', moved), {set: {line: 'n1', at: moved.from, until: moved.from + 3}});
+  // A start trim can't reach back past the clip's own start, and an end trim can't go past its end.
+  const start = dragShape(line, {mode: 'trim-start', shift: 0, now: 0}, context);
+  assert.deepEqual([round(start.from), round(start.trimStart)], [1.5, 0]);
+  assert.deepEqual(lineChange(line, 'trim-start', start), {set: {line: 'n1', at: start.from, trimStart: start.trimStart}});
+  const end = dragShape(line, {mode: 'trim-end', shift: 0, now: 3}, context);
+  assert.deepEqual([round(end.to), round(end.trimEnd)], [3, 1.5]);
+  assert.equal(lineChange(line, 'trim-end', dragShape(line, {mode: 'trim-end', shift: 0, now: 9}, context)).set.trimEnd, 0);
+  // Nothing moved, nothing to save.
+  assert.equal(lineChange(line, 'line', lineShape(line)), null);
+});
+
 test('narration edits: split a line at a character or at words, and merge it back', async () => {
   const folder = await fs.mkdtemp(path.join(os.tmpdir(), 'flikka-narration-'));
   const file = path.join(folder, 'recording.project.json');

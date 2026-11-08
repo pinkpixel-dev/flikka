@@ -20,6 +20,7 @@
   --spotlight: oklch(0.82 0.07 220);
   --overlay: oklch(0.8 0.1 85);
   --speech: oklch(0.42 0.02 265);
+  --narration: oklch(0.74 0.09 300);
   --texture: oklch(1 0 0 / 0.045);
 
   --sans: 'Geist Variable', 'Geist', sans-serif;
@@ -548,3 +549,14 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
   .setting-pair select, .setting-pair input { flex: none; }
   .setting-source { grid-row: 1; grid-column: 2; }
 }
+
+/* Narration lines on the timeline: the waveform behind the words, trim handles on the edges. */
+.block.line { background: oklch(0.74 0.09 300 / .16); box-shadow: inset 0 0 0 1px oklch(0.74 0.09 300 / .5); color: oklch(0.95 0.02 300); cursor: grab; overflow: visible; }
+.block.line .wave { position: absolute; inset: 1px 0; width: 100%; height: calc(100% - 2px); color: oklch(0.74 0.09 300 / .26); pointer-events: none; }
+.block.line > .label { position: relative; min-width: 0; pointer-events: none; }
+.block.line.unspoken { background: transparent; box-shadow: none; border: 1px dashed oklch(0.74 0.09 300 / .5); color: var(--muted); }
+.block.line.muted { opacity: .5; }
+.block.line.over { box-shadow: inset 0 0 0 1px var(--warn); }
+.block.line.chosen { background: oklch(0.74 0.09 300 / .32); box-shadow: inset 0 0 0 1.5px var(--narration); }
+.block.line.live { opacity: .85; box-shadow: inset 0 0 0 1.5px var(--narration); }
+.dragging .block.line { cursor: grabbing; }

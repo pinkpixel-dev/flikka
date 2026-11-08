@@ -25,6 +25,9 @@ export function Studio({project, refresh, onChange}) {
   // A zoom being aimed on the recording: the zoom, and where and how close it looks for now.
   const [aim, setAim] = useState(null);
   const [aiming, setAiming] = useState(false);
+  // The project file's stamp the timeline was read at (or the panel's own last edit left): edits send it back, and
+  // one made against an older project is refused (lib/ui.mjs fresh()), so the timeline is read again.
+  const stamp = useRef();
   const editable = Boolean(project.recording);
   const showing = !project.final || !editable ? (project.final ? 'final' : editable ? 'live' : 'none') : shown;
 
@@ -32,7 +35,7 @@ export function Studio({project, refresh, onChange}) {
   useEffect(() => {
     if (!editable) return;
     let current = true;
-    api('project-timeline', {id: project.id}).then(next => current && setTimeline(next)).catch(failure => current && toast('Timeline: ' + failure.message));
+    api('project-timeline', {id: project.id}).then(next => { if (current) { stamp.current = next.edited; setTimeline(next); } }).catch(failure => current && toast('Timeline: ' + failure.message));
     return () => { current = false; };
   }, [project.id, project.edited, version]);
   useEffect(() => {
@@ -52,19 +55,17 @@ export function Studio({project, refresh, onChange}) {
     catch (failure) { toast(failure.message); }
     finally { refresh(); }
   };
-  // From the timeline: the edit, then the timeline and preview again. It fails loudly, so the timeline can drop
-  // what it drew while saving.
-  // From the narration list: the edit, then the timeline and preview again. True when it saved.
-  const narrationEdit = async changes => {
-    try { await api('project-narration', {id: project.id, changes}); setChanged(true); setShown('live'); setVersion(old => old + 1); return true; }
-    catch (failure) { toast(failure.message); return false; }
-    finally { refresh(); }
-  };
-  const timelineEdit = async body => {
-    try { await api('project-timeline-edit', {id: project.id, ...body}); setChanged(true); setShown('live'); setVersion(old => old + 1); }
+  // Timeline and narration edits: the edit, then the timeline and preview again. Refused as stale, the timeline is
+  // read again too.
+  const guarded = async (action, body) => {
+    try { const result = await api(action, {id: project.id, edited: stamp.current, ...body}); stamp.current = result.edited; setChanged(true); setShown('live'); }
     catch (failure) { toast(failure.message); throw failure; }
-    finally { refresh(); }
+    finally { setVersion(old => old + 1); refresh(); }
   };
+  // From the narration list and lane: true when it saved.
+  const narrationEdit = changes => guarded('project-narration', {changes}).then(() => true, () => false);
+  // From the timeline: it fails loudly, so the timeline can drop what it drew while saving.
+  const timelineEdit = body => guarded('project-timeline-edit', body);
   // Back one saved edit (any edit: a switch, the timeline, or an agent's).
   const undo = async () => {
     try { await api('project-undo', {id: project.id}); setChanged(true); setShown('live'); setVersion(old => old + 1); }
@@ -111,7 +112,7 @@ export function Studio({project, refresh, onChange}) {
       {showing === 'live' && preview?.narration && preview.narration.spoken < preview.narration.total &&
         <div className="banner">{preview.narration.spoken} of {preview.narration.total} narration lines spoken. The rest play once you render.</div>}
       {stale && <div className="banner">The timeline shows the edit as it is now. Render to update the exported video.</div>}
-      {editable && timeline && <Timeline timeline={timeline} time={time} fps={fps} stale={stale} onEdit={timelineEdit} onAim={startAim} onSeek={seconds => player.current?.seek(seconds)}/>}
+      {editable && timeline && <Timeline project={project.id} timeline={timeline} time={time} fps={fps} stale={stale} onEdit={timelineEdit} onNarration={narrationEdit} onAim={startAim} onSeek={seconds => player.current?.seek(seconds)}/>}
     </div>
     <Inspector project={project} edit={edit} render={render} rendering={rendering} changed={changed}
       narration={editable && <Narration project={project} timeline={timeline} time={time} onSeek={seconds => player.current?.seek(seconds)}

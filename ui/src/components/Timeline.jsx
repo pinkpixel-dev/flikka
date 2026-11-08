@@ -2,6 +2,8 @@ import React, {useEffect, useRef, useState} from 'react';
 import {Crosshair, Scissors, Trash2, X, ZoomIn} from 'lucide-react';
 import {clock, timecode} from '../lib/format.js';
 import {Button} from './ui.jsx';
+import {Wave} from '../timeline/Wave.jsx';
+import {dragShape, lineChange, lineShape} from '../timeline/lines.js';
 
 // Under the player: what the finished video holds (flikka project timeline), in its own seconds. Clips with the
 // cuts between them, camera moves, overlays, clicks and markers, and the words spoken.
@@ -10,14 +12,16 @@ import {Button} from './ui.jsx';
 //   Camera: drag on empty space for a new zoom, drag a zoom to move it or its edges to resize it, click one to
 //   change its scale, aim it on the recording, or remove it (Delete).
 //   Events: click a click or a typing burst (or press Z near one) to zoom in right there.
-// Keys: [ and ] jump to the previous or next zoom and choose it, Enter chooses the zoom under the playhead.
-// Edges snap to the playhead, clip edges and other zooms, then to whole frames.
+//   Narration: drag a line to move it, or its edges to trim it. Click one to choose it.
+// Keys: [ and ] jump to the previous or next zoom and choose it, Enter chooses the zoom under the playhead, Alt+← →
+// nudges the chosen narration line a frame (Shift: a tenth of a second).
+// Edges snap to the playhead, clip edges, other zooms and narration lines, then to whole frames.
 const steps = [0.5, 1, 2, 5, 10, 15, 30, 60, 120, 300];
 const scales = [1.25, 1.5, 2, 2.5, 3];
 const at = (seconds, duration) => `${(seconds / duration) * 100}%`;
 const span = (from, to, duration) => ({left: at(from, duration), width: `max(2px, ${((to - from) / duration) * 100}%)`});
 
-export function Timeline({timeline, time, onSeek, onEdit, onAim, fps, stale}) {
+export function Timeline({project, timeline, time, onSeek, onEdit, onNarration, onAim, fps, stale}) {
   const strip = useRef();
   const [width, setWidth] = useState(800);
   const [drag, setDrag] = useState(null);
@@ -25,6 +29,7 @@ export function Timeline({timeline, time, onSeek, onEdit, onAim, fps, stale}) {
   const [chosen, setChosen] = useState(null);
   const [picked, setPicked] = useState(null);
   const [saving, setSaving] = useState(null);
+  const [chosenLine, setChosenLine] = useState(null);
   useEffect(() => {
     const observer = new ResizeObserver(([entry]) => setWidth(entry.contentRect.width));
     observer.observe(strip.current);
@@ -41,13 +46,27 @@ export function Timeline({timeline, time, onSeek, onEdit, onAim, fps, stale}) {
   const frame = value => Math.round(value * fps) / fps;
   const clamp = value => Math.max(first, Math.min(last, value));
 
-  const timeAt = (clientX, skip) => {
+  // Narration lines that can be drawn (a line following one not spoken yet has no place).
+  const lines = (timeline.narration || []).filter(line => line.from !== null);
+  // What an edge snaps to, leaving out the zoom (index) or narration line (id) being dragged.
+  const edgesBut = (skip, skipLine) => [time, first, last, ...timeline.parts.flatMap(part => [part.from, part.to]), ...timeline.zooms.flatMap((zoom, index) => index === skip ? [] : [zoom.from, zoom.to]),
+    ...lines.flatMap(line => line.id === skipLine ? [] : [line.from, lineShape(line).to])];
+  const reach = () => (6 / strip.current.getBoundingClientRect().width) * duration;
+  const timeAt = (clientX, skip, skipLine) => {
     const box = strip.current.getBoundingClientRect();
     const raw = Math.max(0, Math.min(1, (clientX - box.left) / box.width)) * duration;
-    const reach = (6 / box.width) * duration;
-    const edges = [time, first, last, ...timeline.parts.flatMap(part => [part.from, part.to]), ...timeline.zooms.flatMap((zoom, index) => index === skip ? [] : [zoom.from, zoom.to])];
+    const edges = edgesBut(skip, skipLine);
     const near = edges.reduce((best, edge) => Math.abs(edge - raw) < Math.abs(best - raw) ? edge : best, Infinity);
-    return Math.abs(near - raw) <= reach ? near : frame(raw);
+    return Math.abs(near - raw) <= reach() ? near : frame(raw);
+  };
+  // A narration line as drawn mid-drag, and saving it (one change, one undo).
+  const shapeOf = (line, drag) => dragShape(line, {mode: drag.mode, now: drag.now, shift: ((drag.cx - drag.x) / width) * duration},
+    {edges: edgesBut(null, line.id), reach: reach(), frame, first, last});
+  const saveLine = async (line, mode, shape) => {
+    const change = lineChange(line, mode, shape);
+    if (!change || !onNarration) return;
+    setSaving({line: line.id, ...shape}); setSelection(null);
+    if (!await onNarration([change])) setSaving(null);
   };
 
   const save = async (body, draft) => {
@@ -62,18 +81,19 @@ export function Timeline({timeline, time, onSeek, onEdit, onAim, fps, stale}) {
     const zoom = target.closest('[data-zoom]')?.dataset.zoom;
     const pick = target.closest('[data-pick]')?.dataset.pick;
     const lane = target.closest('[data-lane]')?.dataset.lane;
+    const line = onNarration ? target.closest('[data-line]')?.dataset.line : undefined;
     const start = timeAt(event.clientX);
-    const mode = target.dataset.edge || (zoom !== undefined ? 'move' : pick ? 'pick' : lane === 'clips' ? 'select' : lane === 'camera' ? 'create' : 'scrub');
+    const mode = line ? (target.dataset.trim ? 'trim-' + target.dataset.trim : 'line') : target.dataset.edge || (zoom !== undefined ? 'move' : pick ? 'pick' : lane === 'clips' ? 'select' : lane === 'camera' ? 'create' : 'scrub');
     event.currentTarget.setPointerCapture(event.pointerId);
     if (mode === 'scrub') { setChosen(null); setPicked(null); onSeek(start); }
-    setDrag({mode, zoom: zoom === undefined ? null : Number(zoom), pick, x: event.clientX, start, now: start, moved: false});
+    setDrag({mode, zoom: zoom === undefined ? null : Number(zoom), line, pick, x: event.clientX, cx: event.clientX, start, now: start, moved: false});
   };
   const move = event => {
     if (!drag) return;
     const moved = drag.moved || Math.abs(event.clientX - drag.x) > 4;
-    const now = timeAt(event.clientX, drag.zoom);
+    const now = timeAt(event.clientX, drag.zoom, drag.line);
     if (drag.mode === 'scrub' || (drag.mode === 'pick' && moved)) onSeek(now);
-    setDrag({...drag, now, moved});
+    setDrag({...drag, now, cx: event.clientX, moved});
   };
   const up = () => {
     if (!drag) return;
@@ -81,6 +101,14 @@ export function Timeline({timeline, time, onSeek, onEdit, onAim, fps, stale}) {
     const {mode, start, now, moved} = drag;
     const zoom = drag.zoom === null ? null : timeline.zooms[drag.zoom];
     if (mode === 'scrub') return;
+    // A narration line: pressed without dragging, it's chosen (the playhead goes to its start); dragged, it's saved.
+    if (drag.line) {
+      const line = lines.find(item => item.id === drag.line);
+      if (!line) return;
+      if (!moved) { setChosen(null); setPicked(null); setChosenLine(line.id); onSeek(line.from); return; }
+      saveLine(line, mode, shapeOf(line, drag));
+      return;
+    }
     // A click or a typing burst: pressed without dragging, it's picked (the playhead goes to it).
     if (mode === 'pick') {
       if (!moved) { const [kind, index] = drag.pick.split(':'); pickEvent(kind, Number(index)); }
@@ -159,7 +187,14 @@ export function Timeline({timeline, time, onSeek, onEdit, onAim, fps, stale}) {
   const keys = event => {
     const by = {ArrowLeft: -1, ArrowRight: 1}[event.key];
     const handled = () => { event.preventDefault(); event.stopPropagation(); };
-    if (by) { handled(); onSeek(event.shiftKey ? time + by : (Math.round(time * fps) + by) / fps); }
+    const nudging = by && event.altKey && lines.find(line => line.id === chosenLine);
+    if (nudging) {
+      handled();
+      if (saving) return;
+      const shape = lineShape(nudging), step = event.shiftKey ? 0.1 : 1 / fps;
+      const from = Math.max(first, Math.min(last - 0.05, frame(shape.from + by * step)));
+      saveLine(nudging, 'line', {...shape, from, to: from + shape.to - shape.from});
+    } else if (by) { handled(); onSeek(event.shiftKey ? time + by : (Math.round(time * fps) + by) / fps); }
     else if (event.key === 'Home') { handled(); onSeek(0); }
     else if (event.key === 'End') { handled(); onSeek(duration); }
     else if (event.key === 'Enter' && selection) { handled(); cut(); }
@@ -169,7 +204,7 @@ export function Timeline({timeline, time, onSeek, onEdit, onAim, fps, stale}) {
     else if ((event.key === 'Delete' || event.key === 'Backspace') && chosen !== null) { handled(); remove(chosen); }
     else if (event.key.toLowerCase() === 'z' && !event.ctrlKey && !event.metaKey && !event.altKey) { handled(); pickNearest(); }
     else if (event.key.toLowerCase() === 'a' && chosen !== null && onAim && !event.ctrlKey && !event.metaKey && !event.altKey) { handled(); aimAt(timeline.zooms[chosen]); }
-    else if (event.key === 'Escape' && (selection || chosen !== null || picked)) { handled(); setSelection(null); setChosen(null); setPicked(null); }
+    else if (event.key === 'Escape' && (selection || chosen !== null || picked || chosenLine)) { handled(); setSelection(null); setChosen(null); setPicked(null); setChosenLine(null); }
   };
 
   // Zooms as they show right now: mid-drag, saving, or saved.
@@ -213,6 +248,19 @@ export function Timeline({timeline, time, onSeek, onEdit, onAim, fps, stale}) {
       {(timeline.keystrokes || []).map((key, index) => <span key={'k' + index} className="keystroke" style={{left: at(key.at, duration)}} data-tip={key.keys}/>)}
       {timeline.markers.map((marker, index) => <span key={'m' + index} className="marker" style={{left: at(marker.at, duration)}} data-tip={marker.label || 'Marker'}/>)}
     </>},
+    {name: 'Narration', lane: 'narration', tip: 'Drag a line to move it, or its edges to trim it. Click one to choose it, then Alt+← → nudges it.', show: lines.length > 0, items: lines.map(line => {
+      // As it shows right now: mid-drag, saving, or saved.
+      const shape = drag?.line === line.id && drag.moved ? shapeOf(line, drag) : saving?.line === line.id ? saving : lineShape(line);
+      const live = (drag?.line === line.id && drag.moved) || saving?.line === line.id;
+      const spoken = line.to !== null;
+      const tip = live ? undefined : `${line.text}${spoken ? '' : ' · not spoken yet'}${line.muted ? ' · muted' : ''}${line.overrun ? ` · runs ${line.overrun.toFixed(1)} s past its end` : ''}${line.overlaps ? ` · overlaps ${line.overlaps}` : ''}`;
+      return <span key={line.id} className={`block line ${spoken ? '' : 'unspoken'} ${line.muted ? 'muted' : ''} ${line.overrun || line.overlaps ? 'over' : ''} ${live ? 'live' : ''} ${chosenLine === line.id ? 'chosen' : ''}`}
+        style={span(shape.from, shape.to, duration)} data-line={line.id} data-tip={tip}>
+        {spoken && <Wave project={project} line={line} trimStart={shape.trimStart} trimEnd={shape.trimEnd}/>}
+        <span className="label">{line.text}</span>
+        {spoken && <><span className="edge start" data-trim="start"/><span className="edge end" data-trim="end"/></>}
+      </span>;
+    })},
     {name: 'Speech', show: timeline.speech.length > 0, items: timeline.speech.map((line, index) => <Block key={index} className={`speech ${line.partlyCut ? 'partly' : ''}`} {...span(line.from, line.to, duration)} tip={line.text}>{line.text}</Block>)},
   ].filter(row => row.show);
 

@@ -7,7 +7,8 @@ export async function api(action, body = {}) {
   // A tab left open from an earlier panel has an old key: load the page again for the current one.
   if (response.status === 403) { location.reload(); throw Error('Reconnecting to the panel…'); }
   const result = await response.json();
-  if (!response.ok) throw Error(result.error);
+  // stale: the project changed since the page last read it (see fresh() in lib/ui.mjs).
+  if (!response.ok) throw Object.assign(Error(result.error), {stale: Boolean(result.stale)});
   return result;
 }
 
