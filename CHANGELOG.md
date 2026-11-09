@@ -15,6 +15,7 @@
 - Removed the voice import command. Your voices, the Chatterbox model and the CUDA plugin all come from Flikka's own downloads now, so `flikka voice cuda install` no longer takes `--fresh`.
 
 ### 🧹 Maintenance
+- The helpers come from the `voice-v0.3.0` release now (`flikka-voice` 0.3.0 and `flikka-cursor` 0.2.0, in one archive), pinned by sha256 in npm installs and the AUR package.
 - `undici` is pinned to 7.30.2 through an npm override, which fixes the high-severity advisories that came in through `@hyperframes/engine`.
 
 ## 0.4.0 - November 8, 2026
