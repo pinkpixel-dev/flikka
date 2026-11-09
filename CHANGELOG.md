@@ -8,6 +8,11 @@
 - Each command's page (`flikka record help` and so on) lists all of its actions with their usage, followed by its rules. The project page still lists every edit option.
 - Unknown commands and actions point you to the right help page instead of printing all of it into the error.
 
+### 🗣️ Narration
+- `flikka project frames` on a narrated recording shows the narration captions now, like the render does, instead of the mic's. It uses the lines already spoken and says how many that is (`narration` in the result).
+- `flikka voice say` takes `--speed`, so you can hear a say-as mark at a line's own speed before writing it in. The help shows how.
+- `flikka project fit --help` has examples now.
+
 ### 🖱️ Screen recordings
 - Window recordings on Wayland log the pointer too, so you can show or hide it after recording, like full-screen ones. Your desktop asks you to pick the window twice (the recording, then the pointer), and the pointer disappears from the video while it's outside the window. This needs `flikka-cursor` 0.2.0; older helpers keep the pointer baked in.
 

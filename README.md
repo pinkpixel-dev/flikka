@@ -257,7 +257,10 @@ flikka project render launch
 ```bash
 flikka voice list
 flikka voice say af_heart "Testing one two three" --out test.wav
+flikka voice say bf_emma "Open the [GIF](/ʤˈɪf/) folder" --speed 1.1
 ```
+
+`voice say` takes say-as marks and a `--speed`, so you can hear how a fix sounds before you write it into a narration line.
 
 A film picks its narrator with `"voice": {"name": "..."}`. Without one, it uses the default voice from Settings, which starts out as `af_heart`.
 
