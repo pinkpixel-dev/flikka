@@ -1,6 +1,6 @@
 import {useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
 
-// Zoom and sideways scroll for the timeline (Narra's useTimelineZoom, in seconds). The track is `zoom` times as
+// Zoom and sideways scroll for the timeline, in seconds. The track is `zoom` times as
 // wide as the viewport and everything on it is placed in percent, so dragging and seeking need no changes.
 // Zooming keeps the moment under the pointer (or the playhead, or the middle) where it was. While the video plays,
 // the view follows the playhead until you scroll it yourself; pressing play follows again.

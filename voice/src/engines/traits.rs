@@ -1,6 +1,6 @@
-//! The contract between Narra and each speech model.
+//! The contract between the app and each speech model.
 //!
-//! Narra owns the workflow (projects, segments, caching, export). An engine only loads its
+//! The app owns the workflow (projects, segments, caching, export). An engine only loads its
 //! model, reports what it can do, and turns text into audio.
 
 use std::path::{Path, PathBuf};

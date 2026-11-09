@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {narrationClipURL} from '../lib/api.js';
 
-// A narration line's waveform on the timeline (from Narra's waveform.ts and Waveform.tsx). The browser decodes the
+// A narration line's waveform on the timeline. The browser decodes the
 // clip, so any format Kokoro or flikka-voice writes works, and its peaks are kept per clip for the page's life.
 const peakWindow = 0.01; // one peak per 10 ms
 const peaks = new Map();

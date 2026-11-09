@@ -120,8 +120,8 @@ fn seed(reference_hash: &str, chunk: &str) -> u64 {
     u64::from_le_bytes(digest[..8].try_into().expect("a SHA-256 digest has 32 bytes"))
 }
 
-/// Swaps dictionary words for their sounds-like text, as whole words and ignoring case. "Narra's"
-/// matches a "Narra" entry. Tags in brackets are left alone, and entries with only exact phonemes
+/// Swaps dictionary words for their sounds-like text, as whole words and ignoring case. "Memlake's"
+/// matches a "Memlake" entry. Tags in brackets are left alone, and entries with only exact phonemes
 /// are skipped, since Chatterbox reads text.
 fn apply_words(text: &str, entries: &[Pronunciation]) -> String {
     let lookup = |word: &str| {
@@ -477,18 +477,18 @@ mod tests {
 
     #[test]
     fn dictionary_words_are_swapped_as_whole_words() {
-        let words = [entry("Narra", "vox see"), entry("laugh", "laff"), entry("Nguyen", "win"), Pronunciation {
+        let words = [entry("Memlake", "mem lake"), entry("laugh", "laff"), entry("Nguyen", "win"), Pronunciation {
             word: "Kai".into(),
             sounds_like: String::new(),
             phonemes: Some("kˈI".into()),
         }];
         assert_eq!(
-            resolve_marks("NARRA and Narra's app. Narras stays. [laugh] I laugh.", &words),
-            "vox see and vox see's app. Narras stays. [laugh] I laff."
+            resolve_marks("MEMLAKE and Memlake's app. Memlakes stays. [laugh] I laugh.", &words),
+            "mem lake and mem lake's app. Memlakes stays. [laugh] I laff."
         );
         assert_eq!(resolve_marks("Mr. Nguyen-Smith met Nguyen.", &words), "Mr. Nguyen-Smith met win.");
         // Phoneme-only entries do nothing here, and a mark wins over the dictionary.
-        assert_eq!(resolve_marks("Kai said [Narra](vocks ee).", &words), "Kai said vocks ee.");
+        assert_eq!(resolve_marks("Kai said [Memlake](mem layk).", &words), "Kai said mem layk.");
     }
 
     #[test]
@@ -544,7 +544,7 @@ mod tests {
 
     #[test]
     fn needs_a_saved_voice() {
-        let dir = std::env::temp_dir().join(format!("narra-chatterbox-voices-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("flikka-chatterbox-voices-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         let mut engine = ChatterboxEngine::new(PathBuf::from("unused"), dir.clone());
         assert!(matches!(engine.cache_key(&request("Hello.")), Err(TtsError::NoVoices)));
@@ -561,15 +561,15 @@ mod tests {
         std::fs::remove_dir_all(&dir).unwrap();
     }
 
-    /// Runs the real model. Point `NARRA_CHATTERBOX_DIR` at a folder laid out like the app's
-    /// model folder, for example `spikes/chatterbox/models/nano`, and `NARRA_CHATTERBOX_VOICE` at a
+    /// Runs the real model. Point `FLIKKA_CHATTERBOX_DIR` at a folder laid out like the app's
+    /// model folder, for example `spikes/chatterbox/models/nano`, and `FLIKKA_CHATTERBOX_VOICE` at a
     /// 24 kHz mono WAV of someone speaking. A reference without speech makes almost no audio.
     #[test]
     #[ignore = "needs Chatterbox model files, a reference clip, and a GPU"]
     fn speaks_in_a_saved_voice() {
-        let dir = PathBuf::from(std::env::var("NARRA_CHATTERBOX_DIR").expect("set NARRA_CHATTERBOX_DIR"));
-        let clip = PathBuf::from(std::env::var("NARRA_CHATTERBOX_VOICE").expect("set NARRA_CHATTERBOX_VOICE"));
-        let voices_dir = std::env::temp_dir().join(format!("narra-chatterbox-real-{}", std::process::id()));
+        let dir = PathBuf::from(std::env::var("FLIKKA_CHATTERBOX_DIR").expect("set FLIKKA_CHATTERBOX_DIR"));
+        let clip = PathBuf::from(std::env::var("FLIKKA_CHATTERBOX_VOICE").expect("set FLIKKA_CHATTERBOX_VOICE"));
+        let voices_dir = std::env::temp_dir().join(format!("flikka-chatterbox-real-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&voices_dir);
         let speech: Vec<f32> = hound::WavReader::open(clip).unwrap().samples::<i16>().map(|s| s.unwrap() as f32 / 32768.0).collect();
         voices::create(&voices_dir, "Reference", "test", &speech, true).unwrap();
@@ -592,14 +592,14 @@ mod tests {
     }
 
     /// Like `speaks_in_a_saved_voice`, on CUDA with the KV cache kept on the GPU. Also needs
-    /// `NARRA_CUDA_PLUGIN` at `libonnxruntime_providers_cuda.so`, CUDA 13, and cuDNN 9.
+    /// `FLIKKA_CUDA_PLUGIN` at `libonnxruntime_providers_cuda.so`, CUDA 13, and cuDNN 9.
     #[test]
     #[ignore = "needs Chatterbox model files, a reference clip, the CUDA plugin, and an NVIDIA GPU"]
     fn speaks_on_cuda() {
-        let dir = PathBuf::from(std::env::var("NARRA_CHATTERBOX_DIR").expect("set NARRA_CHATTERBOX_DIR"));
-        let clip = PathBuf::from(std::env::var("NARRA_CHATTERBOX_VOICE").expect("set NARRA_CHATTERBOX_VOICE"));
-        let plugin = PathBuf::from(std::env::var("NARRA_CUDA_PLUGIN").expect("set NARRA_CUDA_PLUGIN"));
-        let voices_dir = std::env::temp_dir().join(format!("narra-chatterbox-cuda-{}", std::process::id()));
+        let dir = PathBuf::from(std::env::var("FLIKKA_CHATTERBOX_DIR").expect("set FLIKKA_CHATTERBOX_DIR"));
+        let clip = PathBuf::from(std::env::var("FLIKKA_CHATTERBOX_VOICE").expect("set FLIKKA_CHATTERBOX_VOICE"));
+        let plugin = PathBuf::from(std::env::var("FLIKKA_CUDA_PLUGIN").expect("set FLIKKA_CUDA_PLUGIN"));
+        let voices_dir = std::env::temp_dir().join(format!("flikka-chatterbox-cuda-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&voices_dir);
         let speech: Vec<f32> = hound::WavReader::open(clip).unwrap().samples::<i16>().map(|s| s.unwrap() as f32 / 32768.0).collect();
         voices::create(&voices_dir, "Reference", "test", &speech, true).unwrap();

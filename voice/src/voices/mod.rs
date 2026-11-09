@@ -69,7 +69,7 @@ pub fn reference_path(dir: &Path, id: &str) -> PathBuf {
     dir.join(id).join(REFERENCE)
 }
 
-/// Ids are folder names, so only the ones Narra makes are accepted.
+/// Ids are folder names, so only ones shaped like v19a4f2c0b1e are accepted.
 fn valid_id(id: &str) -> bool {
     id.starts_with('v') && id.len() > 1 && id.chars().all(|c| c.is_ascii_alphanumeric())
 }
@@ -190,7 +190,7 @@ pub fn delete(dir: &Path, id: &str) -> Result<(), String> {
     trash::delete(dir.join(id)).map_err(|e| format!("could not move the voice to the trash: {e}"))
 }
 
-/// A voice's reference clip as mono samples. Narra writes them at 24 kHz, so other rates are refused.
+/// A voice's reference clip as mono samples. They're saved at 24 kHz, so other rates are refused.
 pub fn read_reference(dir: &Path, id: &str) -> Result<Vec<f32>, String> {
     if !valid_id(id) {
         return Err(format!("there is no voice \"{id}\""));
@@ -216,7 +216,7 @@ mod tests {
     use super::*;
 
     fn temp_dir(name: &str) -> PathBuf {
-        let dir = std::env::temp_dir().join(format!("narra-voices-{name}-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("flikka-voices-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         dir
     }

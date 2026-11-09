@@ -24,8 +24,8 @@ function Cuda({gpu}) {
   return <div className="button-row">
     <small className="muted">{text.trim()}</small>
     {!status.installed && <Button size="small" variant="ghost" disabled={installing}
-      tip={status.narra ? 'Link the CUDA plugin Narra already has' : 'Download Microsoft’s CUDA plugin (183 MB). Needs CUDA 13 and cuDNN 9'} onClick={install}>
-      {installing ? 'Installing…' : status.narra ? 'Use Narra’s CUDA' : 'Install CUDA'}</Button>}
+      tip="Download Microsoft’s CUDA plugin (183 MB). Needs CUDA 13 and cuDNN 9" onClick={install}>
+      {installing ? 'Installing…' : 'Install CUDA'}</Button>}
   </div>;
 }
 

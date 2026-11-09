@@ -9,7 +9,7 @@ rule=$(printf '=%.0s' {1..80})
 thin=$(printf -- '-%.0s' {1..80})
 {
   printf '%s\nflikka-voice and flikka-cursor: third-party notices\n%s\n\n' "$rule" "$rule"
-  printf 'flikka-voice and flikka-cursor are Apache-2.0 (LICENSE). flikka-voice is built from Narra'"'"'s speech engine and\nthese parts; flikka-cursor from the crates listed at the end.\n\n'
+  printf 'flikka-voice and flikka-cursor are Apache-2.0 (LICENSE). flikka-voice is built from\nthese parts; flikka-cursor from the crates listed at the end.\n\n'
   printf '%s\nNative code linked into flikka-voice or shipped next to it\n%s\n\n' "$rule" "$rule"
   # pyke's builds of ONNX Runtime and Dawn come without their license files, so copies are kept in licenses/.
   while IFS='|' read -r name url file; do

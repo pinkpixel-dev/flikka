@@ -17,7 +17,7 @@ export function Voices({onCount}) {
     <header className="page-head"><h1>Voices</h1><span className="muted">Your own voices, for narration. English only.</span></header>
     <div className="voices-grid">
       <div className="voice-list">
-        {voices?.length === 0 && <div className="panel empty">No voices yet. Record one, upload a voice note, or copy yours from Narra with <code>flikka voice import narra</code>.</div>}
+        {voices?.length === 0 && <div className="panel empty">No voices yet. Record one or upload a voice note.</div>}
         {voices?.map(voice => <Voice key={voice.id} voice={voice} onRemove={load}/>)}
       </div>
       <AddVoice onAdded={load}/>

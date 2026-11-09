@@ -1,7 +1,7 @@
 import React, {useRef} from 'react';
 import {timecode} from '../lib/format.js';
 
-// The whole video in miniature, under the timeline (Narra's TimelineOverview). The box is the
+// The whole video in miniature, under the timeline. The box is the
 // part in view: drag it to scroll, drag its edges to zoom, or click the strip to jump there. The box takes the
 // arrow keys too (Shift: a whole view), and Home and End.
 const clamp = (value, low, high) => Math.min(high, Math.max(low, value));

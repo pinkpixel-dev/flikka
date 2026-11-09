@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.5.0 - Unreleased
+
+### 📖 Help
+- `flikka help` lists every action of every command now, each with a one-line summary.
+- Every action has its own page with its usage, options and examples: `flikka record click help`, `flikka project edit --help` or `flikka help voice add`. `-h` works too, and so do the old shortcuts like `flikka doctor --help`.
+- Each command's page (`flikka record help` and so on) lists all of its actions with their usage, followed by its rules. The project page still lists every edit option.
+- Unknown commands and actions point you to the right help page instead of printing all of it into the error.
+
+### 🗣️ Your own voice
+- Removed the voice import command. Your voices, the Chatterbox model and the CUDA plugin all come from Flikka's own downloads now, so `flikka voice cuda install` no longer takes `--fresh`.
+
+### 🧹 Maintenance
+- `undici` is pinned to 7.30.2 through an npm override, which fixes the high-severity advisories that came in through `@hyperframes/engine`.
+
 ## 0.4.0 - November 8, 2026
 
 ### 🎬 Panel
@@ -26,7 +40,7 @@
 - While the video plays, the timeline follows the playhead. Scroll it yourself and it stays where you put it until you press play again.
 
 ### 📁 Folders and settings
-- `flikka app doctor` checks for `flikka-voice` and the Chatterbox model. Both download on first use, so neither fails the check, and the model shows as linked from Narra when your Narra copy is there. On a system older than glibc 2.38 it says the helper can't run there.
+- `flikka app doctor` checks for `flikka-voice` and the Chatterbox model. Both download on first use, so neither fails the check. On a system older than glibc 2.38 it says the helper can't run there.
 - The default voice in Settings is a menu of Kokoro's 54 voices, grouped by language with Kokoro's own grades.
 - `flikka voice list` shows Kokoro's voices with their language, gender and grade.
 - `flikka app doctor` lists `espeak-ng` as optional (needed by the Spanish, French, Hindi, Italian and Portuguese voices) and gives its install command separately, so it never fails the check.
@@ -41,11 +55,10 @@
 - Narrate in your own voice. `flikka voice add "My voice" --consent` records about 15 seconds from your mic (or takes `--from` a voice note or video), cleans it, checks the words, and keeps the best 10 seconds. Chatterbox Nano speaks it, on your own machine.
 - Your voices work anywhere a Kokoro voice does: films, narration over recordings (`--narrator "My voice"` or `--line n2,voice=My voice`), `flikka voice say`, and the default voice in Settings.
 - `--consent` is required to add a voice, confirming it's yours or that you have permission to use it. The panel asks the same thing with a switch before it records.
-- `flikka voice import narra` copies the voices you made in Narra, and the model is linked from Narra's copy when it's there, so nothing downloads twice.
 - The Voices page is back in the panel: listen to each voice's sample, try a line in it, record or upload a new one, and delete one (it goes to the Trash).
 - Lines in your voice are made again when you re-record that voice.
 - Your voices speak English only and need glibc 2.38 or newer. Their helper, `flikka-voice`, downloads by itself the first time one speaks (about 15 MB, checked against the tested file), and the AUR package installs it into `/usr/lib/flikka`.
-- Your voices can run on CUDA on NVIDIA cards, about 1.5 times faster than WebGPU. `flikka voice cuda install` (or the button in Settings) links Narra's CUDA plugin or downloads it (183 MB), and `flikka voice cuda` says whether it's ready. It needs CUDA 13 and cuDNN 9 on the system.
+- Your voices can run on CUDA on NVIDIA cards, about 1.5 times faster than WebGPU. `flikka voice cuda install` (or the button in Settings) downloads Microsoft's CUDA plugin (183 MB), and `flikka voice cuda` says whether it's ready. It needs CUDA 13 and cuDNN 9 on the system.
 - A new "Your voices run on" setting (`voice-gpu`): auto (CUDA when it's installed, otherwise WebGPU), webgpu or cpu.
 - `flikka app doctor` shows whether CUDA is set up for your voices on machines with an NVIDIA driver.
 
@@ -58,7 +71,7 @@
 - A Narration tab in the panel lists a recording's lines. Edit a line's words, voice and speed, play it, speak it (or speak it again), mute it or remove it, and click its time to jump there. Ctrl+Enter splits a line at the cursor and Ctrl+Backspace at the start merges it into the line above. Type a new line at the bottom and it lands at the playhead. A line that needs a look, like one that's too long for its moment, says so under its text.
 - `flikka project speak <id>` speaks the lines that aren't spoken yet without rendering, or one line with `--line n2` (add `--again` to speak it anew). The panel speaks lines through the same command, one job at a time.
 - Say a word differently, in one spot or everywhere. In the Narration tab, put the cursor on a word and press Ctrl+K (or the speech button) to spell it the way it sounds, like `nair-ated`, or give exact phonemes, like `ʤˈɪf`. Preview speaks the line that way in its own voice before you apply it. Turn on "Everywhere in this project" to save it as a pronunciation for every line, and the ones you've saved are listed at the top of the tab, each with a button to take it off. Phonemes are for Kokoro voices. Your own voices read text, so they use the sounds-like spelling.
-- In one spot, the change is written into the line as a say-as mark, `[read](red)` or `[GIF](/ʤˈɪf/)`, the same syntax Narra and Misaki use. `--say-as n2,"read=red"` (or `"read=/ɹˈɛd/"`) adds one from the CLI, and `--pronounce "GIF=/ʤˈɪf/"` takes exact phonemes now too. Captions and the film check always show the plain word.
+- In one spot, the change is written into the line as a say-as mark, `[read](red)` or `[GIF](/ʤˈɪf/)`, the same syntax Misaki uses. `--say-as n2,"read=red"` (or `"read=/ɹˈɛd/"`) adds one from the CLI, and `--pronounce "GIF=/ʤˈɪf/"` takes exact phonemes now too. Captions and the film check always show the plain word.
 - Check a recording's narration for words a listener may mishear. Press Check in the Narration tab, or run `flikka project check <id>` (`--line n2` for one). Whisper listens to each spoken line's own clip, so music and your mic can't cause false alarms, and every line is heard in one run. No render needed. Flagged words show under the line, and clicking one opens Say as right on it. What Whisper heard is kept with the clip, so only new or changed lines are heard again. The check uses Whisper's `base` model unless you picked one in Settings, since `tiny` mishears too much to trust.
 - The film check's misheard-word note now mentions say-as marks too.
 - Fit a line that runs past its moment. Press Fit on the line in the Narration tab, or run `flikka project fit <id>` (add `--line n2` for one). It reads the line just fast enough to fit, up to 1.3×, speaks it again and checks, with one more nudge if it's still a little long. The new speeds save as one edit, so Ctrl+Z undoes them.

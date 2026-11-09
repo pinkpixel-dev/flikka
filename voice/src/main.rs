@@ -1,4 +1,4 @@
-//! flikka-voice: Narra's Chatterbox Nano engine as a headless helper Flikka runs as a child process.
+//! flikka-voice: a Chatterbox Nano engine as a headless helper Flikka runs as a child process.
 //!
 //!   flikka-voice voices --voices <dir>
 //!       prints the saved voices as one JSON array
@@ -7,7 +7,8 @@
 //!       writes one JSON line per event on stdout: {"event": "loaded", ...}, then {"event": "done", ...} or
 //!       {"event": "error", ...} per job. Exits when stdin closes.
 //!
-//! Everything under engines/, voices/, audio/ and pronunciations/ is copied unchanged from Narra.
+//! engines/ holds the speech model, voices/ the saved voices, audio/ WAV reading and writing, and
+//! pronunciations/ the sounds-like dictionary.
 
 mod audio;
 mod cuda;

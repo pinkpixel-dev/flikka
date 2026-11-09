@@ -1,8 +1,8 @@
-//! Optional CUDA for NVIDIA cards, through Microsoft's CUDA plugin for ONNX Runtime (from Narra).
+//! Optional CUDA for NVIDIA cards, through Microsoft's CUDA plugin for ONNX Runtime.
 //!
 //! flikka-voice is the WebGPU build, and the plugin loads into it at run time, so CUDA is a download Flikka makes
 //! when asked (`flikka voice cuda install`) instead of a second build. The plugin uses the CUDA 13 and cuDNN 9
-//! libraries installed on the system. Narra measured Chatterbox about 1.6 times faster than WebGPU on CUDA.
+//! libraries installed on the system. On a 4090, Chatterbox ran about 1.5 times faster on CUDA than on WebGPU.
 use std::path::Path;
 use std::sync::Mutex;
 
@@ -16,7 +16,7 @@ const EP_NAME: &str = "CUDAExecutionProvider";
 static REGISTERED: Mutex<bool> = Mutex::new(false);
 
 /// A session builder on the first CUDA device, registering `plugin` first if needed. TF32 is off: with it on,
-/// Kokoro's audio drifted far from the CPU's in Narra's tests, so it's kept off for Chatterbox too.
+/// Kokoro's audio drifted far from the CPU's in earlier tests, so it's kept off for Chatterbox too.
 pub fn builder(plugin: &Path) -> Result<SessionBuilder, String> {
     let env = Environment::current().map_err(|e| e.to_string())?;
     {
@@ -31,6 +31,6 @@ pub fn builder(plugin: &Path) -> Result<SessionBuilder, String> {
     Session::builder().map_err(|e| e.to_string())?.with_devices([device], Some(&options)).map_err(|e| e.to_string())
 }
 
-/// Narra tracks WebGPU use to suggest a restart (CUDA ran slower in a process that had used WebGPU). flikka-voice
-/// is a fresh process for each run, so there's nothing to track.
+/// CUDA ran slower in a process that had already used WebGPU, which a long-running app would have to track.
+/// flikka-voice is a fresh process for each run, so there's nothing to track.
 pub fn note_webgpu() {}

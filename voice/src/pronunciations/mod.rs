@@ -20,13 +20,9 @@ pub struct Pronunciation {
     pub phonemes: Option<String>,
 }
 
-/// The dictionary a fresh install starts with.
+/// The dictionary a fresh install starts with: empty.
 pub fn defaults() -> Vec<Pronunciation> {
-    vec![Pronunciation {
-        word: "Narra".into(),
-        sounds_like: "Nara".into(),
-        phonemes: None,
-    }]
+    Vec::new()
 }
 
 /// Trims every field, drops empty phoneme overrides, and rejects entries that cannot work.
@@ -101,12 +97,12 @@ mod tests {
     #[test]
     fn project_entries_replace_global_ones_for_the_same_word() {
         let entry = |word: &str, sounds_like: &str| Pronunciation { word: word.into(), sounds_like: sounds_like.into(), phonemes: None };
-        let global = [entry("Narra", "vox see"), entry("Nguyen", "win")];
-        let project = [entry("narra", "vox ee"), entry("Aoife", "ee fa")];
+        let global = [entry("Memlake", "vox see"), entry("Nguyen", "win")];
+        let project = [entry("memlake", "vox ee"), entry("Aoife", "ee fa")];
         let words: Vec<(String, String)> = layered(&global, &project).into_iter().map(|p| (p.word, p.sounds_like)).collect();
         assert_eq!(
             words,
-            [("Nguyen".into(), "win".into()), ("narra".into(), "vox ee".into()), ("Aoife".into(), "ee fa".into())]
+            [("Nguyen".into(), "win".into()), ("memlake".into(), "vox ee".into()), ("Aoife".into(), "ee fa".into())]
         );
         assert_eq!(layered(&global, &[]).len(), 2);
     }
@@ -121,28 +117,28 @@ mod tests {
 
     #[test]
     fn validate_trims_and_drops_blank_phonemes() {
-        let clean = validate(vec![entry("  Narra ", " vox see ", Some("  "))]).unwrap();
-        assert_eq!(clean, vec![entry("Narra", "vox see", None)]);
+        let clean = validate(vec![entry("  Memlake ", " vox see ", Some("  "))]).unwrap();
+        assert_eq!(clean, vec![entry("Memlake", "vox see", None)]);
     }
 
     #[test]
     fn validate_rejects_bad_entries() {
         assert!(validate(vec![entry("", "x", None)]).is_err());
         assert!(validate(vec![entry("two words", "x", None)]).is_err());
-        assert!(validate(vec![entry("Narra", "", None)]).is_err());
-        assert!(validate(vec![entry("Narra", "a", None), entry("narra", "b", None)]).is_err());
+        assert!(validate(vec![entry("Memlake", "", None)]).is_err());
+        assert!(validate(vec![entry("Memlake", "a", None), entry("memlake", "b", None)]).is_err());
     }
 
     #[test]
     fn validate_allows_apostrophes_hyphens_and_phoneme_only_entries() {
         assert!(validate(vec![entry("O'Neil", "oh neel", None)]).is_ok());
         assert!(validate(vec![entry("Jean-Luc", "zhawn luke", None)]).is_ok());
-        assert!(validate(vec![entry("Narra", "", Some("vˈɑksi"))]).is_ok());
+        assert!(validate(vec![entry("Memlake", "", Some("vˈɑksi"))]).is_ok());
     }
 
     #[test]
     fn save_then_load_round_trips_and_missing_file_gives_defaults() {
-        let dir = std::env::temp_dir().join(format!("narra-pron-test-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("flikka-pron-test-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join(FILE_NAME);
         let _ = std::fs::remove_file(&path);

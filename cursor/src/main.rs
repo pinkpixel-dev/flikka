@@ -1,13 +1,13 @@
 //! flikka-cursor: logs where the pointer is while Flikka records the screen on Wayland, so the recording itself can be
 //! made without it and Flikka draws it (or not) when it renders.
 //!
-//!   flikka-cursor --out <file.jsonl> [--token <file>]
+//!   flikka-cursor --out <file.jsonl> [--token <file>] [--window]
 //!
 //! Opens its own screencast session in the portal's metadata cursor mode: the stream's frames are never read, only the
 //! pointer position each PipeWire buffer carries. Writes one line per change to --out:
 //!   {"type":"move","x":0.41,"y":0.73,"t":1762600000.123,"visible":true}
 //! x and y are 0 to 1 across the stream, t is wall-clock seconds (Unix time), and visible is false while the pointer is
-//! off this monitor. --token keeps the portal's restore token, so only the first run shows the picker.
+//! off the stream (this monitor, or with --window the chosen window). --token keeps the portal's restore token, so only the first run shows the picker.
 //!
 //! Events on stdout, one JSON line each: {"event":"ready","width":…,"height":…} once positions flow,
 //! {"event":"error","code":…,"message":…} on failure (code "no-metadata" when the portal can't do it, "cancelled"
@@ -48,9 +48,10 @@ async fn main() {
         return;
     }
     let Some(out) = flag(&args, "--out") else {
-        eprintln!("usage: flikka-cursor --out <file.jsonl> [--token <file>]");
+        eprintln!("usage: flikka-cursor --out <file.jsonl> [--token <file>] [--window]");
         exit(2);
     };
+    let source = if args.iter().any(|a| a == "--window") { SourceType::WINDOW } else { SourceType::MONITOR };
     let token_file = flag(&args, "--token");
     let token = token_file
         .as_ref()
@@ -66,7 +67,7 @@ async fn main() {
     let session = portal.create_session(Default::default()).await.unwrap_or_else(|e| fail("portal", e));
     let options = SelectSourcesOptions::default()
         .set_cursor_mode(CursorMode::METADATA)
-        .set_sources(SourceType::MONITOR)
+        .set_sources(source)
         .set_multiple(false)
         .set_persist_mode(PersistMode::ExplicitlyRevoked)
         .set_restore_token(token.as_deref());

@@ -39,8 +39,8 @@ impl Marked {
 }
 
 /// Letters only, so Misaki reads it as one word and never spells it out or splits it.
-/// Later marks get the longer names, and `restore` replaces them first, so "narrainlineaa" is
-/// never hit by "narrainlinea".
+/// Later marks get the longer names, and `restore` replaces them first, so "flikkainlineaa" is
+/// never hit by "flikkainlinea".
 fn placeholder(index: usize) -> String {
     let mut suffix = String::new();
     let mut n = index;
@@ -52,7 +52,7 @@ fn placeholder(index: usize) -> String {
         }
         n -= 1;
     }
-    format!("narrainline{suffix}")
+    format!("flikkainline{suffix}")
 }
 
 /// Finds `[word](say)` marks. Anything that does not form a complete mark stays as written.
@@ -114,28 +114,28 @@ mod tests {
     #[test]
     fn replaces_marks_with_placeholders() {
         let marked = parse("I [read](red) it, then [read](/ɹˈid/) it again.");
-        assert_eq!(marked.text, "I narrainlinea it, then narrainlineb it again.");
+        assert_eq!(marked.text, "I flikkainlinea it, then flikkainlineb it again.");
         assert_eq!(
             marked.marks,
             vec![
-                sounds("read", "narrainlinea", "red"),
-                Mark { word: "read".into(), placeholder: "narrainlineb".into(), say: Say::Phonemes("ɹˈid".into()) },
+                sounds("read", "flikkainlinea", "red"),
+                Mark { word: "read".into(), placeholder: "flikkainlineb".into(), say: Say::Phonemes("ɹˈid".into()) },
             ]
         );
     }
 
     #[test]
     fn keeps_punctuation_and_possessives_around_marks() {
-        let marked = parse("[Narra](vox see)'s turn. [Dr.](doctor) Lee!");
-        assert_eq!(marked.text, "narrainlinea's turn. narrainlineb Lee!");
-        assert_eq!(marked.marks[1], sounds("Dr.", "narrainlineb", "doctor"));
+        let marked = parse("[Memlake](mem lake)'s turn. [Dr.](doctor) Lee!");
+        assert_eq!(marked.text, "flikkainlinea's turn. flikkainlineb Lee!");
+        assert_eq!(marked.marks[1], sounds("Dr.", "flikkainlineb", "doctor"));
     }
 
     #[test]
     fn trims_space_inside_brackets_and_allows_phrases() {
         let marked = parse("See [ New York ]( noo york ).");
-        assert_eq!(marked.text, "See narrainlinea.");
-        assert_eq!(marked.marks, vec![sounds("New York", "narrainlinea", "noo york")]);
+        assert_eq!(marked.text, "See flikkainlinea.");
+        assert_eq!(marked.marks, vec![sounds("New York", "flikkainlinea", "noo york")]);
     }
 
     #[test]
@@ -153,7 +153,7 @@ mod tests {
         ] {
             let marked = parse(text);
             if text == "[a [read](red)" {
-                assert_eq!(marked.text, "[a narrainlinea");
+                assert_eq!(marked.text, "[a flikkainlinea");
                 continue;
             }
             assert_eq!(marked.text, text, "{text:?} should stay as written");
@@ -164,16 +164,16 @@ mod tests {
     #[test]
     fn restore_puts_the_words_back() {
         let marked = parse("I [read](red) and [led](lead) it.");
-        assert_eq!(marked.restore("I narrainlinea and narrainlineb it."), "I read and led it.");
-        assert_eq!(marked.restore("narrainlineb it."), "led it.");
+        assert_eq!(marked.restore("I flikkainlinea and flikkainlineb it."), "I read and led it.");
+        assert_eq!(marked.restore("flikkainlineb it."), "led it.");
     }
 
     #[test]
     fn placeholders_stay_unique_past_the_alphabet() {
-        assert_eq!(placeholder(0), "narrainlinea");
-        assert_eq!(placeholder(25), "narrainlinez");
-        assert_eq!(placeholder(26), "narrainlineaa");
-        assert_eq!(placeholder(27), "narrainlineab");
+        assert_eq!(placeholder(0), "flikkainlinea");
+        assert_eq!(placeholder(25), "flikkainlinez");
+        assert_eq!(placeholder(26), "flikkainlineaa");
+        assert_eq!(placeholder(27), "flikkainlineab");
         let text = "[a](b) ".repeat(30);
         let marked = parse(&text);
         assert_eq!(marked.marks.len(), 30);

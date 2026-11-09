@@ -281,7 +281,7 @@ Write the narration in the voice's language and the rest follows it:
 
 ### Your own voice
 
-Flikka can also narrate in your own voice. It copies a voice from about 10 seconds of you talking, using Chatterbox Nano (the same engine Narra uses), and it runs entirely on your machine.
+Flikka can also narrate in your own voice. It copies a voice from about 10 seconds of you talking, using Chatterbox Nano, and it runs entirely on your machine.
 
 ```bash
 flikka voice add "My voice" --consent              # read the text it shows, for about 15 seconds
@@ -293,17 +293,11 @@ flikka voice say "My voice" "Hello, this is my voice."
 
 After that, your voice works anywhere a Kokoro voice does: `"voice": {"name": "My voice"}` in a film, `--narrator "My voice"` on a recording, or as the default voice in Settings. Names are matched without caring about case, so quote the ones with spaces.
 
-If you already made voices in Narra, copy them across once:
-
-```bash
-flikka voice import narra
-```
-
 A few things to know:
 
 - Your voices speak English only. Chatterbox Nano doesn't do other languages.
 - The first line in a run takes about 15 seconds longer while the model loads. After that, each line takes about as long as it lasts (on the GPU).
-- The first time, Flikka downloads the model (about 550 MB) into `~/.flikka/models/chatterbox`. If Narra already has it, Flikka links Narra's copy instead, so nothing downloads and no extra disk space is used.
+- The first time, Flikka downloads the model (about 550 MB) into `~/.flikka/models/chatterbox`, checked against the exact files that were tested.
 - It uses `flikka-voice`, a small helper program (about 15 MB). The AUR package installs it, and npm installs download it the first time one of your voices speaks, checked against the exact file that was tested. People who only use Kokoro's voices never download it.
 - `flikka-voice` needs glibc 2.38 or newer, which means roughly Ubuntu 24.04, Fedora 39, or anything newer. Kokoro's voices keep working on older systems.
 
@@ -315,7 +309,7 @@ Your voices run on WebGPU by default. On an NVIDIA card they can run on CUDA ins
 flikka voice cuda install
 ```
 
-That installs Microsoft's CUDA plugin for ONNX Runtime into `~/.flikka/cuda`. If Narra already has it, Flikka links Narra's copy. Otherwise it downloads it (183 MB, checked against the tested file). Settings has the same thing as a button under "Your voices run on".
+That installs Microsoft's CUDA plugin for ONNX Runtime into `~/.flikka/cuda`. It's a 183 MB download, checked against the tested file. Settings has the same thing as a button under "Your voices run on".
 
 It needs CUDA 13 and cuDNN 9 installed on your system. `flikka voice cuda` shows whether everything's there and whether CUDA is in use, and `flikka app doctor` lists anything missing. The "Your voices run on" setting (`voice-gpu`) picks `auto` (CUDA when it's ready, otherwise WebGPU), `webgpu` or `cpu`. If CUDA fails to start for some reason, the line still gets spoken on WebGPU.
 
@@ -348,7 +342,7 @@ flikka app skills --agent codex --remove         # take it back out
 
 From a git clone the skill is linked, so edits to `skills/flikka/SKILL.md` show up right away. Otherwise it's copied, and running the command again after an update refreshes it. If a `flikka` skill folder that Flikka didn't make is already there, it's left alone.
 
-After that, you can just ask your agent to "record yourself signing up on example.com" or "make a launch video from project 3f9a1c2e". The built-in help (`flikka help`, `flikka record help`, and so on) is written for agents too, with rules like "look before you click" and "never type passwords".
+After that, you can just ask your agent to "record yourself signing up on example.com" or "make a launch video from project 3f9a1c2e". The built-in help is written for agents too. `flikka help` lists every command, `flikka record help` gives one command's rules and examples, and `flikka project edit help` (or `--help` on any action) shows one action in full. The command pages include rules like "look before you click" and "never type passwords".
 
 ## Where things live
 
