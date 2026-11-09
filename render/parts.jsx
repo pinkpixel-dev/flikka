@@ -2,6 +2,7 @@
 import React from 'react';
 import {AbsoluteFill, Sequence, Video, Audio, Img, useCurrentFrame, useVideoConfig} from './frame.jsx';
 import {clamp, ease, speedOf, demoFrames, playedClips, clipFrames, crossfades, transitionSeconds} from './timing.js';
+import {Layers} from './layers.jsx';
 
 export {clamp, ease, speedOf, demoFrames};
 
@@ -269,6 +270,7 @@ export function Demo(props) {
     {project.intro && <Sequence durationInFrames={Math.round(project.intro.duration * fps)} premountFor={fps}><Title text={project.intro.text} frames={Math.round(project.intro.duration * fps)}/></Sequence>}
     {sequences}
     {fades}
+    {props.layers?.length > 0 && <Layers items={props.layers}/>}
     {props.captions?.length > 0 && <NarrationCaptions captions={props.captions}/>}
     {props.narration?.length > 0 && <NarrationSound lines={props.narration}/>}
     {props.music && <Music music={props.music}/>}

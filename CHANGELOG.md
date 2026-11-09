@@ -8,6 +8,12 @@
 - Each command's page (`flikka record help` and so on) lists all of its actions with their usage, followed by its rules. The project page still lists every edit option.
 - Unknown commands and actions point you to the right help page instead of printing all of it into the error.
 
+### 🧩 Layers
+- Recordings and films can have overlay layers now: text, images, videos (muted, looped) and solid boxes placed anywhere on the finished video, each with its own opacity and rotation.
+- Keyframes animate a layer's box, opacity and rotation, eased with `linear`, `ease`, `ease-in`, `ease-out`, `ease-in-out` or any `cubic-bezier(...)`. The preview and the export draw them the same way.
+- On recordings, `flikka project edit` takes `--layer`, `--layer-set`, `--keyframe`, `--unkeyframe`, `--unlayer` and `--layers off`. A layer sticks to recording moments, so cutting around it carries it along, and `flikka project timeline` lists where each one shows.
+- In films, any scene takes a `"layers"` list in film.json.
+
 ### 🗣️ Narration
 - `flikka project frames` on a narrated recording shows the narration captions now, like the render does, instead of the mic's. It uses the lines already spoken and says how many that is (`narration` in the result).
 - `flikka voice say` takes `--speed`, so you can hear a say-as mark at a line's own speed before writing it in. The help shows how.

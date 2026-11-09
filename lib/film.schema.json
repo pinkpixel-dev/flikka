@@ -289,6 +289,13 @@
       "kicker": {
         "type": "string",
         "description": "Small label above the title."
+      },
+      "layers": {
+        "type": "array",
+        "items": {
+          "$ref": "#/$defs/layer"
+        },
+        "description": "Overlays on this scene: text, images, videos and solid boxes, drawn in order (the last on top), each with a box, opacity, rotation and keyframes."
       }
     },
     "scene": {
@@ -407,6 +414,9 @@
         },
         "kicker": {
           "$ref": "#/$defs/common/kicker"
+        },
+        "layers": {
+          "$ref": "#/$defs/common/layers"
         }
       }
     },
@@ -448,6 +458,9 @@
         },
         "kicker": {
           "$ref": "#/$defs/common/kicker"
+        },
+        "layers": {
+          "$ref": "#/$defs/common/layers"
         }
       }
     },
@@ -483,6 +496,9 @@
         },
         "kicker": {
           "$ref": "#/$defs/common/kicker"
+        },
+        "layers": {
+          "$ref": "#/$defs/common/layers"
         }
       }
     },
@@ -526,6 +542,9 @@
         },
         "kicker": {
           "$ref": "#/$defs/common/kicker"
+        },
+        "layers": {
+          "$ref": "#/$defs/common/layers"
         }
       }
     },
@@ -595,6 +614,9 @@
         },
         "kicker": {
           "$ref": "#/$defs/common/kicker"
+        },
+        "layers": {
+          "$ref": "#/$defs/common/layers"
         }
       }
     },
@@ -716,6 +738,9 @@
         },
         "kicker": {
           "$ref": "#/$defs/common/kicker"
+        },
+        "layers": {
+          "$ref": "#/$defs/common/layers"
         }
       }
     },
@@ -756,6 +781,9 @@
         },
         "kicker": {
           "$ref": "#/$defs/common/kicker"
+        },
+        "layers": {
+          "$ref": "#/$defs/common/layers"
         }
       }
     },
@@ -794,6 +822,9 @@
         },
         "kicker": {
           "$ref": "#/$defs/common/kicker"
+        },
+        "layers": {
+          "$ref": "#/$defs/common/layers"
         }
       }
     },
@@ -872,6 +903,9 @@
         },
         "dim": {
           "$ref": "#/$defs/common/dim"
+        },
+        "layers": {
+          "$ref": "#/$defs/common/layers"
         }
       }
     },
@@ -926,6 +960,201 @@
         },
         "dim": {
           "$ref": "#/$defs/common/dim"
+        },
+        "layers": {
+          "$ref": "#/$defs/common/layers"
+        }
+      }
+    },
+    "keyframe": {
+      "type": "object",
+      "description": "Values the layer reaches at a moment.",
+      "required": [
+        "at"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "at": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 3600,
+          "description": "Seconds after the layer appears."
+        },
+        "x": {
+          "type": "number",
+          "minimum": -1,
+          "maximum": 2,
+          "description": "Left edge, as a share of the video's width (0 = left, 1 = right; outside 0–1 is off screen)."
+        },
+        "y": {
+          "type": "number",
+          "minimum": -1,
+          "maximum": 2,
+          "description": "Top edge, as a share of the video's height."
+        },
+        "w": {
+          "type": "number",
+          "minimum": 0.01,
+          "maximum": 2,
+          "description": "Width, as a share of the video's width."
+        },
+        "h": {
+          "type": "number",
+          "minimum": 0.01,
+          "maximum": 2,
+          "description": "Height, as a share of the video's height."
+        },
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "0 is invisible, 1 (the default) solid."
+        },
+        "rotation": {
+          "type": "number",
+          "minimum": -3600,
+          "maximum": 3600,
+          "description": "Degrees clockwise, around the box's center. Default 0."
+        },
+        "ease": {
+          "type": "string",
+          "pattern": "^(linear|ease|ease-in|ease-out|ease-in-out|cubic-bezier\\(.*\\))$",
+          "description": "How the values move into this keyframe: linear, ease (the default), ease-in, ease-out, ease-in-out or cubic-bezier(x1, y1, x2, y2)."
+        }
+      }
+    },
+    "layer": {
+      "type": "object",
+      "description": "Text, an image, a video or a solid box placed over the scene, with keyframes.",
+      "required": [
+        "type",
+        "x",
+        "y",
+        "w",
+        "h"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "enum": [
+            "text",
+            "image",
+            "video",
+            "solid"
+          ],
+          "description": "text, an image, a video (muted, looped) or a solid box."
+        },
+        "id": {
+          "type": "string",
+          "description": "An optional name for the layer."
+        },
+        "start": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 3600,
+          "description": "Seconds from the scene's start when it appears. Default 0."
+        },
+        "end": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 3600,
+          "description": "Seconds from the scene's start when it goes. Default: the scene's end."
+        },
+        "x": {
+          "type": "number",
+          "minimum": -1,
+          "maximum": 2,
+          "description": "Left edge, as a share of the video's width (0 = left, 1 = right; outside 0–1 is off screen)."
+        },
+        "y": {
+          "type": "number",
+          "minimum": -1,
+          "maximum": 2,
+          "description": "Top edge, as a share of the video's height."
+        },
+        "w": {
+          "type": "number",
+          "minimum": 0.01,
+          "maximum": 2,
+          "description": "Width, as a share of the video's width."
+        },
+        "h": {
+          "type": "number",
+          "minimum": 0.01,
+          "maximum": 2,
+          "description": "Height, as a share of the video's height."
+        },
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "0 is invisible, 1 (the default) solid."
+        },
+        "rotation": {
+          "type": "number",
+          "minimum": -3600,
+          "maximum": 3600,
+          "description": "Degrees clockwise, around the box's center. Default 0."
+        },
+        "text": {
+          "type": "string",
+          "description": "A text layer's words."
+        },
+        "file": {
+          "type": "string",
+          "description": "An image or video layer's file, from the film's folder."
+        },
+        "fit": {
+          "enum": [
+            "contain",
+            "cover"
+          ],
+          "description": "An image or video: contain (the default) shows all of it, cover fills the box."
+        },
+        "color": {
+          "type": "string",
+          "description": "Text color, or a solid's color (CSS)."
+        },
+        "background": {
+          "type": "string",
+          "description": "A color behind a text layer (CSS)."
+        },
+        "font": {
+          "type": "string",
+          "description": "A text layer's font family (CSS)."
+        },
+        "size": {
+          "type": "number",
+          "minimum": 0.01,
+          "maximum": 0.5,
+          "description": "A text layer's font size as a share of the video's height. Default 0.05."
+        },
+        "weight": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 900,
+          "description": "Font weight, default 600."
+        },
+        "align": {
+          "enum": [
+            "left",
+            "center",
+            "right"
+          ],
+          "description": "Text alignment in the box, default center."
+        },
+        "radius": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000,
+          "description": "Corner radius in pixels."
+        },
+        "keyframes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/keyframe"
+          },
+          "description": "Moments the box, opacity or rotation change to, eased in between."
         }
       }
     }

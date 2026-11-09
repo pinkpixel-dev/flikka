@@ -1,6 +1,7 @@
 import React from 'react';
 import {AbsoluteFill, Sequence, Img, Audio, Video, useCurrentFrame, useVideoConfig} from './frame.jsx';
 import {clamp, ease, Clip, entering} from './parts.jsx';
+import {Layers} from './layers.jsx';
 
 // ---- Films: a sequence of scenes (titles, images, slides, figures, recordings) with captions.
 
@@ -437,6 +438,7 @@ export function Film({film}) {
         <Crossfade frames={scene.frames} fade={Math.round(fps / 3)} last={last} background={theme.background} style={film.transition}>
           <Backdrop theme={theme} offset={scene.from}/>
           <Scene scene={scene} theme={theme} frames={scene.frames} reserve={film.captions ? 140 : 30}/>
+          {scene.layers?.length > 0 && <Layers items={scene.layers}/>}
         </Crossfade>
       </Sequence>;
     })}

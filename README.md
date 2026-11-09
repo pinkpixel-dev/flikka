@@ -165,6 +165,9 @@ Some useful ones:
 | `--callout start,end,x,y,"text"` | A label pointing at a spot. `--step` does the same with a number, counted in time order |
 | `--arrow start,end,x,y,x2,y2`, `--box start,end,x,y,w,h` | Draw an arrow, or a highlight box around something |
 | `--redact start,end,x,y,w,h[,solid]` | Blur an area after recording, or cover it with `solid`. `all` instead of start,end covers the whole video |
+| `--layer text\|image\|video\|solid,start,end,x,y,w,h[,what]` | Place text, a picture, a video (muted, looped) or a solid box anywhere on the finished video. Boxes are shares of the video, and `all` instead of start,end covers the whole recording. Each layer gets an id (`l1`, `l2`, …) |
+| `--layer-set l1,opacity=0.8,rotation=5` | Change a layer: its box, opacity, rotation, font size, colors, alignment, fit, stacking (`order=front`), or `text=` last |
+| `--keyframe l1,0.5,opacity=1,ease=ease-out` | Animate a layer's box, opacity or rotation. The time is seconds after the layer appears, and `ease` takes the CSS names or `cubic-bezier(...)`. `--unkeyframe`, `--unlayer` and `--layers off` take things away |
 | `--keystrokes on` | Show shortcuts (Ctrl+S, Enter and so on) in a corner as they're pressed |
 | `--intro "text"`, `--outro "4,text"` | A title card before or after the recording (2.5 s unless you give the seconds) |
 | `--transition fade` | A transition at every cut instead of a hard jump: `fade`, `wipe`, `slide` or `zoom`. The video's length doesn't change |
