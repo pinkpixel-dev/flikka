@@ -164,7 +164,7 @@ flikka project render <id>
 
 Options that work with every recording: `--mic <name|default>`, `--system-audio`, `--camera <name|default>` (not for the browser), `--fps 24|30|60`, `--countdown <s>`, `--no-zoom`, `--max-width <px>` and `--native-cursor`.
 
-`--no-cursor` starts with the mouse cursor hidden. A whole display on Wayland logs the pointer instead of baking it in (when `flikka-cursor` is installed and the portal supports it), so `flikka project edit <id> --cursor on|off` can show or hide it later; check `cursorBaked` in the project. A window or region recorded with `--no-cursor` has no pointer at all. Screen and window recordings show the real screen, so anything on it ends up in the video.
+`--no-cursor` starts with the mouse cursor hidden. A whole display or a window on Wayland logs the pointer instead of baking it in (when `flikka-cursor` is installed and the portal supports it; windows need 0.2.0 or newer), so `flikka project edit <id> --cursor on|off` can show or hide it later; check `cursorBaked` in the project. A window recording asks the user to pick the window twice (the recording, then the pointer): tell them to pick the same one. A region recorded with `--no-cursor` has no pointer at all. Screen and window recordings show the real screen, so anything on it ends up in the video.
 
 ## Multi-Scene Films with Voice Narration
 

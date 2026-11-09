@@ -28,6 +28,8 @@ struct State {
     height: u32,
     out: BufWriter<File>,
     last: Option<(i32, i32, bool)>,
+    /// The compositor sends a still pointer's position again (COSMIC does), so a buffer without one means it left.
+    repeats: bool,
     moves: u64,
     /// Total and count of how old buffers were when they arrived, for the lag reported at the end.
     lag: (f64, u32),
@@ -55,8 +57,14 @@ impl State {
         let (w, h) = (self.width.max(1) as i32, self.height.max(1) as i32);
         let visible = (0..w).contains(&x) && (0..h).contains(&y);
         if self.last == Some((x, y, visible)) {
-            return;
+            self.repeats = true;
+        } else {
+            self.write(x, y, t, visible);
         }
+    }
+
+    fn write(&mut self, x: i32, y: i32, t: f64, visible: bool) {
+        let (w, h) = (self.width.max(1) as i32, self.height.max(1) as i32);
         self.last = Some((x, y, visible));
         let round = |value: f64| (value * 100_000.0).round() / 100_000.0;
         let line = json!({"type": "move", "x": round(x as f64 / w as f64), "y": round(y as f64 / h as f64),
@@ -66,6 +74,18 @@ impl State {
             self.error.get_or_insert_with(|| "Couldn't write the pointer log".into());
         }
         self.moves += 1;
+    }
+
+    /// The pointer went off the stream without a position outside it: hidden at its last place, once. A compositor
+    /// that repeats a still pointer's position only sends no data when the pointer is gone. One that hasn't been seen
+    /// doing that might send none for a still pointer too, so then it's only taken as gone near the edge.
+    fn left(&mut self, t: f64) {
+        let Some((x, y, true)) = self.last else { return };
+        let (w, h) = (self.width.max(1) as i32, self.height.max(1) as i32);
+        let margin = 16.max(w.min(h) * 3 / 100);
+        if self.repeats || x < margin || y < margin || x >= w - margin || y >= h - margin {
+            self.write(x, y, t, false);
+        }
     }
 }
 
@@ -125,10 +145,10 @@ pub struct Logged {
 }
 
 /// Reads pointer positions until `quit` says stop or the stream fails.
-pub fn run(node: u32, fd: OwnedFd, out: &Path, size: Option<(i32, i32)>, quit: pw::channel::Receiver<()>) -> Result<Logged, String> {
+pub fn run(node: u32, fd: OwnedFd, out: &Path, size: Option<(i32, i32)>, source: &'static str, quit: pw::channel::Receiver<()>) -> Result<Logged, String> {
     let file = File::create(out).map_err(|e| format!("Couldn't create {}: {e}", out.display()))?;
     let (width, height) = size.map(|(w, h)| (w.max(0) as u32, h.max(0) as u32)).unwrap_or((0, 0));
-    let state = Rc::new(RefCell::new(State { width, height, out: BufWriter::new(file), last: None, moves: 0, lag: (0.0, 0), ready: false, error: None }));
+    let state = Rc::new(RefCell::new(State { width, height, out: BufWriter::new(file), last: None, repeats: false, moves: 0, lag: (0.0, 0), ready: false, error: None }));
 
     let mainloop = pw::main_loop::MainLoopRc::new(None).map_err(|e| e.to_string())?;
     let context = pw::context::ContextBox::new(mainloop.loop_(), None).map_err(|e| e.to_string())?;
@@ -156,7 +176,7 @@ pub fn run(node: u32, fd: OwnedFd, out: &Path, size: Option<(i32, i32)>, quit: p
                 }
                 pw::stream::StreamState::Streaming if !state.ready => {
                     state.ready = true;
-                    emit(json!({"event": "ready", "width": state.width, "height": state.height}));
+                    emit(json!({"event": "ready", "width": state.width, "height": state.height, "source": source}));
                 }
                 _ => {}
             }
@@ -179,17 +199,21 @@ pub fn run(node: u32, fd: OwnedFd, out: &Path, size: Option<(i32, i32)>, quit: p
         })
         .process(move |stream, _| {
             let Some(buffer) = stream.dequeue_buffer() else { return };
-            // An id of 0 means this buffer brings no new pointer data.
-            if let Some(cursor) = buffer.find_meta::<MetaCursor>().filter(|cursor| cursor.is_valid()) {
-                let position = cursor.position();
-                let pts = buffer.find_meta::<MetaHeader>().map(|header| header.pts()).filter(|pts| *pts > 0);
-                let (t, age) = captured_at(pts);
-                let mut state = on_buffer.borrow_mut();
-                if let Some(age) = age {
-                    state.lag = (state.lag.0 + age, state.lag.1 + 1);
-                }
-                state.moved(position.x, position.y, t);
+            let Some(cursor) = buffer.find_meta::<MetaCursor>() else { return };
+            let pts = buffer.find_meta::<MetaHeader>().map(|header| header.pts()).filter(|pts| *pts > 0);
+            let (t, age) = captured_at(pts);
+            let mut state = on_buffer.borrow_mut();
+            // An id of 0 means this buffer brings no new pointer data. Right after a position at the edge, it means
+            // the pointer left: a window stream sends only those while the pointer is somewhere else on the screen.
+            if !cursor.is_valid() {
+                state.left(t);
+                return;
             }
+            if let Some(age) = age {
+                state.lag = (state.lag.0 + age, state.lag.1 + 1);
+            }
+            let position = cursor.position();
+            state.moved(position.x, position.y, t);
         })
         .register()
         .map_err(|e| e.to_string())?;
@@ -208,5 +232,56 @@ pub fn run(node: u32, fd: OwnedFd, out: &Path, size: Option<(i32, i32)>, quit: p
     match state.error.take() {
         Some(message) => Err(message),
         None => Ok(Logged { moves: state.moves, lag_ms: (state.lag.1 > 0).then(|| (state.lag.0 / state.lag.1 as f64 * 10_000.0).round() / 10.0) }),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn state(name: &str) -> (State, std::path::PathBuf) {
+        let file = std::env::temp_dir().join(format!("flikka-cursor-{name}-{}.jsonl", std::process::id()));
+        let out = BufWriter::new(File::create(&file).unwrap());
+        (State { width: 1000, height: 500, out, last: None, repeats: false, moves: 0, lag: (0.0, 0), ready: false, error: None }, file)
+    }
+
+    fn lines(file: &Path) -> Vec<serde_json::Value> {
+        std::fs::read_to_string(file).unwrap().lines().map(|line| serde_json::from_str(line).unwrap()).collect()
+    }
+
+    #[test]
+    fn no_data_after_an_edge_hides_the_pointer_once_and_a_position_brings_it_back() {
+        let (mut state, file) = state("edge");
+        state.moved(500, 250, 1.0);
+        state.moved(995, 250, 1.1);
+        state.left(1.2);
+        state.left(1.3);
+        state.moved(990, 260, 2.0);
+        let logged = lines(&file);
+        assert_eq!(logged.iter().map(|line| line["visible"].as_bool().unwrap()).collect::<Vec<_>>(), [true, true, false, true]);
+        assert_eq!((logged[2]["x"].as_f64().unwrap(), logged[2]["t"].as_f64().unwrap()), (0.995, 1.2));
+        let _ = std::fs::remove_file(file);
+    }
+
+    #[test]
+    fn once_still_positions_repeat_no_data_anywhere_means_the_pointer_left() {
+        let (mut state, file) = state("repeats");
+        state.moved(500, 250, 1.0);
+        state.moved(500, 250, 1.1);
+        state.moved(700, 250, 1.2);
+        state.left(1.3);
+        let logged = lines(&file);
+        assert_eq!(logged.len(), 3);
+        assert_eq!((logged[2]["x"].as_f64().unwrap(), logged[2]["visible"].as_bool().unwrap()), (0.7, false));
+        let _ = std::fs::remove_file(file);
+    }
+
+    #[test]
+    fn no_data_in_the_middle_means_the_pointer_is_still_there() {
+        let (mut state, file) = state("middle");
+        state.moved(500, 250, 1.0);
+        state.left(1.2);
+        assert_eq!(lines(&file).len(), 1);
+        let _ = std::fs::remove_file(file);
     }
 }

@@ -8,6 +8,9 @@
 - Each command's page (`flikka record help` and so on) lists all of its actions with their usage, followed by its rules. The project page still lists every edit option.
 - Unknown commands and actions point you to the right help page instead of printing all of it into the error.
 
+### 🖱️ Screen recordings
+- Window recordings on Wayland log the pointer too, so you can show or hide it after recording, like full-screen ones. Your desktop asks you to pick the window twice (the recording, then the pointer), and the pointer disappears from the video while it's outside the window. This needs `flikka-cursor` 0.2.0; older helpers keep the pointer baked in.
+
 ### 🗣️ Your own voice
 - Removed the voice import command. Your voices, the Chatterbox model and the CUDA plugin all come from Flikka's own downloads now, so `flikka voice cuda install` no longer takes `--fresh`.
 

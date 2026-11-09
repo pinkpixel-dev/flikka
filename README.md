@@ -106,9 +106,11 @@ flikka record stop
 
 On Wayland, `window` lets you pick a window through your desktop's own picker, and `region` without coordinates lets you drag out an area with `slurp`. `flikka record sources` lists displays, microphones and cameras. Add `--mic default`, `--system-audio` or `--camera default` to record those too.
 
-When you record a whole display on Wayland, you don't have to decide about the mouse pointer up front. Flikka records the screen without it and logs where it was, then draws it when it renders, so you can turn it on or off later with the cursor overlay switch in the panel (or `flikka project edit <id> --cursor off`). `--no-cursor` still works. It just starts the pointer hidden instead of leaving it out for good.
+When you record a whole display or a window on Wayland, you don't have to decide about the mouse pointer up front. Flikka records the screen without it and logs where it was, then draws it when it renders, so you can turn it on or off later with the cursor overlay switch in the panel (or `flikka project edit <id> --cursor off`). `--no-cursor` still works. It just starts the pointer hidden instead of leaving it out for good.
 
-This needs a small helper, `flikka-cursor`, that Flikka downloads by itself the first time you record a display, so that first recording keeps the pointer in the video like before. The first time the helper runs, your desktop asks you to pick the screen once; after that it remembers. It also needs a desktop whose screencast portal can report the pointer separately. I've tested this on COSMIC, and GNOME and KDE should work too. Windows and regions keep the pointer in the video for now, and so does any desktop that can't do it (I believe that includes Sway and Hyprland).
+This needs a small helper, `flikka-cursor`, that Flikka downloads by itself the first time you record a display, so that first recording keeps the pointer in the video like before. The first time the helper runs, your desktop asks you to pick the screen once; after that it remembers. It also needs a desktop whose screencast portal can report the pointer separately. I've tested this on COSMIC, and GNOME and KDE should work too. Regions keep the pointer in the video for now, and so does any desktop that can't do it (I believe that includes Sway and Hyprland).
+
+Window recordings need `flikka-cursor` 0.2.0 or newer, and your desktop asks you to pick the window twice: once for the recording and once for the pointer. Pick the same window both times. When the pointer leaves the window, it disappears from the video until it comes back.
 
 ### Record a terminal
 

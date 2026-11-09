@@ -7,9 +7,10 @@
 //! pointer position each PipeWire buffer carries. Writes one line per change to --out:
 //!   {"type":"move","x":0.41,"y":0.73,"t":1762600000.123,"visible":true}
 //! x and y are 0 to 1 across the stream, t is wall-clock seconds (Unix time), and visible is false while the pointer is
-//! off the stream (this monitor, or with --window the chosen window). --token keeps the portal's restore token, so only the first run shows the picker.
+//! off the stream: this monitor, or with --window the chosen window. --token keeps the portal's restore token, so only
+//! the first run shows the picker (Flikka passes none for windows, since each recording picks its own).
 //!
-//! Events on stdout, one JSON line each: {"event":"ready","width":…,"height":…} once positions flow,
+//! Events on stdout, one JSON line each: {"event":"ready","width":…,"height":…,"source":"monitor"|"window"} once positions flow,
 //! {"event":"error","code":…,"message":…} on failure (code "no-metadata" when the portal can't do it, "cancelled"
 //! when the picker was closed), and {"event":"stopped","moves":…,"lag_ms":…} after SIGINT or SIGTERM (lag_ms: how late buffers arrived on
 //! average, already taken out of t).
@@ -51,7 +52,7 @@ async fn main() {
         eprintln!("usage: flikka-cursor --out <file.jsonl> [--token <file>] [--window]");
         exit(2);
     };
-    let source = if args.iter().any(|a| a == "--window") { SourceType::WINDOW } else { SourceType::MONITOR };
+    let (source, label) = if args.iter().any(|a| a == "--window") { (SourceType::WINDOW, "window") } else { (SourceType::MONITOR, "monitor") };
     let token_file = flag(&args, "--token");
     let token = token_file
         .as_ref()
@@ -96,7 +97,7 @@ async fn main() {
     // PipeWire runs its own loop, so it gets a thread; this one keeps the portal session (its D-Bus connection) alive
     // and waits for the signal to stop.
     let (quit, quit_rx) = pipewire::channel::channel::<()>();
-    let mut reader = tokio::task::spawn_blocking(move || stream::run(node, fd, &out, size, quit_rx));
+    let mut reader = tokio::task::spawn_blocking(move || stream::run(node, fd, &out, size, label, quit_rx));
     let (mut interrupt, mut terminate) = (signal(SignalKind::interrupt()).unwrap(), signal(SignalKind::terminate()).unwrap());
     let result = tokio::select! {
         _ = interrupt.recv() => { let _ = quit.send(()); (&mut reader).await }
