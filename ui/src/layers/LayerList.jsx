@@ -1,8 +1,10 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {ArrowDownToLine, ArrowUpToLine, Film, Image, Square, Trash2, Type} from 'lucide-react';
-import {clock} from '../lib/format.js';
-import {Button, Range, Section} from '../components/ui.jsx';
+import {ArrowDownToLine, ArrowUpToLine, Diamond, Film, Image, Square, Trash2, Type, X} from 'lucide-react';
+import {clock, timecode} from '../lib/format.js';
+import {Button, Range, Section, Switch} from '../components/ui.jsx';
 import {label} from './LayerStage.jsx';
+import {Ease} from './Ease.jsx';
+import {boxAt, keyMoment} from './geometry.js';
 
 // A recording's overlay layers (project.layers, lib/layers.mjs) as the timeline places them: add text, a box, or
 // an image or video at the playhead, choose one (its box shows on the player), and set how it looks. Each change
@@ -33,7 +35,7 @@ const measure = file => new Promise(resolve => {
   }
 });
 
-export function LayerList({layers, chosen, time, ratio, first, last, onChoose, onSeek, onEdit, onUpload}) {
+export function LayerList({layers, chosen, time, ratio, fps, first, last, autoKey, onAutoKey, onChoose, onSeek, onEdit, onUpload}) {
   const picker = useRef(null);
   const [adding, setAdding] = useState(false);
   const layer = layers.find(item => item.id === chosen);
@@ -71,12 +73,17 @@ export function LayerList({layers, chosen, time, ratio, first, last, onChoose, o
         })}</ul>}
       {layers.length > 1 && <p className="hint">Top of the list is in front.</p>}
     </Section>
-    {layer && <LayerFields key={layer.id} layer={layer} onEdit={onEdit} onDone={() => onChoose(null)}/>}
+    {layer && <LayerFields key={layer.id} layer={layer} time={time} fps={fps} autoKey={autoKey} onEdit={onEdit} onDone={() => onChoose(null)}/>}
+    {layer && <Keyframes layer={layer} time={time} fps={fps} autoKey={autoKey} onAutoKey={onAutoKey} onSeek={onSeek} onEdit={onEdit}/>}
   </>;
 }
 
-function LayerFields({layer, onEdit, onDone}) {
+function LayerFields({layer, time, fps, autoKey, onEdit, onDone}) {
   const set = values => onEdit([{set: {layer: layer.id, ...values}}]).catch(() => {});
+  // Opacity and turn animate: with auto-key on they show and key the value at the playhead.
+  const at = autoKey ? keyMoment(layer, time, fps) : null;
+  const now = autoKey ? boxAt(layer, time) : layer;
+  const animate = values => autoKey ? (at === null ? undefined : onEdit([{keyframe: {layer: layer.id, at, ...values}}]).catch(() => {})) : set(values);
   const [text, setText] = useState(layer.text || '');
   useEffect(() => setText(layer.text || ''), [layer.text]);
   const saveText = () => { if (text.trim() && text !== layer.text) set({text}); };
@@ -100,10 +107,43 @@ function LayerFields({layer, onEdit, onDone}) {
     {layer.type === 'solid' && <ColorField label="Color" tip="The box's color (#rrggbbaa or rgba() for see-through)" value={layer.color} fallback="#18181b" onSave={color => set({color})}/>}
     {['image', 'video'].includes(layer.type) && <label className="line" data-tip="Contain shows it all, cover fills the box"><span>Fit</span>
       <select value={layer.fit || 'contain'} onChange={event => set({fit: event.target.value})}><option value="contain">Contain</option><option value="cover">Cover</option></select></label>}
-    <Range label="Opacity" tip="How see-through the layer is" value={Math.round((layer.opacity ?? 1) * 100)} min={0} max={100} unit="%" onCommit={value => set({opacity: value / 100})}/>
-    <Range label="Turn" tip="Rotation in degrees (or drag the round handle on the player)" value={Math.round(layer.rotation || 0)} min={-180} max={180} unit="°" onCommit={rotation => set({rotation})}/>
+    <Range label="Opacity" tip={autoKey ? 'Keys the opacity at the playhead' : 'How see-through the layer is'} value={Math.round((now.opacity ?? 1) * 100)} min={0} max={100} unit="%"
+      disabled={autoKey && at === null} onCommit={value => animate({opacity: value / 100})}/>
+    <Range label="Turn" tip={autoKey ? 'Keys the turn at the playhead' : 'Rotation in degrees (or drag the round handle on the player)'} value={Math.round(now.rotation || 0)} min={-180} max={180} unit="°"
+      disabled={autoKey && at === null} onCommit={rotation => animate({rotation})}/>
     <Range label="Corners" tip="Corner radius in pixels" value={layer.radius || 0} min={0} max={200} unit=" px" onCommit={radius => set({radius})}/>
     <p className="hint">Drag the box on the player to move it, its handles to resize or turn it.</p>
+  </Section>;
+}
+
+// The chosen layer's keyframes: auto-key, a keyframe of everything at the playhead, and each keyframe with what it
+// sets, how it eases in, and remove. Times show in the video's seconds; the project keeps them from the layer's start.
+const shortNames = {x: 'x', y: 'y', w: 'w', h: 'h', opacity: 'opacity', rotation: 'turn'};
+function Keyframes({layer, time, fps, autoKey, onAutoKey, onSeek, onEdit}) {
+  const at = keyMoment(layer, time, fps);
+  const keyframes = [...(layer.keyframes || [])].sort((a, b) => a.at - b.at);
+  const keyAll = () => {
+    const {x, y, w, h, opacity, rotation} = boxAt(layer, time);
+    const values = Object.fromEntries(Object.entries({x, y, w, h, opacity, rotation}).map(([key, value]) => [key, +value.toFixed(4)]));
+    onEdit([{keyframe: {layer: layer.id, at, ...values}}]).catch(() => {});
+  };
+  const edit = changes => onEdit(changes).catch(() => {});
+  return <Section title="Keyframes" aside={<Button size="small" variant="ghost" icon={Diamond} disabled={at === null}
+    tip={at === null ? 'Move the playhead onto the layer to key it' : 'Key the box, opacity and turn as they are at the playhead'} onClick={keyAll}>Key here</Button>}>
+    <Switch label="Auto-key" tip="On: dragging the box, nudging it, opacity and turn add a keyframe at the playhead. Off: they move the whole animation." checked={autoKey} onChange={onAutoKey}/>
+    {keyframes.length === 0 ? <p className="hint">None yet. Turn on auto-key, move the playhead, and drag the box.</p>
+      : <ul className="key-list">{keyframes.map(keyframe => {
+        const here = at !== null && Math.abs(keyframe.at - at) < 0.0005;
+        const set = Object.keys(keyframe).filter(key => key in shortNames);
+        return <li key={keyframe.at} className={`key-row ${here ? 'here' : ''}`}>
+          <div className="key-head">
+            <button type="button" className="line-time" data-tip="Go there" onClick={() => onSeek(layer.from + keyframe.at)}>{timecode(layer.from + keyframe.at)}</button>
+            <span className="key-sets" data-tip={set.map(key => `${shortNames[key]} ${+keyframe[key].toFixed(3)}`).join(' · ')}>{set.map(key => shortNames[key]).join(', ')}</span>
+            <Button size="small" variant="ghost" icon={X} tip="Remove this keyframe" onClick={() => edit([{unkeyframe: {layer: layer.id, at: keyframe.at}}])}/>
+          </div>
+          {keyframe.at > 0 && <Ease value={keyframe.ease} onSave={ease => edit([{keyframe: {layer: layer.id, at: keyframe.at, ease}}])}/>}
+        </li>;
+      })}</ul>}
   </Section>;
 }
 

@@ -31,6 +31,8 @@ export function Studio({project, refresh, onChange}) {
   // The overlay layer being worked on (its box shows over the player), and the Inspector's tab.
   const [chosenLayer, setChosenLayer] = useState(null);
   const [tab, setTab] = useState('edit');
+  // Auto-key: edits to a layer's box, opacity and turn write keyframes at the playhead (render/keyframes.js).
+  const [autoKey, setAutoKey] = useState(false);
   // The layers there were before one was added: the new one gets chosen once the timeline shows it.
   const adding = useRef(null);
   // The project file's stamp the timeline was read at (or the panel's own last edit left): edits send it back, and
@@ -136,7 +138,7 @@ export function Studio({project, refresh, onChange}) {
   const [sizeWidth, sizeHeight] = (timeline?.size || '16×9').split('×').map(Number);
   const ratio = preview ? preview.width / preview.height : sizeWidth / sizeHeight || 16 / 9;
   const layerStage = !aim && chosenLayer && showing === 'live' && preview && timeline?.layers?.length > 0 &&
-    <LayerStage layers={timeline.layers} chosen={chosenLayer} time={time} ratio={ratio} onChoose={chooseLayer}
+    <LayerStage layers={timeline.layers} chosen={chosenLayer} time={time} ratio={ratio} fps={fps} autoKey={autoKey} onChoose={chooseLayer}
       onSave={changes => layerEdit(changes)} onRemove={removeLayer} onDone={() => setChosenLayer(null)}/>;
   // New layers go in the recording part of the video, not on the intro or outro cards.
   const first = timeline?.intro?.to || 0, last = timeline?.outro?.from ?? timeline?.duration ?? 0;
@@ -161,7 +163,7 @@ export function Studio({project, refresh, onChange}) {
         chosenLayer={chosenLayer} onChooseLayer={chooseLayer} onLayers={layerEdit}/>}
     </div>
     <Inspector project={project} edit={edit} render={render} rendering={rendering} changed={changed} tab={tab} onTab={setTab}
-      layers={editable && timeline && <LayerList layers={timeline.layers || []} chosen={chosenLayer} time={time} first={first} last={last}
+      layers={editable && timeline && <LayerList layers={timeline.layers || []} chosen={chosenLayer} time={time} fps={fps} first={first} last={last} autoKey={autoKey} onAutoKey={setAutoKey}
         ratio={ratio} onChoose={chooseLayer} onSeek={seek} onEdit={layerEdit} onUpload={layerUpload}/>}
       narration={editable && <Narration project={project} timeline={timeline} time={time} onSeek={seconds => player.current?.seek(seconds)}
         onEdit={narrationEdit} onSpoken={() => { setVersion(old => old + 1); refresh(); }}/>}/>

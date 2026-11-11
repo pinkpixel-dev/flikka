@@ -7,7 +7,7 @@ import path from 'node:path';
 import {editProject, undoProject, timelineProject} from '../lib/project.mjs';
 import {layerAt, parseEasing, eased} from '../render/keyframes.js';
 import {layerProblems, sceneLayers, layerArgs} from '../lib/layers.mjs';
-import {boxChange, dragBox, layerRows, layerSpan, spanChange} from '../ui/src/layers/geometry.js';
+import {boxChange, dragBox, keyChange, keyMoment, layerRows, layerSpan, moveKey, spanChange} from '../ui/src/layers/geometry.js';
 
 const near = (actual, expected, within = 1e-3) => assert.ok(Math.abs(actual - expected) < within, `${actual} is not about ${expected}`);
 
@@ -153,4 +153,23 @@ test('the layers lane: rows for overlaps, moves and trims', () => {
   assert.deepEqual(layerSpan({from: 2, to: 5}, {mode: 'layer', shift: 4.9}, options), {from: 7, to: 10});
   assert.deepEqual(layerSpan({from: 2, to: 5}, {mode: 'layer-start', now: 4.95}, options), {from: 4.9, to: 5});
   assert.deepEqual(spanChange({id: 'l1', from: 2, to: 5}, {from: 2, to: 6}), {set: {layer: 'l1', end: 6}});
+});
+
+test('keyframes from the panel: auto-key, moving one, easing on and off', async () => {
+  const layer = {id: 'l1', from: 2, to: 6, x: 0.1, keyframes: [{at: 1, x: 0.5, ease: 'ease-in'}]};
+  assert.equal(keyMoment(layer, 3.51, 30), 1.5);
+  assert.equal(keyMoment(layer, 1, 30), null);
+  // Auto-key writes the values the box has at the playhead, only the ones that changed.
+  assert.deepEqual(keyChange(layer, 3.5, 30, {x: 0.3, y: 0.2, w: 0.2, h: 0.1}, {x: 0.4, y: 0.2, w: 0.2, h: 0.1}), {keyframe: {layer: 'l1', at: 1.5, x: 0.4}});
+  assert.deepEqual(moveKey(layer, layer.keyframes[0], 2.25), [{unkeyframe: {layer: 'l1', at: 1}}, {keyframe: {layer: 'l1', at: 2.25, x: 0.5, ease: 'ease-in'}}]);
+  assert.deepEqual(layerArgs(moveKey(layer, layer.keyframes[0], 2.25)), ['--unkeyframe', 'l1,1', '--keyframe', 'l1,2.25,x=0.5,ease=ease-in']);
+
+  const {folder, file} = await scratchProject();
+  try {
+    await editProject(file, ['--layer', 'solid,1,5,0.1,0.1,0.2,0.2', '--keyframe', 'l1,1,x=0.5,ease=ease-in']);
+    await editProject(file, ['--output-time', ...layerArgs([{unkeyframe: {layer: 'l1', at: 1}}, {keyframe: {layer: 'l1', at: 2.25, x: 0.5, ease: 'ease-in'}}])]);
+    await editProject(file, layerArgs([{keyframe: {layer: 'l1', at: 2.25, ease: ''}}]));
+    const [saved] = JSON.parse(await fs.readFile(file, 'utf8')).layers;
+    assert.deepEqual(saved.keyframes, [{at: 2.25, x: 0.5}]);
+  } finally { await fs.rm(folder, {recursive: true, force: true}); }
 });

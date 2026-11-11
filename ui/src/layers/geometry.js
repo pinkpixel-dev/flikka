@@ -62,6 +62,30 @@ export function boxChange(layer, before, after) {
   return Object.keys(set).length ? {set: {layer: layer.id, ...set}} : null;
 }
 
+// Auto-key: the same drag written as a keyframe at the playhead instead (the values the box has there now).
+// time: video seconds, fps: what the moment rounds to. null when nothing changed or the playhead is off the layer.
+export function keyChange(layer, time, fps, before, after) {
+  const at = keyMoment(layer, time, fps);
+  if (at === null) return null;
+  const values = {};
+  for (const key of ['x', 'y', 'w', 'h', 'rotation', 'opacity']) {
+    if (key in after && Math.abs((after[key] ?? 0) - (before[key] ?? 0)) > 1e-4) values[key] = round(after[key]);
+  }
+  return Object.keys(values).length ? {keyframe: {layer: layer.id, at, ...values}} : null;
+}
+
+// Where the playhead is in a layer's own time (seconds after it appears, on a whole frame), or null off it.
+export function keyMoment(layer, time, fps) {
+  const at = Math.round((time - layer.from) * fps) / fps;
+  return at < -0.0005 || at > layer.to - layer.from + 0.0005 ? null : +Math.max(0, at).toFixed(3);
+}
+
+// Moving a keyframe: off its old moment, the same values at the new one (one edit).
+export function moveKey(layer, keyframe, at) {
+  const {at: before, ...values} = keyframe;
+  return Math.abs(at - before) < 0.0005 ? null : [{unkeyframe: {layer: layer.id, at: before}}, {keyframe: {layer: layer.id, at: +at.toFixed(3), ...values}}];
+}
+
 // Layers on the timeline, each on the first row where it fits (layers can overlap in time).
 export function layerRows(layers) {
   const rows = [];

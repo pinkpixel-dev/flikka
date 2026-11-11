@@ -17,6 +17,10 @@
 - Pick a layer and its box shows on the player. Drag it to move it, pull a handle to resize it, or use the round handle to turn it. Shift skips snapping, keeps the shape on a corner, or turns in 15° steps. Arrows nudge it and Delete removes it.
 - A Layers row on the timeline shows when each layer plays. Drag one to move it or its edges to trim it, and overlapping layers stack on their own rows.
 - Moving, resizing or turning an animated layer takes its keyframes along, so the animation keeps its shape. That goes for `--layer-set` too.
+- Keyframes in the panel: a layer's keyframes show as diamonds on its timeline block. Click one to jump there, or drag it to move the keyframe.
+- Turn on Auto-key in the Layers tab and dragging the box, nudging it, or moving the opacity and turn sliders writes a keyframe at the playhead instead. Key here saves the whole box as it is at the playhead.
+- Each keyframe picks how it eases in: linear, ease, ease in, ease out, ease in-out, or a curve you shape by dragging two handles (or typing the four numbers).
+- `--keyframe id,at,ease=` with nothing after it takes a keyframe's easing back to the default.
 
 ### 🗣️ Narration
 - `flikka project frames` on a narrated recording shows the narration captions now, like the render does, instead of the mic's. It uses the lines already spoken and says how many that is (`narration` in the result).

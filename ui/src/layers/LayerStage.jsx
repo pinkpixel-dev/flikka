@@ -1,12 +1,14 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {boxAt, boxChange, dragBox, handles} from './geometry.js';
+import {boxAt, boxChange, dragBox, handles, keyChange, keyMoment} from './geometry.js';
 
 // The chosen layer's box over the player, at the playhead: drag it to move it (its edges and middle snap to the
 // video's, Shift: no snapping), a handle to resize it (Shift on a corner keeps its shape), the round handle above
 // to turn it (Shift: 15° steps). Arrows nudge it (Shift: more), Delete removes it, Escape lets it go. Other layers
 // showing at this moment can be clicked to choose them. Each drag is one edit; a run of nudges is one too.
-// layers: the timeline's (video seconds), ratio: the video's width / height.
-export function LayerStage({layers, chosen, time, ratio, onChoose, onSave, onRemove, onDone}) {
+// With autoKey on, a drag or nudge writes a keyframe at the playhead instead (the box's values there), and the box
+// can't be moved while the playhead is off the layer.
+// layers: the timeline's (video seconds), ratio: the video's width / height, fps: what a keyframe's moment rounds to.
+export function LayerStage({layers, chosen, time, ratio, fps, autoKey, onChoose, onSave, onRemove, onDone}) {
   const frame = useRef(null);
   const boxRef = useRef(null);
   const [drag, setDrag] = useState(null);
@@ -26,7 +28,7 @@ export function LayerStage({layers, chosen, time, ratio, onChoose, onSave, onRem
   const point = (event, area) => ({x: event.clientX - area.left, y: event.clientY - area.top});
 
   const save = async after => {
-    const change = boxChange(layer, here, after);
+    const change = autoKey ? keyChange(layer, time, fps, here, after) : boxChange(layer, here, after);
     if (!change) { setDraft(null); return; }
     setDraft(after);
     try { await onSave([change]); } catch { setDraft(null); }
@@ -34,6 +36,7 @@ export function LayerStage({layers, chosen, time, ratio, onChoose, onSave, onRem
   const down = event => {
     if (event.button !== 0 || draft) return;
     event.stopPropagation();
+    if (autoKey && keyMoment(layer, time, fps) === null) return;
     const area = size();
     event.currentTarget.setPointerCapture(event.pointerId);
     setDrag({mode: event.target.dataset.handle || 'move', from: point(event, area), start: here, box: here, moved: false});
@@ -55,7 +58,7 @@ export function LayerStage({layers, chosen, time, ratio, onChoose, onSave, onRem
     const handled = () => { event.preventDefault(); event.stopPropagation(); };
     if (by) {
       handled();
-      if (draft && !nudge.current) return;
+      if ((draft && !nudge.current) || (autoKey && keyMoment(layer, time, fps) === null)) return;
       // Nudges add up and save half a second after the last one.
       const base = nudge.current?.box || here;
       const box = {...base, x: Math.round((base.x + by[0]) * 1e4) / 1e4, y: Math.round((base.y + by[1]) * 1e4) / 1e4};
@@ -73,9 +76,9 @@ export function LayerStage({layers, chosen, time, ratio, onChoose, onSave, onRem
     <div ref={frame} className="layer-frame" style={{aspectRatio: ratio, width: `min(100cqw, ${ratio.toFixed(4)} * 100cqh)`}}>
       {others.map(item => <span key={item.id} className="layer-other" style={place(boxAt(item, time))} data-tip={`${label(item)} · click to choose`}
         onPointerDown={event => { if (event.button === 0) { event.stopPropagation(); onChoose(item.id); } }}/>)}
-      <div ref={boxRef} className={`layer-box ${showing ? '' : 'outside'} ${drag?.moved ? 'dragging' : ''} ${draft ? 'saving' : ''}`} style={place(shown)} tabIndex={0}
+      <div ref={boxRef} className={`layer-box ${autoKey ? 'keying' : ''} ${showing ? '' : 'outside'} ${drag?.moved ? 'dragging' : ''} ${draft ? 'saving' : ''}`} style={place(shown)} tabIndex={0}
         role="application" aria-label={`${label(layer)}. Drag to move, arrows nudge, Delete removes, Escape lets go.`}
-        data-tip={showing || drag ? undefined : 'Not showing at the playhead: this is where it starts or ends'}
+        data-tip={showing || drag ? undefined : autoKey ? 'Not showing at the playhead: move the playhead onto it to key it' : 'Not showing at the playhead: this is where it starts or ends'}
         onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={() => setDrag(null)} onKeyDown={keys}>
         {handles.map(handle => <span key={handle} className={`layer-handle ${handle}`} data-handle={handle} aria-hidden/>)}
         <span className="layer-handle rotate" data-handle="rotate" data-tip="Turn (Shift: 15° steps)" aria-hidden/>

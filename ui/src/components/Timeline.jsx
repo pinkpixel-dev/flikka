@@ -5,7 +5,7 @@ import {Button} from './ui.jsx';
 import {Wave} from '../timeline/Wave.jsx';
 import {dragShape, lineChange, lineShape} from '../timeline/lines.js';
 import {Overview} from '../timeline/Overview.jsx';
-import {layerRows, layerSpan, spanChange} from '../layers/geometry.js';
+import {layerRows, layerSpan, moveKey, spanChange} from '../layers/geometry.js';
 import {label as layerLabel} from '../layers/LayerStage.jsx';
 import {useZoom} from '../timeline/useZoom.js';
 
@@ -18,6 +18,7 @@ import {useZoom} from '../timeline/useZoom.js';
 //   Events: click a click or a typing burst (or press Z near one) to zoom in right there.
 //   Narration: drag a line to move it, or its edges to trim it. Click one to choose it.
 //   Layers: the same, and a chosen layer's box shows on the player (Delete removes it). Overlapping layers stack.
+//   Its keyframes are diamonds: click one to go there, drag it to move the keyframe.
 // Keys: [ and ] jump to the previous or next zoom and choose it, Enter chooses the zoom under the playhead, Alt+← →
 // nudges the chosen narration line a frame (Shift: a tenth of a second), + and - zoom, 0 fits the whole video.
 // Ctrl+wheel zooms around the pointer, and zoomed in, the wheel scrolls sideways (lib: ../timeline/useZoom.js).
@@ -87,6 +88,9 @@ export function Timeline({project, timeline, time, playing, onSeek, onEdit, onNa
     onLayers([change]).catch(() => setSaving(null));
   };
 
+  // A keyframe diamond mid-drag: its moment in the layer's own seconds, on a frame, inside the layer.
+  const keyAt = (layer, now) => Math.max(0, Math.min(layer.to - layer.from, frame(now - layer.from)));
+
   const save = async (body, draft) => {
     setSaving(draft); setSelection(null);
     try { await onEdit(body); } catch { setSaving(null); }
@@ -102,10 +106,11 @@ export function Timeline({project, timeline, time, playing, onSeek, onEdit, onNa
     const line = onNarration ? target.closest('[data-line]')?.dataset.line : undefined;
     const layer = onLayers ? target.closest('[data-layer]')?.dataset.layer : undefined;
     const start = timeAt(event.clientX);
-    const mode = layer ? (target.dataset.trim ? 'layer-' + target.dataset.trim : 'layer') : line ? (target.dataset.trim ? 'trim-' + target.dataset.trim : 'line') : target.dataset.edge || (zoom !== undefined ? 'move' : pick ? 'pick' : lane === 'clips' ? 'select' : lane === 'camera' ? 'create' : 'scrub');
+    const key = layer ? target.closest('[data-key]')?.dataset.key : undefined;
+    const mode = key !== undefined ? 'key' : layer ? (target.dataset.trim ? 'layer-' + target.dataset.trim : 'layer') : line ? (target.dataset.trim ? 'trim-' + target.dataset.trim : 'line') : target.dataset.edge || (zoom !== undefined ? 'move' : pick ? 'pick' : lane === 'clips' ? 'select' : lane === 'camera' ? 'create' : 'scrub');
     event.currentTarget.setPointerCapture(event.pointerId);
     if (mode === 'scrub') { setChosen(null); setPicked(null); onSeek(start); }
-    setDrag({mode, zoom: zoom === undefined ? null : Number(zoom), line: line || layer, layer, pick, x: event.clientX, cx: event.clientX, start, now: start, moved: false});
+    setDrag({mode, zoom: zoom === undefined ? null : Number(zoom), line: line || layer, layer, key: key === undefined ? null : Number(key), pick, x: event.clientX, cx: event.clientX, start, now: start, moved: false});
   };
   const move = event => {
     if (!drag) return;
@@ -124,6 +129,15 @@ export function Timeline({project, timeline, time, playing, onSeek, onEdit, onNa
     if (drag.layer) {
       const layer = layers.find(item => item.id === drag.layer);
       if (!layer) return;
+      if (mode === 'key') {
+        const keyframe = layer.keyframes?.find(item => item.at === drag.key);
+        if (!moved || !keyframe) { onChooseLayer?.(layer.id); onSeek(layer.from + drag.key); return; }
+        const changes = moveKey(layer, keyframe, keyAt(layer, now));
+        if (!changes || !onLayers) return;
+        setSaving({layer: layer.id, key: drag.key, at: keyAt(layer, now)}); setSelection(null);
+        onLayers(changes).catch(() => setSaving(null));
+        return;
+      }
       if (!moved) { setChosen(null); setPicked(null); setChosenLine(null); onChooseLayer?.(layer.id); if (time < layer.from || time > layer.to) onSeek(layer.from); return; }
       saveLayer(layer, spanOf(layer, drag));
       return;
@@ -271,12 +285,20 @@ export function Timeline({project, timeline, time, playing, onSeek, onEdit, onNa
     {name: 'Overlays', show: overlays.length > 0, items: overlays.map((item, index) => <Block key={index} className={item.kind} {...span(item.from, item.to, duration)} tip={item.label}>{item.label}</Block>)},
     ...layerRows(layers).map((row, index) => ({name: index ? '' : 'Layers', key: 'layers' + index, lane: 'layers',
       tip: index ? undefined : 'Drag a layer to move it, or its edges to trim it. Click one to show its box on the player.', show: true, items: row.map(layer => {
-        const live = (drag?.layer === layer.id && drag.moved) || saving?.layer === layer.id;
-        const shown = drag?.layer === layer.id && drag.moved ? spanOf(layer, drag) : saving?.layer === layer.id ? saving : layer;
+        const keying = drag?.mode === 'key' && drag.layer === layer.id;
+        const live = (drag?.layer === layer.id && drag.moved && !keying) || (saving?.layer === layer.id && saving.key === undefined);
+        const shown = drag?.layer === layer.id && drag.moved && !keying ? spanOf(layer, drag) : saving?.layer === layer.id && saving.key === undefined ? saving : layer;
+        const length = Math.max(0.001, shown.to - shown.from);
+        // Diamonds: where each keyframe is, mid-drag or saving where it's going.
+        const keys = [...new Set((layer.keyframes || []).map(item => item.at))].map(at => ({at,
+          shown: keying && drag.key === at && drag.moved ? keyAt(layer, drag.now) : saving?.layer === layer.id && saving.key === at ? saving.at : at}))
+          .filter(item => item.shown <= length + 0.0005);
         return <span key={layer.id} className={`block layer ${layer.type} ${live ? 'live' : ''} ${chosenLayer === layer.id ? 'chosen' : ''}`} style={span(shown.from, shown.to, duration)}
           data-layer={layer.id} data-tip={live ? undefined : `${layerLabel(layer)} · ${timecode(layer.from)}–${timecode(layer.to)}${layer.keyframes?.length ? ` · ${layer.keyframes.length} keyframes` : ''}`}>
           <span className="label">{layerLabel(layer)}</span>
           <span className="edge start" data-trim="start"/><span className="edge end" data-trim="end"/>
+          {keys.map(item => <span key={item.at} className={`key ${keying && drag.key === item.at ? 'live' : ''}`} style={{left: `${(item.shown / length) * 100}%`}}
+            data-key={item.at} data-tip={keying ? undefined : `Keyframe at ${timecode(layer.from + item.at)} · drag to move it`}/>)}
         </span>;
       })})),
     {name: 'Events', tip: 'Click a click or a typing burst to zoom in there (Z)', show: eventCount > 0, items: <>

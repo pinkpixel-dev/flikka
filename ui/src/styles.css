@@ -623,3 +623,29 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
 .color-input { display: flex; align-items: center; gap: 6px; }
 .color-input input[type=color] { width: 30px; height: 30px; padding: 2px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); cursor: pointer; }
 .color-input input[type=text] { width: 120px; height: 30px; font: 12.5px var(--mono); }
+
+/* Keyframes: diamonds along the bottom of a layer's lane block (the top half of its edges still trims), the box while
+   auto-keying, the list and the easing curve. */
+.block.layer .key { position: absolute; top: calc(100% - 3px); z-index: 2; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; transform: rotate(45deg); border-radius: 1.5px;
+  background: var(--layer); box-shadow: 0 0 0 1.5px var(--bg); cursor: ew-resize; }
+.block.layer .key::before { content: ''; position: absolute; inset: -4px; }
+.block.layer .key:hover, .block.layer .key.live { background: var(--text); }
+.layer-box.keying, .layer-box.keying .layer-handle { outline-color: var(--record-strong); border-color: var(--record-strong); }
+.layer-box.keying .layer-handle.rotate::after { background: var(--record-strong); }
+.key-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.key-row { display: flex; flex-direction: column; gap: 8px; padding: 8px; border: 1px solid var(--line-soft); border-radius: var(--radius); background: var(--surface); }
+.key-row.here { box-shadow: inset 2px 0 0 var(--layer); }
+.key-head { display: flex; align-items: center; gap: 8px; }
+.key-sets { flex: 1; min-width: 0; color: var(--muted); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ease { display: flex; flex-direction: column; gap: 8px; }
+.ease select { height: 30px; font-size: 12.5px; }
+.ease-editor { display: flex; gap: 10px; align-items: center; }
+.ease-graph { width: 132px; height: 132px; flex: none; border-radius: 6px; background: var(--bg); touch-action: none; }
+.ease-frame { fill: none; stroke: var(--line); stroke-dasharray: 3 3; }
+.ease-arm { stroke: var(--faint); stroke-width: 1; }
+.ease-curve { fill: none; stroke: var(--layer); stroke-width: 2; }
+.ease-handle { fill: var(--bg); stroke: var(--text); stroke-width: 1.5; cursor: grab; }
+.ease-graph.dragging .ease-handle { cursor: grabbing; }
+.ease-numbers { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.ease-numbers label { display: flex; flex-direction: column; gap: 2px; font-size: 11px; color: var(--faint); }
+.ease-numbers input { width: 64px; height: 28px; font: 12px var(--mono); }

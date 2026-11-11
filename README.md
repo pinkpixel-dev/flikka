@@ -140,6 +140,8 @@ If you don't want a zoom on every click, set Auto zoom to just clicks, just typi
 
 The Layers tab puts text, boxes, images and videos on top of a recording. Add one at the playhead, then pick it and its box shows up on the player: drag it around, pull the handles to resize it, or grab the round one to turn it. The Layers row on the timeline is where you move a layer or trim when it shows. If a layer is animated, moving it moves the whole animation with it.
 
+To animate a layer, turn on Auto-key in the Layers tab, move the playhead, and drag the box (or change its opacity or turn). Each change drops a keyframe right there, shown as a diamond on the layer's timeline block. Drag a diamond to retime it, and pick how each keyframe eases in from the list, including a curve you can shape by hand.
+
 ## Editing a recording
 
 Edits are flags on `flikka project edit`, and you can combine several in one call:
