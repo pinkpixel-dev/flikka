@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.5.0 - Unreleased
+## 1.0.0 - November 11, 2026
 
 ### 📖 Help
 - `flikka help` lists every action of every command now, each with a one-line summary.
@@ -38,6 +38,9 @@
 ### 🧹 Maintenance
 - The helpers come from the `voice-v0.3.0` release now (`flikka-voice` 0.3.0 and `flikka-cursor` 0.2.0, in one archive), pinned by sha256 in npm installs and the AUR package.
 - `undici` is pinned to 7.30.2 through an npm override, which fixes the high-severity advisories that came in through `@hyperframes/engine`.
+
+### 🏷️ Versioning
+- Bumped to 1.0.0. This finishes the plan to make Flikka the one video app, and `flikka voice import` and `voice cuda install --fresh` are gone, so scripts that used them need updating.
 
 ## 0.4.0 - November 8, 2026
 

@@ -139,7 +139,7 @@ flikka record close terminal
 
 ## Desktop Screen Recording Workflow
 
-Flikka records the physical Linux desktop display using `gpu-screen-recorder` with hardware NVENC acceleration and PipeWire audio.
+Flikka records the physical Linux desktop display using `gpu-screen-recorder` (hardware encoding on the GPU) and PipeWire audio.
 
 ```bash
 # 1. List available displays, mics, and webcams
@@ -178,7 +178,7 @@ flikka project new product-launch --with 1b2bf8de
 flikka project schema
 # "scenes": [
 #   {"type": "title", "title": "Introducing Flikka", "say": "Meet Flikka for Linux."},
-#   {"type": "recording", "source": "demo.mp4", "say": "Record yourself effortlessly."}
+#   {"type": "recording", "recording": "1b2bf8de", "say": "Here's the signup flow."}
 # ]
 
 # 3. Preview frames (or open it in the panel for the user: flikka project live product-launch)
@@ -210,7 +210,7 @@ The same works for `--trim start,end` (keep only that), `--freeze at,seconds` (h
 
 To explain what's happening on screen: `--step start,end,x,y,"text"` (numbered automatically in time order), `--callout start,end,x,y,"text"`, `--arrow start,end,x,y,x2,y2` and `--box start,end,x,y,w,h`. Quote text that has spaces. `--keystrokes on` shows shortcuts as they're pressed (recordings only log shortcuts and named keys, never typed text). To hide something after recording, use `--redact start,end,x,y,w,h,solid`, or `all,x,y,w,h,solid` for the whole video. Always use `solid` for passwords, keys and tokens, since blurred text can sometimes be recovered.
 
-For free-placed overlays, add layers: `--layer text,2,8,0.05,0.85,0.9,0.1,Hello there` (also `image` or `video` with a file, which Flikka copies into the project, and `solid` with a CSS color; `all` instead of start,end covers the whole recording). Boxes are shares of the finished video, so they don't move with zooms, and start and end stick to recording moments like narration. Each gets an id (`l1`, `l2`, …). Change one with `--layer-set l1,opacity=0.8,size=0.04,align=left,order=front`, animate it with `--keyframe l1,0,opacity=0` then `--keyframe l1,0.5,opacity=1,ease=ease-out` (`ease=` alone resets a keyframe's easing) (at is seconds after it appears; x, y, w, h, opacity and rotation animate), (setting x, y, w, h or rotation on an animated layer moves its keyframes along with it), and remove things with `--unkeyframe l1,0`, `--unlayer l1` or `--layers off`. A recording's layers also show when a film plays it, placed relative to the recording window (layers on the recording's background padding land just outside the window there). Films take the same layers as a scene's `"layers"` list in film.json (start and end in seconds from the scene's start, see `flikka project schema`). Video layers are muted and loop.
+For free-placed overlays, add layers: `--layer text,2,8,0.05,0.85,0.9,0.1,Hello there` (also `image` or `video` with a file, which Flikka copies into the project, and `solid` with a CSS color; `all` instead of start,end covers the whole recording). Boxes are shares of the finished video, so they don't move with zooms, and start and end stick to recording moments like narration. Each gets an id (`l1`, `l2`, …). Change one with `--layer-set l1,opacity=0.8,size=0.04,align=left,order=front`. Setting x, y, w, h or rotation on an animated layer moves its keyframes along with it. Animate it with `--keyframe l1,0,opacity=0` then `--keyframe l1,0.5,opacity=1,ease=ease-out`: the time is seconds after the layer appears, x, y, w, h, opacity and rotation animate, and `ease=` alone resets a keyframe's easing. Remove things with `--unkeyframe l1,0`, `--unlayer l1` or `--layers off`. A recording's layers also show when a film plays it, placed relative to the recording window (layers on the recording's background padding land just outside the window there). Films take the same layers as a scene's `"layers"` list in film.json (start and end in seconds from the scene's start, see `flikka project schema`). Video layers are muted and loop.
 
 For a finished feel: `--intro "text"` and `--outro "seconds,text"` add title cards, `--transition fade|wipe|slide|zoom` adds a transition at every cut (films take `"transition"` in film.json), and `--music on` (or `--music <file>`) adds a bed that ducks under the voice (`--music-volume` from 0.1 to 4). An intro shifts every video time by its length, so re-read `flikka project timeline` after adding one.
 

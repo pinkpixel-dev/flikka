@@ -16,16 +16,24 @@ Flikka records your screen, a window, a browser tab or a terminal, then lets you
 
 Every command prints JSON, which is what makes it work so well with agents. An agent can open a browser, click around a real site like a person would, record itself doing it, and hand you a finished MP4.
 
+<p align="center">
+  <img src="media/flikka-demo.gif" alt="The Flikka panel: changing a recording's backdrop, adding a text layer and playing the live preview" width="800">
+</p>
+
+<p align="center"><sub>Flikka recorded this one itself: an agent drove the panel in the Flikka browser, then Flikka zoomed in on the clicks and exported the GIF.</sub></p>
+
 ## What it does
 
 - **Records the desktop** (a display, one window, or a region you drag out) with `gpu-screen-recorder`, so it's fast and light even at 60 fps.
 - **Records a browser** that's a copy of your own, logins included. The mouse glides and text gets typed at human speed, so the video doesn't look like a bot made it.
 - **Records a terminal** running your real shell, with a `--blur` option that hides API keys and other secrets.
 - **Edits automatically**: cuts idle stretches, zooms in on clicks, and draws a smooth cursor with a click ripple.
-- **Narrates** with Kokoro neural voices, and transcribes speech with Whisper for captions.
+- **Narrates** recordings and films with Kokoro neural voices, or in your own voice cloned from about 10 seconds of you talking, and transcribes speech with Whisper for captions. Narration lines stick to moments in the recording, so cutting around them carries them along.
+- **Layers text, images, videos and boxes** over a recording or a film, with keyframes and easing to animate them.
+- **Lets you decide about the pointer later** on Wayland screen and window recordings, since Flikka logs where it was instead of baking it in.
 - **Builds films**: a `film.json` lists scenes (recordings, titles, images, stats, charts, line graphs, slides, before/after comparisons, your own React components) and the narrator's lines. Flikka times everything to the voice, adds captions and music, and checks the result for problems like frozen frames or music drowning out the voice.
 - **Takes framed screenshots** with a nice backdrop, copied straight to your clipboard.
-- **Has a local review panel** where you can watch projects, flip switches like click sounds or zoom, and re-render.
+- **Has a local panel** where you can watch projects, edit the timeline (cuts, zooms, narration lines, layers), place and animate layers right on the player, and re-render.
 
 ## Requirements
 
