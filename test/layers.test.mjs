@@ -6,7 +6,8 @@ import os from 'node:os';
 import path from 'node:path';
 import {editProject, undoProject, timelineProject} from '../lib/project.mjs';
 import {layerAt, parseEasing, eased} from '../render/keyframes.js';
-import {layerProblems, sceneLayers} from '../lib/layers.mjs';
+import {layerProblems, sceneLayers, layerArgs} from '../lib/layers.mjs';
+import {boxChange, dragBox, layerRows, layerSpan, spanChange} from '../ui/src/layers/geometry.js';
 
 const near = (actual, expected, within = 1e-3) => assert.ok(Math.abs(actual - expected) < within, `${actual} is not about ${expected}`);
 
@@ -105,4 +106,51 @@ test('output-time layers land on recording moments', async () => {
     const project = JSON.parse(await fs.readFile(file, 'utf8'));
     assert.deepEqual([project.layers[0].start, project.layers[0].end], [7, 11]);
   } finally { await fs.rm(folder, {recursive: true, force: true}); }
+});
+
+test('moving an animated layer takes its keyframes along', async () => {
+  const {folder, file} = await scratchProject();
+  try {
+    await editProject(file, ['--layer', 'solid,1,5,0.1,0.1,0.2,0.2', '--keyframe', 'l1,1,x=0.5,w=0.4,opacity=0.5']);
+    await editProject(file, ['--layer-set', 'l1,x=0.2,w=0.1,opacity=1']);
+    const [layer] = JSON.parse(await fs.readFile(file, 'utf8')).layers;
+    // x moved by 0.1 and w halved, so the keyframe did too; opacity isn't a place, so its keyframe stays.
+    assert.deepEqual([layer.x, layer.w, layer.keyframes[0].x, layer.keyframes[0].w, layer.keyframes[0].opacity], [0.2, 0.1, 0.6, 0.2, 0.5]);
+  } finally { await fs.rm(folder, {recursive: true, force: true}); }
+});
+
+test('the panel\'s layer changes become edit options', () => {
+  assert.deepEqual(layerArgs([{add: {type: 'text', from: 1, to: 4, x: 0.1, y: 0.4, w: 0.8, h: 0.16, text: 'Hi,\n there'}}]), ['--layer', 'text,1.000,4.000,0.1,0.4,0.8,0.16,Hi, there']);
+  assert.deepEqual(layerArgs([{add: {type: 'solid', from: 0, to: 2, x: 0, y: 0, w: 1, h: 1, color: 'rgba(0,0,0,.5)'}}]), ['--layer', 'solid,0.000,2.000,0,0,1,1,rgba(0,0,0,.5)']);
+  assert.deepEqual(layerArgs([{set: {layer: 'l2', start: 2, x: 0.25, background: '', text: 'a, b'}}, {remove: 'l1'}]),
+    ['--layer-set', 'l2,start=2.000,x=0.25,background=,text=a, b', '--unlayer', 'l1']);
+  assert.throws(() => layerArgs([{set: {layer: 'l1', font: 'Inter'}}]), /can't set font/);
+  assert.throws(() => layerArgs([{set: {layer: '../x', x: 1}}]), /Pick a layer/);
+  assert.throws(() => layerArgs([]), /Nothing to change/);
+});
+
+test('the player box: move snaps, resize keeps the far edge, changes move the layer\'s own values', () => {
+  const stage = {width: 1000, height: 500};
+  const start = {x: 0.1, y: 0.1, w: 0.2, h: 0.2, rotation: 0, opacity: 1};
+  // Dragged 398 px right: its middle lands 2 px from the video's middle, so it snaps there.
+  assert.equal(dragBox(start, {mode: 'move', from: {x: 0, y: 0}, now: {x: 298, y: 0}}, stage).x, 0.4);
+  const wider = dragBox(start, {mode: 'e', from: {x: 0, y: 0}, now: {x: 100, y: 50}}, stage);
+  assert.deepEqual([wider.x, wider.y, wider.w, wider.h], [0.1, 0.1, 0.3, 0.2]);
+  const turned = dragBox(start, {mode: 'rotate', from: {x: 200, y: 0}, now: {x: 300, y: 100}, shift: true}, stage);
+  assert.equal(turned.rotation, 90);
+  // At this moment keyframes put the box at x 0.3 with w 0.4: moving it 0.1 and halving it moves the layer's own x
+  // by 0.1 and halves its own w.
+  const layer = {id: 'l1', x: 0.1, w: 0.2};
+  assert.deepEqual(boxChange(layer, {x: 0.3, y: 0, w: 0.4, h: 0.2}, {x: 0.4, y: 0, w: 0.2, h: 0.2}), {set: {layer: 'l1', x: 0.2, w: 0.1}});
+  assert.equal(boxChange(layer, start, start), null);
+});
+
+test('the layers lane: rows for overlaps, moves and trims', () => {
+  const rows = layerRows([{id: 'a', from: 0, to: 5}, {id: 'b', from: 2, to: 4}, {id: 'c', from: 5, to: 6}]);
+  assert.deepEqual(rows.map(row => row.map(layer => layer.id)), [['a', 'c'], ['b']]);
+  const options = {edges: [10], reach: 0.2, frame: value => Math.round(value * 30) / 30, first: 0, last: 20};
+  // Moved 4.9 s: its end comes within reach of 10 s and snaps there.
+  assert.deepEqual(layerSpan({from: 2, to: 5}, {mode: 'layer', shift: 4.9}, options), {from: 7, to: 10});
+  assert.deepEqual(layerSpan({from: 2, to: 5}, {mode: 'layer-start', now: 4.95}, options), {from: 4.9, to: 5});
+  assert.deepEqual(spanChange({id: 'l1', from: 2, to: 5}, {from: 2, to: 6}), {set: {layer: 'l1', end: 6}});
 });

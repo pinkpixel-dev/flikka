@@ -17,12 +17,15 @@ const corners = [['bottom-right', 'Bottom right'], ['bottom-left', 'Bottom left'
 
 // The right column of a project: export, edits that write to the project (the live preview follows), and the
 // agent prompt, details and steps. `edit(action, body)` saves one edit and refreshes. `children` (a film's scene
-// editor) go under Export. `narration` (a recording's lines, a film's sentences) gets its own tab beside the edits.
-export function Inspector({project, edit, render, rendering, changed, children, narration}) {
+// editor) go under Export. `narration` (a recording's lines, a film's sentences) and `layers` (a recording's overlay
+// layers) get their own tabs beside the edits. `tab` and `onTab` let the page pick the tab (choosing a layer).
+export function Inspector({project, edit, render, rendering, changed, children, narration, layers, tab: givenTab, onTab}) {
   const toast = useToast();
   const [copied, flash] = useFlash();
   const [size, setSize] = useState(null);
-  const [tab, setTab] = useState('edit');
+  const [ownTab, setOwnTab] = useState('edit');
+  const tab = givenTab ?? ownTab, setTab = onTab ?? setOwnTab;
+  const tabs = [['edit', 'Edit'], narration && ['narration', 'Narration'], layers && ['layers', 'Layers']].filter(Boolean);
   const final = project.final;
   const facts = [['Recorded', project.duration && clock(project.duration)], ['Video', final && clock(final.duration)],
     ['Cut', project.kept != null && project.duration ? (project.duration - project.kept).toFixed(1) + ' s' : null], ['Zooms', project.zooms],
@@ -51,12 +54,11 @@ export function Inspector({project, edit, render, rendering, changed, children, 
       {project.render?.state === 'failed' && !rendering && <p className="form-error" role="alert">The last render failed: {project.render.error}</p>}
     </Section>
 
-    {narration && <div className="inspector-tabs" role="tablist" aria-label="What to edit">
-      <button type="button" role="tab" aria-selected={tab === 'edit'} onClick={() => setTab('edit')}>Edit</button>
-      <button type="button" role="tab" aria-selected={tab === 'narration'} onClick={() => setTab('narration')}>Narration</button>
+    {tabs.length > 1 && <div className="inspector-tabs" role="tablist" aria-label="What to edit">
+      {tabs.map(([name, title]) => <button key={name} type="button" role="tab" aria-selected={tab === name} onClick={() => setTab(name)}>{title}</button>)}
     </div>}
 
-    {narration && tab === 'narration' ? narration : <>
+    {narration && tab === 'narration' ? narration : layers && tab === 'layers' ? layers : <>
     {children}
 
     {project.switches && Object.keys(project.switches).length > 0 && <Section title="In the video">

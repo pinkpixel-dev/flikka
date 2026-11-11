@@ -13,6 +13,10 @@
 - Keyframes animate a layer's box, opacity and rotation, eased with `linear`, `ease`, `ease-in`, `ease-out`, `ease-in-out` or any `cubic-bezier(...)`. The preview and the export draw them the same way.
 - On recordings, `flikka project edit` takes `--layer`, `--layer-set`, `--keyframe`, `--unkeyframe`, `--unlayer` and `--layers off`. A layer sticks to recording moments, so cutting around it carries it along, and `flikka project timeline` lists where each one shows.
 - In films, any scene takes a `"layers"` list in film.json.
+- The panel has a Layers tab for recordings. Add text, a box, or an image or video at the playhead (the file gets copied into the project), and set the words, size, weight, alignment, colors, fit, opacity, turn and corners.
+- Pick a layer and its box shows on the player. Drag it to move it, pull a handle to resize it, or use the round handle to turn it. Shift skips snapping, keeps the shape on a corner, or turns in 15° steps. Arrows nudge it and Delete removes it.
+- A Layers row on the timeline shows when each layer plays. Drag one to move it or its edges to trim it, and overlapping layers stack on their own rows.
+- Moving, resizing or turning an animated layer takes its keyframes along, so the animation keeps its shape. That goes for `--layer-set` too.
 
 ### 🗣️ Narration
 - `flikka project frames` on a narrated recording shows the narration captions now, like the render does, instead of the mic's. It uses the lines already spoken and says how many that is (`narration` in the result).

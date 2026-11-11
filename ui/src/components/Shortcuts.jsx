@@ -2,15 +2,17 @@ import React, {useEffect, useRef} from 'react';
 import {Keyboard, X} from 'lucide-react';
 import {Button} from './ui.jsx';
 
-// Every key the panel answers to. Keep it in step with usePlayerKeys, Timeline, Aim, Scenes and FilmStudio.
+// Every key the panel answers to. Keep it in step with usePlayerKeys, Timeline, Aim, LayerStage, Scenes and FilmStudio.
 const groups = [
   ['Player', [[['Space'], 'Play or pause'], [['K'], 'Play or pause'], [['←', '→'], 'Back or forward one frame'], [['Shift', '←', '→'], 'Back or forward one second'],
     [['Home', 'End'], 'Start or end'], [['M'], 'Mute']]],
   ['Editing', [[['Ctrl', 'Z'], 'Undo the last edit'], [['Ctrl', 'S'], 'Save the open scene (films)']]],
   ['Timeline, when focused', [[['←', '→'], 'Move the playhead a frame (Shift: a second)'], [['Enter'], 'Cut the selection, or choose the zoom under the playhead'],
     [['[', ']'], 'Previous or next zoom'], [['Z'], 'Pick the click or typing nearest the playhead'], [['A'], 'Aim the chosen zoom'],
-    [['Delete'], 'Remove the chosen zoom'], [['Alt', '←', '→'], 'Nudge the chosen narration line a frame (Shift: 0.1 s)'], [['+', '-'], 'Zoom in or out (or Ctrl+wheel)'], [['0'], 'Fit the whole video'], [['Esc'], 'Clear the selection']]],
+    [['Delete'], 'Remove the chosen zoom or layer'], [['Alt', '←', '→'], 'Nudge the chosen narration line a frame (Shift: 0.1 s)'], [['+', '-'], 'Zoom in or out (or Ctrl+wheel)'], [['0'], 'Fit the whole video'], [['Esc'], 'Clear the selection']]],
   ['Aiming a zoom', [[['←', '↑', '↓', '→'], 'Move where it looks (Shift: further)'], [['Enter'], 'Save'], [['Esc'], 'Cancel']]],
+  ['A layer on the player', [[['←', '↑', '↓', '→'], 'Nudge it (Shift: further)'], [['Shift'], 'While dragging: no snapping, keep the shape, or turn in 15° steps'],
+    [['Delete'], 'Remove it'], [['Esc'], 'Let it go']]],
   ['Film scenes', [[['Alt', '←', '→'], 'Move the focused scene']]],
   ['Anywhere', [[['?'], 'Show these shortcuts']]],
 ];

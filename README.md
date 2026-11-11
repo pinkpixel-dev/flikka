@@ -138,6 +138,8 @@ Or launch Flikka from your app menu. The panel shows every project, a live previ
 
 If you don't want a zoom on every click, set Auto zoom to just clicks, just typing, or off, then add zooms only where you want them. Click a click or a typing burst on the timeline's Events row (or press Z near one) and pick Zoom here. To change where a zoom looks, click it on the Camera row and press the crosshair (or A). The recording opens over the player with a frame showing what the zoom will show: click or drag to move it, pick how close it gets (up to 3x), and save. Arrow keys nudge the frame and Enter saves, if you'd rather use the keyboard. On the timeline, `[` and `]` jump between zooms and Enter chooses the one under the playhead, so you can get to a zoom without the mouse too.
 
+The Layers tab puts text, boxes, images and videos on top of a recording. Add one at the playhead, then pick it and its box shows up on the player: drag it around, pull the handles to resize it, or grab the round one to turn it. The Layers row on the timeline is where you move a layer or trim when it shows. If a layer is animated, moving it moves the whole animation with it.
+
 ## Editing a recording
 
 Edits are flags on `flikka project edit`, and you can combine several in one call:

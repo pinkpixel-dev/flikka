@@ -28,3 +28,13 @@ export async function uploadVoice(name, blob, consent) {
   if (!response.ok) throw Error(result.error);
   return result;
 }
+
+// A new image or video layer: the body is the file, the rest (type, from, to, box, edited) goes in the address.
+export async function uploadLayer(id, file, fields) {
+  const query = new URLSearchParams({id, name: file.name, ...Object.fromEntries(Object.entries(fields).filter(([, value]) => value != null).map(([key, value]) => [key, String(value)]))});
+  const response = await fetch('/project-layer-file?' + query, {method: 'POST', headers: {Authorization: 'Bearer ' + token}, body: file});
+  if (response.status === 403) { location.reload(); throw Error('Reconnecting to the panel…'); }
+  const result = await response.json();
+  if (!response.ok) throw Object.assign(Error(result.error), {stale: Boolean(result.stale)});
+  return result;
+}

@@ -5,6 +5,8 @@ import {Button} from './ui.jsx';
 import {Wave} from '../timeline/Wave.jsx';
 import {dragShape, lineChange, lineShape} from '../timeline/lines.js';
 import {Overview} from '../timeline/Overview.jsx';
+import {layerRows, layerSpan, spanChange} from '../layers/geometry.js';
+import {label as layerLabel} from '../layers/LayerStage.jsx';
 import {useZoom} from '../timeline/useZoom.js';
 
 // Under the player: what the finished video holds (flikka project timeline), in its own seconds. Clips with the
@@ -15,16 +17,17 @@ import {useZoom} from '../timeline/useZoom.js';
 //   change its scale, aim it on the recording, or remove it (Delete).
 //   Events: click a click or a typing burst (or press Z near one) to zoom in right there.
 //   Narration: drag a line to move it, or its edges to trim it. Click one to choose it.
+//   Layers: the same, and a chosen layer's box shows on the player (Delete removes it). Overlapping layers stack.
 // Keys: [ and ] jump to the previous or next zoom and choose it, Enter chooses the zoom under the playhead, Alt+← →
 // nudges the chosen narration line a frame (Shift: a tenth of a second), + and - zoom, 0 fits the whole video.
 // Ctrl+wheel zooms around the pointer, and zoomed in, the wheel scrolls sideways (lib: ../timeline/useZoom.js).
-// Edges snap to the playhead, clip edges, other zooms and narration lines, then to whole frames.
+// Edges snap to the playhead, clip edges, other zooms, narration lines and layers, then to whole frames.
 const steps = [0.5, 1, 2, 5, 10, 15, 30, 60, 120, 300];
 const scales = [1.25, 1.5, 2, 2.5, 3];
 const at = (seconds, duration) => `${(seconds / duration) * 100}%`;
 const span = (from, to, duration) => ({left: at(from, duration), width: `max(2px, ${((to - from) / duration) * 100}%)`});
 
-export function Timeline({project, timeline, time, playing, onSeek, onEdit, onNarration, onAim, fps, stale}) {
+export function Timeline({project, timeline, time, playing, onSeek, onEdit, onNarration, onAim, fps, stale, chosenLayer, onChooseLayer, onLayers}) {
   const strip = useRef();
   const [width, setWidth] = useState(800);
   const [drag, setDrag] = useState(null);
@@ -52,9 +55,10 @@ export function Timeline({project, timeline, time, playing, onSeek, onEdit, onNa
 
   // Narration lines that can be drawn (a line following one not spoken yet has no place).
   const lines = (timeline.narration || []).filter(line => line.from !== null);
-  // What an edge snaps to, leaving out the zoom (index) or narration line (id) being dragged.
+  const layers = timeline.layers || [];
+  // What an edge snaps to, leaving out the zoom (index), narration line or layer (id) being dragged.
   const edgesBut = (skip, skipLine) => [time, first, last, ...timeline.parts.flatMap(part => [part.from, part.to]), ...timeline.zooms.flatMap((zoom, index) => index === skip ? [] : [zoom.from, zoom.to]),
-    ...lines.flatMap(line => line.id === skipLine ? [] : [line.from, lineShape(line).to])];
+    ...lines.flatMap(line => line.id === skipLine ? [] : [line.from, lineShape(line).to]), ...layers.flatMap(layer => layer.id === skipLine ? [] : [layer.from, layer.to])];
   const reach = () => (6 / strip.current.getBoundingClientRect().width) * duration;
   const timeAt = (clientX, skip, skipLine) => {
     const box = strip.current.getBoundingClientRect();
@@ -73,6 +77,16 @@ export function Timeline({project, timeline, time, playing, onSeek, onEdit, onNa
     if (!await onNarration([change])) setSaving(null);
   };
 
+  // A layer as drawn mid-drag, and saving it.
+  const spanOf = (layer, drag) => layerSpan(layer, {mode: drag.mode, now: drag.now, shift: ((drag.cx - drag.x) / width) * duration},
+    {edges: edgesBut(null, layer.id), reach: reach(), frame, first, last});
+  const saveLayer = (layer, span) => {
+    const change = spanChange(layer, span);
+    if (!change || !onLayers) return;
+    setSaving({layer: layer.id, ...span}); setSelection(null);
+    onLayers([change]).catch(() => setSaving(null));
+  };
+
   const save = async (body, draft) => {
     setSaving(draft); setSelection(null);
     try { await onEdit(body); } catch { setSaving(null); }
@@ -86,11 +100,12 @@ export function Timeline({project, timeline, time, playing, onSeek, onEdit, onNa
     const pick = target.closest('[data-pick]')?.dataset.pick;
     const lane = target.closest('[data-lane]')?.dataset.lane;
     const line = onNarration ? target.closest('[data-line]')?.dataset.line : undefined;
+    const layer = onLayers ? target.closest('[data-layer]')?.dataset.layer : undefined;
     const start = timeAt(event.clientX);
-    const mode = line ? (target.dataset.trim ? 'trim-' + target.dataset.trim : 'line') : target.dataset.edge || (zoom !== undefined ? 'move' : pick ? 'pick' : lane === 'clips' ? 'select' : lane === 'camera' ? 'create' : 'scrub');
+    const mode = layer ? (target.dataset.trim ? 'layer-' + target.dataset.trim : 'layer') : line ? (target.dataset.trim ? 'trim-' + target.dataset.trim : 'line') : target.dataset.edge || (zoom !== undefined ? 'move' : pick ? 'pick' : lane === 'clips' ? 'select' : lane === 'camera' ? 'create' : 'scrub');
     event.currentTarget.setPointerCapture(event.pointerId);
     if (mode === 'scrub') { setChosen(null); setPicked(null); onSeek(start); }
-    setDrag({mode, zoom: zoom === undefined ? null : Number(zoom), line, pick, x: event.clientX, cx: event.clientX, start, now: start, moved: false});
+    setDrag({mode, zoom: zoom === undefined ? null : Number(zoom), line: line || layer, layer, pick, x: event.clientX, cx: event.clientX, start, now: start, moved: false});
   };
   const move = event => {
     if (!drag) return;
@@ -105,6 +120,14 @@ export function Timeline({project, timeline, time, playing, onSeek, onEdit, onNa
     const {mode, start, now, moved} = drag;
     const zoom = drag.zoom === null ? null : timeline.zooms[drag.zoom];
     if (mode === 'scrub') return;
+    // A layer: pressed without dragging, it's chosen (its box shows on the player); dragged, it's saved.
+    if (drag.layer) {
+      const layer = layers.find(item => item.id === drag.layer);
+      if (!layer) return;
+      if (!moved) { setChosen(null); setPicked(null); setChosenLine(null); onChooseLayer?.(layer.id); if (time < layer.from || time > layer.to) onSeek(layer.from); return; }
+      saveLayer(layer, spanOf(layer, drag));
+      return;
+    }
     // A narration line: pressed without dragging, it's chosen (the playhead goes to its start); dragged, it's saved.
     if (drag.line) {
       const line = lines.find(item => item.id === drag.line);
@@ -206,10 +229,11 @@ export function Timeline({project, timeline, time, playing, onSeek, onEdit, onNa
     else if (event.key === 'Enter' && event.target === event.currentTarget) { handled(); chooseZoom(timeline.zooms.findIndex(zoom => time >= zoom.from && time <= zoom.to)); }
     else if ((event.key === '[' || event.key === ']') && !event.ctrlKey && !event.metaKey && !event.altKey) { handled(); jumpZoom(event.key === ']' ? 1 : -1); }
     else if ((event.key === 'Delete' || event.key === 'Backspace') && chosen !== null) { handled(); remove(chosen); }
+    else if ((event.key === 'Delete' || event.key === 'Backspace') && chosenLayer && onLayers && !saving) { handled(); const id = chosenLayer; onChooseLayer?.(null); onLayers([{remove: id}]).catch(() => {}); }
     else if (event.key.toLowerCase() === 'z' && !event.ctrlKey && !event.metaKey && !event.altKey) { handled(); pickNearest(); }
     else if (event.key.toLowerCase() === 'a' && chosen !== null && onAim && !event.ctrlKey && !event.metaKey && !event.altKey) { handled(); aimAt(timeline.zooms[chosen]); }
     else if (['+', '=', '-', '0'].includes(event.key) && !event.ctrlKey && !event.metaKey && !event.altKey) { handled(); ({'+': zoom.zoomIn, '=': zoom.zoomIn, '-': zoom.zoomOut, '0': zoom.fit})[event.key](); }
-    else if (event.key === 'Escape' && (selection || chosen !== null || picked || chosenLine)) { handled(); setSelection(null); setChosen(null); setPicked(null); setChosenLine(null); }
+    else if (event.key === 'Escape' && (selection || chosen !== null || picked || chosenLine || chosenLayer)) { handled(); setSelection(null); setChosen(null); setPicked(null); setChosenLine(null); onChooseLayer?.(null); }
   };
 
   // Zooms as they show right now: mid-drag, saving, or saved.
@@ -245,6 +269,16 @@ export function Timeline({project, timeline, time, playing, onSeek, onEdit, onNa
       {timeline.spotlights.map((item, index) => <Block key={'s' + index} className="spotlight" {...span(item.from, item.to, duration)} tip={`Spotlight · ${timecode(item.from)}–${timecode(item.to)}`}/>)}
     </>},
     {name: 'Overlays', show: overlays.length > 0, items: overlays.map((item, index) => <Block key={index} className={item.kind} {...span(item.from, item.to, duration)} tip={item.label}>{item.label}</Block>)},
+    ...layerRows(layers).map((row, index) => ({name: index ? '' : 'Layers', key: 'layers' + index, lane: 'layers',
+      tip: index ? undefined : 'Drag a layer to move it, or its edges to trim it. Click one to show its box on the player.', show: true, items: row.map(layer => {
+        const live = (drag?.layer === layer.id && drag.moved) || saving?.layer === layer.id;
+        const shown = drag?.layer === layer.id && drag.moved ? spanOf(layer, drag) : saving?.layer === layer.id ? saving : layer;
+        return <span key={layer.id} className={`block layer ${layer.type} ${live ? 'live' : ''} ${chosenLayer === layer.id ? 'chosen' : ''}`} style={span(shown.from, shown.to, duration)}
+          data-layer={layer.id} data-tip={live ? undefined : `${layerLabel(layer)} · ${timecode(layer.from)}–${timecode(layer.to)}${layer.keyframes?.length ? ` · ${layer.keyframes.length} keyframes` : ''}`}>
+          <span className="label">{layerLabel(layer)}</span>
+          <span className="edge start" data-trim="start"/><span className="edge end" data-trim="end"/>
+        </span>;
+      })})),
     {name: 'Events', tip: 'Click a click or a typing burst to zoom in there (Z)', show: eventCount > 0, items: <>
       {(timeline.typing || []).map((item, index) => <span key={'t' + index} className={`block typing ${isPicked('typing', index)}`} style={span(item.from, item.to, duration)}
         data-pick={`typing:${index}`} data-tip={picked ? undefined : `Typing at ${timecode(item.from)} · click to zoom here`}/>)}
@@ -280,13 +314,13 @@ export function Timeline({project, timeline, time, playing, onSeek, onEdit, onNa
         <button type="button" data-tip="Zoom out (-)" aria-label="Zoom out" disabled={!zoomed} onClick={zoom.zoomOut}><Minus size={13} strokeWidth={1.8} aria-hidden/></button>
         <button type="button" data-tip="Zoom in (+, or Ctrl+wheel)" aria-label="Zoom in" disabled={zoom.zoom >= zoom.maxZoom - 0.001} onClick={zoom.zoomIn}><Plus size={13} strokeWidth={1.8} aria-hidden/></button>
       </div>
-      {rows.map(row => <span key={row.name} data-tip={row.tip}>{row.name}</span>)}
+      {rows.map(row => <span key={row.key || row.name} data-tip={row.tip}>{row.name}</span>)}
     </div>
     <div className="timeline-view" ref={zoom.viewport}>
     <div className="timeline-track" ref={strip} style={{width: `${zoom.zoom * 100}%`}} role="slider" tabIndex={0} aria-label="Timeline" aria-valuemin={0} aria-valuemax={+duration.toFixed(2)} aria-valuenow={+time.toFixed(2)}
       aria-valuetext={timecode(time)} onKeyDown={keys} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={() => setDrag(null)}>
       <div className="ruler">{ticks.map(second => <span key={second} style={{left: at(second, duration)}}>{tick < 1 ? timecode(second).slice(0, -1) : clock(second)}</span>)}</div>
-      {rows.map(row => <div className="lane" key={row.name} data-lane={row.lane}>{row.items}</div>)}
+      {rows.map(row => <div className="lane" key={row.key || row.name} data-lane={row.lane}>{row.items}</div>)}
       <div className="playhead" style={{transform: `translateX(${Math.min(1, time / duration) * width}px)`}} aria-hidden/>
       {tools && <div className={`timeline-tools on-${tools.row}`} style={{left: `clamp(110px, ${at(tools.where, duration)}, calc(100% - 110px))`, top: tools.top}} onPointerDown={event => event.stopPropagation()}>
         {selection ? <>
