@@ -108,6 +108,23 @@ function Keystrokes({events, time, width, height}) {
   </div>;
 }
 
+// How a recording's screen fits a box (its size less the padding): the window shown (view), the whole screen at
+// that scale, and whether a tall video follows the cursor instead. Clip draws it; render/film.jsx uses it to put a
+// recording's layers where they sat on its own video.
+export function screenFit(project, boxWidth, boxHeight) {
+  const crop = project.crop || {x: 0, y: 0, w: 1, h: 1};
+  const [sourceWidth, sourceHeight] = [project.width * crop.w, project.height * crop.h];
+  // A wide screen in a tall video (Shorts, Reels, X on a phone) fitted whole is a thin strip of tiny text. Instead it
+  // fills a 4:5 window as tall as it can be, cropped to what's around the cursor, and the window follows it.
+  // Only a tall video (vertical, portrait) crops: a square one shows the whole desktop, as it was recorded.
+  const follow = boxHeight > boxWidth * 1.1 && sourceWidth / sourceHeight > 1.3 * boxWidth / boxHeight;
+  const [fitWidth, fitHeight] = follow ? [boxWidth, Math.min(boxHeight, boxWidth * 5 / 4)] : [boxWidth, boxHeight];
+  // At most 2 video pixels per recorded pixel: a small area on a non-Retina screen blown up more turns to mush.
+  const ratio = follow ? Math.min(2, fitHeight / sourceHeight, fitWidth * 0.98 / (sourceWidth * 0.4)) : Math.min(2, boxWidth / sourceWidth, boxHeight / sourceHeight);
+  const [screenWidth, screenHeight] = [sourceWidth * ratio, sourceHeight * ratio];
+  return {follow, fitWidth, fitHeight, ratio, screenWidth, screenHeight, viewWidth: Math.min(screenWidth, fitWidth), viewHeight: Math.min(screenHeight, fitHeight)};
+}
+
 // box: the area the screen is fitted into (the whole video, or half of it in a comparison).
 // sound: the address of the sound to play with it (the live preview; a render adds the mixed sound with ffmpeg).
 // A freeze (clip.hold) shows its still (holds: source second → picture) with the cursor where it was, in silence.
@@ -120,20 +137,9 @@ export function Clip({project, clip, sourceUrl, events, clicks, transcript, webc
   // A crop shows part of the recording as the whole screen. Zooms, cursor and spotlights keep full-recording
   // coordinates; local() turns a full-recording point into one on the cropped screen.
   const crop = project.crop || {x: 0, y: 0, w: 1, h: 1};
-  const [sourceWidth, sourceHeight] = [project.width * crop.w, project.height * crop.h];
   const local = point => ({...point, x: (point.x - crop.x) / crop.w, y: (point.y - crop.y) / crop.h});
-  const [boxWidth, boxHeight] = [(box?.width ?? width) - 2 * padding, (box?.height ?? height) - 2 * padding];
-  // A wide screen in a tall video (Shorts, Reels, X on a phone) fitted whole is a thin strip of tiny text. Instead it
-  // fills a 4:5 window as tall as it can be, cropped to what's around the cursor, and the window follows it.
-  // Only a tall video (vertical, portrait) crops: a square one shows the whole desktop, as it was recorded.
-  const follow = boxHeight > boxWidth * 1.1 && sourceWidth / sourceHeight > 1.3 * boxWidth / boxHeight;
-  const [fitWidth, fitHeight] = follow ? [boxWidth, Math.min(boxHeight, boxWidth * 5 / 4)] : [boxWidth, boxHeight];
-  // At most 2 video pixels per recorded pixel: a small area on a non-Retina screen blown up more turns to mush.
-  const ratio = follow ? Math.min(2, fitHeight / sourceHeight, fitWidth * 0.98 / (sourceWidth * 0.4)) : Math.min(2, boxWidth / sourceWidth, boxHeight / sourceHeight);
-  const screenWidth = sourceWidth * ratio;
-  const screenHeight = sourceHeight * ratio;
+  const {follow, ratio, screenWidth, screenHeight, viewWidth, viewHeight} = screenFit(project, (box?.width ?? width) - 2 * padding, (box?.height ?? height) - 2 * padding);
   const [fullWidth, fullHeight] = [project.width * ratio, project.height * ratio];
-  const [viewWidth, viewHeight] = [Math.min(screenWidth, fitWidth), Math.min(screenHeight, fitHeight)];
   const index = project.zooms.findIndex(item => time >= item.start && time <= item.end);
   const zoom = project.zooms[index];
   // Zooms that touch are chained: no zoom out/in between them, just a pan.

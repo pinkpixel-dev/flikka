@@ -21,6 +21,8 @@
 - Turn on Auto-key in the Layers tab and dragging the box, nudging it, or moving the opacity and turn sliders writes a keyframe at the playhead instead. Key here saves the whole box as it is at the playhead.
 - Each keyframe picks how it eases in: linear, ease, ease in, ease out, ease in-out, or a curve you shape by dragging two handles (or typing the four numbers).
 - `--keyframe id,at,ease=` with nothing after it takes a keyframe's easing back to the default.
+- Film scenes get the same Layers tab: open a scene, pick a layer, and its box shows on the live film. Starts and Ends fields set when it shows (scenes have no timeline lane), and keyframes, auto-key and the easing curve all work there too. Each change saves film.json, so Ctrl+Z undoes it.
+- A recording's own layers now show up when a film plays that recording, in recording, compare and custom scenes. They keep their spot relative to the recording window, so a callout still points at the same thing, and they follow the recording's cuts. A layer that lasts to the end of the recording stays on while the scene holds its last frame.
 
 ### 🗣️ Narration
 - `flikka project frames` on a narrated recording shows the narration captions now, like the render does, instead of the mic's. It uses the lines already spoken and says how many that is (`narration` in the result).

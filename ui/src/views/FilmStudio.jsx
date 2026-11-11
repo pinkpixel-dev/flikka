@@ -1,6 +1,6 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {Undo2} from 'lucide-react';
-import {api, media} from '../lib/api.js';
+import {api, media, uploadLayer} from '../lib/api.js';
 import {usePlayerKeys} from '../lib/hooks.js';
 import {useToast} from '../lib/toast.js';
 import {Inspector} from '../components/Inspector.jsx';
@@ -8,7 +8,10 @@ import {Player} from '../components/Player.jsx';
 import {Scenes} from '../components/Scenes.jsx';
 import {FilmEditor, newScene, sceneKinds} from '../components/SceneForm.jsx';
 import {FilmNarration} from '../narration/Sentences.jsx';
-import {Button} from '../components/ui.jsx';
+import {LayerList} from '../layers/LayerList.jsx';
+import {LayerStage} from '../layers/LayerStage.jsx';
+import {applySceneLayers, sceneLayerView} from '../layers/film.js';
+import {Button, Section} from '../components/ui.jsx';
 
 // The film with the open form's draft in it: a scene's (index ≥ 0) or the settings' (index -1, keys kept in order).
 function withDraft(film, index, draft) {
@@ -39,6 +42,10 @@ export function FilmStudio({project, refresh, onChange}) {
   const [busy, setBusy] = useState(false);
   const [lines, setLines] = useState(null);
   const [version, setVersion] = useState(0);
+  // The open scene's overlay layer being worked on (its box shows over the player), the Inspector's tab, auto-key.
+  const [chosenLayer, setChosenLayer] = useState(null);
+  const [tab, setTab] = useState('edit');
+  const [autoKey, setAutoKey] = useState(false);
   const final = project.final;
   const showing = final ? shown : 'live';
 
@@ -80,8 +87,8 @@ export function FilmStudio({project, refresh, onChange}) {
   const names = useMemo(() => Object.fromEntries(recordings.map(item => [item.id, item.name])), [recordings]);
 
   // Saves the whole film and opens `open` (a scene, or -1). The strip shows the change at once; a refused save
-  // puts it back and says why.
-  const save = async (next, open = index) => {
+  // puts it back and says why (in the form, and in a toast when `loud`, for saves made from elsewhere).
+  const save = async (next, open = index, loud = false) => {
     if (saving) return false;
     const before = {film, selected};
     setSaving(true); setErrors(null); setFilm(next); setSelected(open);
@@ -89,10 +96,39 @@ export function FilmStudio({project, refresh, onChange}) {
       await api('film-save', {id: project.id, film: next});
       setDraft(null); setChanged(true); setShown('live'); setPreview(old => old && {...old, scenes: null});
       return true;
-    } catch (failure) { setFilm(before.film); setSelected(before.selected); setErrors(failure.message); return false; }
+    } catch (failure) { setFilm(before.film); setSelected(before.selected); setErrors(failure.message); if (loud) toast(failure.message); return false; }
     finally { setSaving(false); refresh(); }
   };
   const current = () => withDraft(film, index, draft);
+
+  // The open scene's layers, in the live film's seconds (ui/src/layers/film.js), once the film says where it sits.
+  // While the live film is built again after a save, the scene keeps where it last sat (a layer doesn't move it).
+  const placed = useRef({});
+  if (index >= 0 && timing?.[index]) placed.current[index] = timing[index];
+  const part = index >= 0 ? timing?.[index] || placed.current[index] : null;
+  const layers = part && value ? sceneLayerView(value, part) : [];
+  function chooseLayer(id) {
+    setChosenLayer(id);
+    if (id) { setTab('layers'); setShown('live'); }
+  }
+  useEffect(() => { setChosenLayer(null); if (index < 0) setTab(old => old === 'layers' ? 'edit' : old); }, [index]);
+  useEffect(() => { if (chosenLayer && part && !layers.some(layer => layer.id === chosenLayer)) setChosenLayer(null); }, [film, draft, part]);
+  // Layer changes go into the scene and the whole film is saved (one undo step), like the form's own saves.
+  const layerEdit = async changes => {
+    const whole = current();
+    const {scene, renamed, added} = applySceneLayers(whole.scenes[index], changes, part);
+    if (!await save({...whole, scenes: whole.scenes.map((item, at) => at === index ? scene : item)}, index, true)) throw new Error('Not saved');
+    if (added) chooseLayer(added);
+    else if (renamed[chosenLayer]) setChosenLayer(renamed[chosenLayer]);
+  };
+  // A picture or video is copied into the project first, then added like any layer.
+  const layerUpload = async (file, fields) => {
+    let stored;
+    try { stored = (await uploadLayer(project.id, file, {type: fields.type, keep: 1})).file; }
+    catch (failure) { toast(failure.message); throw failure; }
+    await layerEdit([{add: {...fields, file: stored}}]);
+  };
+  const removeLayer = id => { setChosenLayer(null); layerEdit([{remove: id}]).catch(() => {}); };
   const open = async at => {
     if (draft && !await save(current(), at)) return;
     setSelected(at); setErrors(null);
@@ -140,10 +176,14 @@ export function FilmStudio({project, refresh, onChange}) {
   const source = showing === 'final' ? {src: media(project.id, 'final') + '&v=' + final.elapsedSeconds, video: true, width: final.width, height: final.height}
     : preview ? {src: preview.src, video: false, width: preview.width, height: preview.height} : {src: null, width: 16, height: 9};
   const fps = (showing === 'final' ? final.fps : preview?.fps) || 30;
+  const ratio = preview ? preview.width / preview.height : 16 / 9;
+  const layerStage = chosenLayer && showing === 'live' && preview && layers.length > 0 &&
+    <LayerStage layers={layers} chosen={chosenLayer} time={time} ratio={ratio} fps={fps} autoKey={autoKey} onChoose={chooseLayer}
+      onSave={changes => layerEdit(changes)} onRemove={removeLayer} onDone={() => setChosenLayer(null)}/>;
 
   return <div className="studio">
     <div className="stage-column">
-      <Player ref={player} {...source} fps={fps} onTime={setTime} note={problem && !preview ? 'The live film can’t be built yet.' : undefined}>
+      <Player ref={player} {...source} fps={fps} onTime={setTime} note={problem && !preview ? 'The live film can’t be built yet.' : undefined} overlay={layerStage}>
         <Button icon={Undo2} variant="ghost" size="small" tip="Undo the last save (Ctrl+Z)" disabled={rendering || saving} onClick={undo}/>
         <div className="segmented" role="tablist" aria-label="What plays">
           <button type="button" role="tab" aria-selected={showing === 'final'} disabled={!final} data-tip="The exported video file" onClick={() => setShown('final')}>Exported</button>
@@ -157,7 +197,10 @@ export function FilmStudio({project, refresh, onChange}) {
         <div className="banner">{preview.narration.spoken} of {preview.narration.total} sentences spoken. The rest play once you render.</div>}
       {film && <Scenes scenes={scenes} timing={timing} selected={index} time={time} names={names} kinds={kinds} onSelect={open} onMove={move} onAdd={add}/>}
     </div>
-    <Inspector project={project} render={render} rendering={rendering} changed={changed}
+    <Inspector project={project} render={render} rendering={rendering} changed={changed} tab={tab} onTab={setTab}
+      layers={film && value && index >= 0 && (!part ? <Section title="Layers"><p className="hint">Layers go on the live film.</p>
+        <Button size="small" onClick={() => setShown('live')}>{showing === 'live' ? 'Building the live film…' : 'Show live'}</Button></Section> : <LayerList layers={layers} chosen={chosenLayer} time={time} fps={fps} ratio={ratio} first={part.start} last={part.start + part.seconds}
+        scene={part} autoKey={autoKey} onAutoKey={setAutoKey} onChoose={chooseLayer} onSeek={seconds => player.current?.seek(seconds)} onEdit={layerEdit} onUpload={layerUpload}/>)}
       narration={film && <FilmNarration project={project} film={current()} lines={lines} timing={timing} onSave={next => save(next)}
         onSeek={seconds => player.current?.seek(seconds)} onChanged={() => setVersion(old => old + 1)}/>}>
       {film && schema && value && <FilmEditor schema={schema} film={film} index={index} value={value} dirty={draft != null} saving={saving} errors={errors}

@@ -7,6 +7,7 @@ import path from 'node:path';
 import {editProject, undoProject, timelineProject} from '../lib/project.mjs';
 import {layerAt, parseEasing, eased} from '../render/keyframes.js';
 import {layerProblems, sceneLayers, layerArgs} from '../lib/layers.mjs';
+import {applySceneLayers, sceneLayerView} from '../ui/src/layers/film.js';
 import {boxChange, dragBox, keyChange, keyMoment, layerRows, layerSpan, moveKey, spanChange} from '../ui/src/layers/geometry.js';
 
 const near = (actual, expected, within = 1e-3) => assert.ok(Math.abs(actual - expected) < within, `${actual} is not about ${expected}`);
@@ -172,4 +173,22 @@ test('keyframes from the panel: auto-key, moving one, easing on and off', async 
     const [saved] = JSON.parse(await fs.readFile(file, 'utf8')).layers;
     assert.deepEqual(saved.keyframes, [{at: 2.25, x: 0.5}]);
   } finally { await fs.rm(folder, {recursive: true, force: true}); }
+});
+
+test('a film scene\'s layers in the panel: film seconds in, scene seconds stored', () => {
+  const part = {start: 10, seconds: 6};
+  const scene = {type: 'title', title: 'Hi', layers: [{type: 'solid', x: 0, y: 0, w: 1, h: 1, keyframes: [{at: 1, x: 0.5}]}, {id: 'logo', type: 'text', text: 'A', start: 2, end: 9, x: 0, y: 0, w: 0.5, h: 0.1}]};
+  assert.deepEqual(sceneLayerView(scene, part).map(layer => [layer.id, layer.from, layer.to]), [['#1', 10, 16], ['logo', 12, 16]]);
+  const {scene: changed, renamed, added} = applySceneLayers(scene, [
+    {set: {layer: '#1', x: 0.25, start: 11}},
+    {keyframe: {layer: 'logo', at: 0.5, opacity: 0, ease: 'ease-out'}},
+    {add: {type: 'text', from: 10, to: 16, x: 0.1, y: 0.4, w: 0.8, h: 0.16, text: 'New'}},
+  ], part);
+  assert.deepEqual([renamed, added], [{'#1': 'l1'}, 'l2']);
+  // The id-less layer got one, its keyframe moved with x, and its start is in the scene's seconds.
+  assert.deepEqual(changed.layers[0], {type: 'solid', x: 0.25, y: 0, w: 1, h: 1, keyframes: [{at: 1, x: 0.75}], id: 'l1', start: 1});
+  assert.deepEqual(changed.layers[1].keyframes, [{at: 0.5, opacity: 0, ease: 'ease-out'}]);
+  // A new layer over the whole scene leaves start and end off.
+  assert.deepEqual(changed.layers[2], {id: 'l2', type: 'text', x: 0.1, y: 0.4, w: 0.8, h: 0.16, text: 'New'});
+  assert.equal(applySceneLayers(changed, [{remove: 'l1'}, {remove: 'logo'}, {remove: 'l2'}], part).scene.layers, undefined);
 });

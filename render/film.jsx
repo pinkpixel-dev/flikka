@@ -1,6 +1,6 @@
 import React from 'react';
 import {AbsoluteFill, Sequence, Img, Audio, Video, useCurrentFrame, useVideoConfig} from './frame.jsx';
-import {clamp, ease, Clip, entering} from './parts.jsx';
+import {clamp, ease, Clip, entering, screenFit} from './parts.jsx';
 import {Layers} from './layers.jsx';
 
 // ---- Films: a sequence of scenes (titles, images, slides, figures, recordings) with captions.
@@ -47,6 +47,43 @@ export function Background({scene, frames}) {
   </AbsoluteFill>;
 }
 
+// A recording's own overlay layers (project.layers, lib/layers.mjs) as a film plays it: their recording moments on
+// the scene's frames (a moment that was cut moves to where the video picks up, or where it stopped), and their boxes
+// on the recording window wherever the scene draws it. On the recording's own video a box is a share of the whole
+// frame; here the same frame is drawn again, scaled and moved so its window lands on this window.
+function recordingLayers(recording, box, fps, rate, frames) {
+  const {project} = recording;
+  let offset = 0;
+  const parts = project.clips.filter(clip => !clip.hold).map(clip => {
+    const length = Math.max(1, Math.round((clip.end - clip.start) * fps / rate));
+    const part = {...clip, from: offset, length};
+    offset += length;
+    return part;
+  });
+  const frameAt = (moment, end) => {
+    const part = parts.find(item => moment >= item.start && moment <= item.end);
+    if (part) return part.from + Math.round((moment - part.start) * fps / rate);
+    return end ? (parts.filter(item => item.start < moment).at(-1)?.from ?? 0) + (parts.filter(item => item.start < moment).at(-1)?.length ?? 0)
+      : parts.find(item => item.start > moment)?.from ?? null;
+  };
+  const items = (recording.layers || []).flatMap(layer => {
+    const from = frameAt(layer.start, false);
+    // A layer that lasts to the recording's end stays on while the scene holds its last frame.
+    let to = layer.end >= (parts.at(-1)?.end ?? 0) - 0.05 ? frames : frameAt(layer.end, true);
+    to = Math.min(to, frames);
+    return from === null || to - from < 1 ? [] : [{...layer, from, frames: to - from}];
+  });
+  if (!items.length) return null;
+  const own = {width: project.export.width, height: project.export.height, padding: project.style.padding};
+  const there = screenFit(project, own.width - 2 * own.padding, own.height - 2 * own.padding);
+  const here = screenFit(project, box.width - 2 * box.padding, box.height - 2 * box.padding);
+  const scale = here.viewWidth / there.viewWidth;
+  const [width, height] = [own.width * scale, own.height * scale];
+  const left = (box.width - here.viewWidth) / 2 - (own.width - there.viewWidth) / 2 * scale;
+  const top = (box.height - here.viewHeight) / 2 - (own.height - there.viewHeight) / 2 * scale;
+  return <div style={{position: 'absolute', left, top, width, height, pointerEvents: 'none'}}><Layers items={items} frame={{width, height, scale}}/></div>;
+}
+
 export function Recording({recording, box, frames, rate = 1}) {
   const {fps} = useVideoConfig();
   const {project} = recording;
@@ -64,6 +101,7 @@ export function Recording({recording, box, frames, rate = 1}) {
   const padding = box.padding;
   const crop = project.crop || {x: 0, y: 0, w: 1, h: 1};
   const ratio = Math.min((box.width - 2 * padding) / (project.width * crop.w), (box.height - 2 * padding) / (project.height * crop.h));
+  const layers = recordingLayers(recording, box, fps, rate, frames);
   return <AbsoluteFill>
     {sequences}
     {frames > offset && <Sequence from={offset}><AbsoluteFill style={{justifyContent: 'center', alignItems: 'center'}}>
@@ -71,6 +109,7 @@ export function Recording({recording, box, frames, rate = 1}) {
         <Img src={recording.lastFrameUrl} style={{position: 'absolute', left: -crop.x * project.width * ratio, top: -crop.y * project.height * ratio, width: project.width * ratio, height: project.height * ratio}}/>
       </div>
     </AbsoluteFill></Sequence>}
+    {layers}
   </AbsoluteFill>;
 }
 

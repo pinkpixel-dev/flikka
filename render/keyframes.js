@@ -4,6 +4,8 @@
 // What a layer can animate, with the value it has when it doesn't say.
 export const animated = {x: 0, y: 0, w: 1, h: 1, opacity: 1, rotation: 0};
 export const easings = ['linear', 'ease', 'ease-in', 'ease-out', 'ease-in-out'];
+// Each value's range. A box can sit partly outside the video, so it can slide in from the edge.
+export const limits = {x: [-1, 2], y: [-1, 2], w: [0.01, 2], h: [0.01, 2], opacity: [0, 1], rotation: [-3600, 3600]};
 // The CSS curves, as cubic-bezier points.
 const named = {ease: [0.25, 0.1, 0.25, 1], 'ease-in': [0.42, 0, 1, 1], 'ease-out': [0, 0, 0.58, 1], 'ease-in-out': [0.42, 0, 0.58, 1]};
 
@@ -65,4 +67,18 @@ export function layerAt(layer, time) {
     state[key] = from.value + (to.value - from.value) * progress;
   }
   return state;
+}
+
+// A new place, size or turn for an animated layer takes its keyframes along, so the animation keeps its shape:
+// x, y and rotation keyframes move by the same amount, w and h ones grow or shrink by the same share.
+export function carryKeyframes(layer, key, value) {
+  if (!['x', 'y', 'w', 'h', 'rotation'].includes(key) || !layer.keyframes?.some(keyframe => key in keyframe)) return;
+  const before = layer[key] ?? animated[key];
+  const [lower, upper] = limits[key];
+  const scaled = key === 'w' || key === 'h';
+  for (const keyframe of layer.keyframes) {
+    if (!(key in keyframe)) continue;
+    const moved = scaled ? keyframe[key] * value / before : keyframe[key] + value - before;
+    keyframe[key] = Math.round(Math.max(lower, Math.min(upper, moved)) * 1e4) / 1e4;
+  }
 }

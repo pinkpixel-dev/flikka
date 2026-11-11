@@ -142,6 +142,8 @@ The Layers tab puts text, boxes, images and videos on top of a recording. Add on
 
 To animate a layer, turn on Auto-key in the Layers tab, move the playhead, and drag the box (or change its opacity or turn). Each change drops a keyframe right there, shown as a diamond on the layer's timeline block. Drag a diamond to retime it, and pick how each keyframe eases in from the list, including a curve you can shape by hand.
 
+Films work the same way. Open a scene, switch to the Layers tab, and place layers on the live film. Since a film has a scene strip instead of a timeline, you set when a layer starts and ends with two fields in seconds from the scene's start.
+
 ## Editing a recording
 
 Edits are flags on `flikka project edit`, and you can combine several in one call:

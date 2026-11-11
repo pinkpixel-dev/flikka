@@ -35,7 +35,8 @@ const measure = file => new Promise(resolve => {
   }
 });
 
-export function LayerList({layers, chosen, time, ratio, fps, first, last, autoKey, onAutoKey, onChoose, onSeek, onEdit, onUpload}) {
+// scene: {start, seconds} for a film's scene, which has no timeline lane, so start and end are fields here instead.
+export function LayerList({layers, chosen, time, ratio, fps, first, last, scene, autoKey, onAutoKey, onChoose, onSeek, onEdit, onUpload}) {
   const picker = useRef(null);
   const [adding, setAdding] = useState(false);
   const layer = layers.find(item => item.id === chosen);
@@ -73,12 +74,12 @@ export function LayerList({layers, chosen, time, ratio, fps, first, last, autoKe
         })}</ul>}
       {layers.length > 1 && <p className="hint">Top of the list is in front.</p>}
     </Section>
-    {layer && <LayerFields key={layer.id} layer={layer} time={time} fps={fps} autoKey={autoKey} onEdit={onEdit} onDone={() => onChoose(null)}/>}
+    {layer && <LayerFields key={layer.id} layer={layer} time={time} fps={fps} scene={scene} autoKey={autoKey} onEdit={onEdit} onDone={() => onChoose(null)}/>}
     {layer && <Keyframes layer={layer} time={time} fps={fps} autoKey={autoKey} onAutoKey={onAutoKey} onSeek={onSeek} onEdit={onEdit}/>}
   </>;
 }
 
-function LayerFields({layer, time, fps, autoKey, onEdit, onDone}) {
+function LayerFields({layer, time, fps, scene, autoKey, onEdit, onDone}) {
   const set = values => onEdit([{set: {layer: layer.id, ...values}}]).catch(() => {});
   // Opacity and turn animate: with auto-key on they show and key the value at the playhead.
   const at = autoKey ? keyMoment(layer, time, fps) : null;
@@ -92,6 +93,7 @@ function LayerFields({layer, time, fps, autoKey, onEdit, onDone}) {
     <Button size="small" variant="ghost" icon={ArrowDownToLine} tip="Send to back" onClick={() => set({order: 'back'})}/>
     <Button size="small" variant="ghost" icon={Trash2} tip="Remove this layer (Delete on the player, Ctrl+Z undoes)" onClick={() => { onDone(); onEdit([{remove: layer.id}]).catch(() => {}); }}/>
   </div>}>
+    {scene && <SceneSpan layer={layer} scene={scene} onSave={set}/>}
     {layer.type === 'text' && <>
       <textarea className="layer-text" aria-label="Words" rows={2} value={text} onChange={event => setText(event.target.value)} onBlur={saveText}
         onKeyDown={event => { if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) { event.preventDefault(); saveText(); } }}/>
@@ -165,4 +167,23 @@ function ColorField({label: name, tip, value, fallback, clearable, onSave}) {
     <input type="text" aria-label={name} value={draft} placeholder={clearable ? 'None' : fallback} spellCheck={false}
       onChange={event => setDraft(event.target.value)} onBlur={() => save(draft.trim())} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); save(draft.trim()); } }}/>
   </span></label>;
+}
+
+// When a film scene's layer shows, in seconds from the scene's start (saved in the film's seconds, like the lane's).
+function SceneSpan({layer, scene, onSave}) {
+  const shown = {start: +(layer.from - scene.start).toFixed(2), end: +(layer.to - scene.start).toFixed(2)};
+  const [draft, setDraft] = useState(shown);
+  useEffect(() => setDraft(shown), [shown.start, shown.end]);
+  const save = key => {
+    const value = Math.max(0, Math.min(scene.seconds, Number(draft[key])));
+    const other = key === 'start' ? shown.end : shown.start;
+    if (!Number.isFinite(value) || value === shown[key] || (key === 'start' ? value > other - 0.1 : value < other + 0.1)) { setDraft(shown); return; }
+    onSave({[key]: scene.start + value});
+  };
+  return <div className="scene-span">
+    {[['start', 'Starts', 'Seconds into the scene it appears'], ['end', 'Ends', `Seconds into the scene it goes (the scene is ${scene.seconds.toFixed(1)} s)`]].map(([key, name, tip]) =>
+      <label key={key} className="field" data-tip={tip}><span>{name}</span>
+        <input type="number" min={0} max={+scene.seconds.toFixed(2)} step={0.1} value={draft[key]} onChange={event => setDraft({...draft, [key]: event.target.value})}
+          onBlur={() => save(key)} onKeyDown={event => { if (event.key === 'Enter') event.currentTarget.blur(); }}/></label>)}
+  </div>;
 }

@@ -2,23 +2,27 @@
 // (films), each with a box, opacity and rotation that keyframes can animate (render/keyframes.js).
 // items: [{type, from, frames, x, y, w, h, opacity, rotation, keyframes, …}], from and frames in frames of the
 // composition (or of the scene), url for an image or video, seconds for a video's length (it loops).
+// frame: {width, height, scale} to draw into a box other than the whole video (a recording's layers inside a film
+// scene), sizes in px times scale; without it, the video's own size.
 import {Sequence, Img, Video, useCurrentFrame, useVideoConfig} from './frame.jsx';
 import {layerAt} from './keyframes.js';
 
 // Like the captions: Noto Sans JP or SC (shipped with the page when the text needs them) after Arial.
 const font = 'Arial, "Noto Sans JP Variable", "Noto Sans SC Variable", sans-serif';
 
-export function Layers({items = []}) {
+export function Layers({items = [], frame}) {
   return <>{items.map((layer, index) => <Sequence key={layer.id || index} from={layer.from} durationInFrames={layer.frames}>
-    <Layer layer={layer}/>
+    <Layer layer={layer} frame={frame}/>
   </Sequence>)}</>;
 }
 
-function Layer({layer}) {
+function Layer({layer, frame: area}) {
   const frame = useCurrentFrame();
-  const {fps, width, height} = useVideoConfig();
+  const video = useVideoConfig();
+  const {fps} = video;
+  const {width, height, scale = 1} = area || video;
   const {x, y, w, h, opacity, rotation} = layerAt(layer, frame / fps);
-  const radius = layer.radius || 0;
+  const radius = (layer.radius || 0) * scale;
   const box = {position: 'absolute', left: x * width, top: y * height, width: w * width, height: h * height, opacity: Math.max(0, Math.min(1, opacity)),
     transform: rotation ? `rotate(${rotation}deg)` : undefined, transformOrigin: 'center', borderRadius: radius, overflow: 'hidden'};
   if (layer.type === 'solid') return <div style={{...box, background: layer.color || '#18181b'}}/>;

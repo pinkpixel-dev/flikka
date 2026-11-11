@@ -649,3 +649,5 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
 .ease-numbers { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .ease-numbers label { display: flex; flex-direction: column; gap: 2px; font-size: 11px; color: var(--faint); }
 .ease-numbers input { width: 64px; height: 28px; font: 12px var(--mono); }
+.scene-span { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.scene-span input { height: 32px; font: 12.5px var(--mono); }
