@@ -37,6 +37,7 @@
 
 ### 🐛 Fixes
 - The panel no longer crashes when a file it's sending goes missing or can't be read partway through, like a preview file rebuilt by an edit from the CLI. That one request ends and the panel keeps running.
+- `flikka record status` answers `{"state": "none"}` when nothing's recording, instead of failing with a file error when there's never been a recording or the last one was removed. `stop`, `pause`, `resume` and `mark` say plainly that nothing's recording, and an id that doesn't exist gets its own message.
 
 ### 🧹 Maintenance
 - The helpers come from the `voice-v0.3.0` release now (`flikka-voice` 0.3.0 and `flikka-cursor` 0.2.0, in one archive), pinned by sha256 in npm installs and the AUR package.
